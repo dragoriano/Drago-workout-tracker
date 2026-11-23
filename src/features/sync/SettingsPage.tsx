@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   ArrowLeft, Cloud, Moon, Palette, Sparkles, AlertTriangle, 
   TrendingDown, Download, RefreshCw, Trash2, ChevronRight, X, QrCode, Upload, Camera, ScanLine, Volume2, ShieldAlert, Activity,
-  CloudUpload, CloudDownload, Mic, Calculator, Gauge
+  CloudUpload, CloudDownload, Mic, Calculator, Gauge, FileSpreadsheet
 } from 'lucide-react';
 import { PremiumIcon, FilledIcon } from '../../components/ui/PremiumIcon';
 import { QRCodeSVG } from 'qrcode.react';
@@ -15,6 +15,7 @@ import { applyThemeColor, applyThemeMode } from '../../utils/theme';
 import { useAppStore, DEFAULT_SETTINGS } from '../../store/useAppStore';
 import { PullToRefresh } from '../../components/ui/PullToRefresh';
 import { PlateCalculatorModal } from '../../components/ui/PlateCalculatorModal';
+import { downloadCSV, formatSessionsToCSV } from '../../utils/sessionExport';
 import { BARBELL_PRESETS, DEFAULT_BARBELL_WEIGHT, WeightUnit } from '../../utils/strength';
 import type { User } from '@supabase/supabase-js';
 
@@ -25,6 +26,8 @@ const QRCodeScanner = React.lazy(() =>
 export function SettingsPage() {
   const navigate = useNavigate();
   const settings = useAppStore((s) => s.settings) || DEFAULT_SETTINGS;
+  const sessions = useAppStore((s) => s.sessions);
+  const programs = useAppStore((s) => s.programs);
   const updateSettings = useAppStore((s) => s.updateSettings);
   const hydrate = useAppStore((s) => s.hydrate);
 
@@ -156,6 +159,23 @@ export function SettingsPage() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const handleExportCSV = async () => {
+    const exportSessions = sessions.length > 0 ? sessions : await db.getSessions();
+    const exportPrograms = programs.length > 0 ? programs : await db.getPrograms();
+
+    if (exportSessions.length === 0) {
+      setAlertMessage({
+        title: 'No History to Export',
+        message: 'Complete at least one workout session before exporting your history as CSV.',
+      });
+      return;
+    }
+
+    const unit = settings.weightUnit || 'kg';
+    const csv = formatSessionsToCSV(exportSessions, exportPrograms, unit);
+    downloadCSV(csv, `dragoriano-history-${new Date().toISOString().split('T')[0]}.csv`);
   };
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -663,6 +683,13 @@ export function SettingsPage() {
                 <div>
                   <h3 className="font-bold text-content">Export Data</h3>
                   <p className="text-xs text-muted">Download your workout data</p>
+                </div>
+              </button>
+              <button onClick={handleExportCSV} className="w-full flex items-center gap-3 rounded-2xl bg-card p-4 text-left glow-card group">
+                <PremiumIcon icon={FileSpreadsheet} color="emerald" variant="soft" size="sm" className="group-hover:scale-110" />
+                <div>
+                  <h3 className="font-bold text-content">Export History (CSV)</h3>
+                  <p className="text-xs text-muted">Download workout sets as a spreadsheet</p>
                 </div>
               </button>
               <button onClick={() => setShowDataModal(true)} className="w-full flex items-center justify-between rounded-2xl bg-card p-4 text-left glow-card group">

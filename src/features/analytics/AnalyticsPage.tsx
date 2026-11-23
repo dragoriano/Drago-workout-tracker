@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Card } from '../../components/ui/Card';
 import { format, subDays, startOfDay, formatISO } from 'date-fns';
-import { Flame, TrendingUp, Activity, Trophy, ArrowUp, Zap, Ruler, Calendar, Dumbbell, Gauge } from 'lucide-react';
+import { Flame, TrendingUp, Activity, Trophy, ArrowUp, Zap, Ruler, Calendar, Dumbbell, Gauge, Download } from 'lucide-react';
 import { PremiumIcon, FilledIcon } from '../../components/ui/PremiumIcon';
 import { WorkoutHeatmap } from '../../components/ui/WorkoutHeatmap';
 import { MuscleGroupChart, mapToMuscleGroup, getMuscleColor } from '../../components/ui/MuscleGroupChart';
@@ -18,9 +18,11 @@ import {
   findPreviousComparableSession,
   getPRTimelineExercises,
 } from '../../utils/sessionComparison';
+import { downloadCSV, formatSessionsToCSV } from '../../utils/sessionExport';
 import { isWarmupSet, rpeToRir } from '../../utils/strength';
-import { WorkoutSession } from '../../types';
+import type { WorkoutSession } from '../../types';
 import { SessionCompareModal } from './SessionCompareModal';
+import { SessionEditorModal } from './SessionEditorModal';
 import { SessionHistoryCard } from './SessionHistoryCard';
 
 export { computeStreaks, flattenPRs };
@@ -28,6 +30,7 @@ export { computeStreaks, flattenPRs };
 export function AnalyticsPage() {
   // ── Zustand store ────────────────────────────────────────────────
   const sessions = useAppStore((s) => s.sessions);
+  const programs = useAppStore((s) => s.programs);
   const measurements = useAppStore((s) => s.measurements);
   const customExercises = useAppStore((s) => s.customExercises);
   const settings = useAppStore((s) => s.settings);
@@ -46,6 +49,7 @@ export function AnalyticsPage() {
     session: WorkoutSession | null;
     baseline: WorkoutSession | null;
   }>({ isOpen: false, session: null, baseline: null });
+  const [editingSession, setEditingSession] = useState<WorkoutSession | null>(null);
 
   useEffect(() => { if (!isHydrated) hydrate(); }, [hydrate, isHydrated]);
 
@@ -580,6 +584,26 @@ export function AnalyticsPage() {
       ) : (
         /* ── HISTORY TAB ───────────────────────────────── */
         <>
+          {sessions.length > 0 && (
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted">
+                {filteredSessions.length} {filteredSessions.length === 1 ? 'Session' : 'Sessions'}
+                {selectedDate ? ' on selected date' : ''}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const csv = formatSessionsToCSV(sessions, programs, unit);
+                  downloadCSV(csv, `dragoriano-history-${new Date().toISOString().split('T')[0]}.csv`);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-surface border border-content/10 px-3 py-1.5 text-xs font-bold text-content hover:bg-content/10 transition-colors shrink-0"
+              >
+                <Download size={13} />
+                <span>Export CSV</span>
+              </button>
+            </div>
+          )}
+
           {filteredSessions.length === 0 ? (
             <div className="flex h-40 flex-col items-center justify-center text-center">
               <Calendar size={32}className="mb-3 text-muted opacity-30" />
@@ -603,6 +627,7 @@ export function AnalyticsPage() {
                   onCompare={(target, baseline) =>
                     setCompareState({ isOpen: true, session: target, baseline })
                   }
+                  onEdit={(target) => setEditingSession(target)}
                 />
               ))}
             </div>
@@ -617,6 +642,15 @@ export function AnalyticsPage() {
         allSessions={sessions}
         unit={unit}
         onClose={() => setCompareState({ isOpen: false, session: null, baseline: null })}
+      />
+
+      <SessionEditorModal
+        isOpen={editingSession !== null}
+        session={editingSession}
+        allSessions={sessions}
+        unit={unit}
+        effortScale={effortScale}
+        onClose={() => setEditingSession(null)}
       />
     </PullToRefresh>
   );

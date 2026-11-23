@@ -1,21 +1,25 @@
 import React, { useState } from 'react';
-import { Calendar } from 'lucide-react';
+import { Calendar, Download } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { WorkoutHeatmap } from '../../components/ui/WorkoutHeatmap';
 import { useAppStore } from '../../store/useAppStore';
-import { WorkoutSession } from '../../types';
+import type { WorkoutSession } from '../../types';
 import { findPreviousComparableSession } from '../../utils/sessionComparison';
+import { downloadCSV, formatSessionsToCSV } from '../../utils/sessionExport';
 import { SessionCompareModal } from './SessionCompareModal';
+import { SessionEditorModal } from './SessionEditorModal';
 import { SessionHistoryCard } from './SessionHistoryCard';
 
 export function HistoryPage() {
   const sessions = useAppStore((s) => s.sessions);
+  const programs = useAppStore((s) => s.programs);
   const settings = useAppStore((s) => s.settings);
   const [compareState, setCompareState] = useState<{
     isOpen: boolean;
     session: WorkoutSession | null;
     baseline: WorkoutSession | null;
   }>({ isOpen: false, session: null, baseline: null });
+  const [editingSession, setEditingSession] = useState<WorkoutSession | null>(null);
 
   const sortedSessions = React.useMemo(() => {
     return [...sessions].sort((a, b) => b.date - a.date);
@@ -23,9 +27,26 @@ export function HistoryPage() {
 
   const unit = settings?.weightUnit || 'kg';
 
+  const handleExportCSV = () => {
+    if (sessions.length === 0) return;
+    const csv = formatSessionsToCSV(sessions, programs, unit);
+    downloadCSV(csv, `dragoriano-history-${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
   return (
     <div className="p-4 pt-8 pb-24">
-      <h1 className="mb-8 text-3xl font-bold tracking-tight">History</h1>
+      <div className="mb-8 flex items-center justify-between gap-3">
+        <h1 className="text-3xl font-bold tracking-tight">History</h1>
+        <button
+          type="button"
+          onClick={handleExportCSV}
+          disabled={sessions.length === 0}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-surface border border-content/10 px-3 py-2 text-xs font-bold text-content hover:bg-content/10 transition-colors disabled:opacity-40 disabled:pointer-events-none shrink-0"
+        >
+          <Download size={14} />
+          <span>Export CSV</span>
+        </button>
+      </div>
 
       {/* Workout Heatmap Calendar */}
       {sessions.length > 0 && (
@@ -60,6 +81,7 @@ export function HistoryPage() {
               onCompare={(target, baseline) =>
                 setCompareState({ isOpen: true, session: target, baseline })
               }
+              onEdit={(target) => setEditingSession(target)}
             />
           ))}
         </div>
@@ -72,6 +94,15 @@ export function HistoryPage() {
         allSessions={sessions}
         unit={unit}
         onClose={() => setCompareState({ isOpen: false, session: null, baseline: null })}
+      />
+
+      <SessionEditorModal
+        isOpen={editingSession !== null}
+        session={editingSession}
+        allSessions={sessions}
+        unit={unit}
+        effortScale={settings?.effortScale || 'rpe'}
+        onClose={() => setEditingSession(null)}
       />
     </div>
   );

@@ -1,8 +1,8 @@
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import { Clock, Dumbbell, GitCompareArrows, Trophy } from 'lucide-react';
+import { Clock, Dumbbell, Edit2, GitCompareArrows, Trophy } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
-import { EffortScale, WorkoutSession } from '../../types';
+import type { EffortScale, WorkoutSession } from '../../types';
 import { cn } from '../../utils/cn';
 import { formatEffortLabel, getSetType, isWarmupSet } from '../../utils/strength';
 import { FREESTYLE_PROGRAM_ID } from '../../utils/customExercises';
@@ -16,6 +16,7 @@ interface SessionHistoryCardProps {
   effortScale?: EffortScale;
   previousSession?: WorkoutSession | null;
   onCompare?: (session: WorkoutSession, baseline: WorkoutSession | null) => void;
+  onEdit?: (session: WorkoutSession) => void;
 }
 
 export function SessionHistoryCard({
@@ -25,6 +26,7 @@ export function SessionHistoryCard({
   effortScale = 'rpe',
   previousSession = null,
   onCompare,
+  onEdit,
 }: SessionHistoryCardProps) {
   const comparison = previousSession ? compareSessions(session, previousSession) : null;
   return (
@@ -34,8 +36,8 @@ export function SessionHistoryCard({
       transition={{ delay: Math.min(index * 0.05, 0.3) }}
     >
       <Card className="p-5">
-        <div className="mb-4 flex items-center justify-between border-b border-content/5 pb-4">
-          <div>
+        <div className="mb-4 flex items-center justify-between gap-2 border-b border-content/5 pb-4">
+          <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-bold text-lg">{format(session.date, 'EEEE, MMM d')}</h3>
               {(session.workoutName || session.programId === FREESTYLE_PROGRAM_ID) && (
@@ -47,6 +49,17 @@ export function SessionHistoryCard({
             <p className="text-sm text-muted">{format(session.date, 'h:mm a')}</p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
+            {onEdit && (
+              <button
+                type="button"
+                onClick={() => onEdit(session)}
+                className="flex items-center gap-1 rounded-lg bg-content/5 border border-content/10 px-2.5 py-1 text-xs font-bold text-content hover:bg-content/10 transition-colors"
+                title="Edit session"
+              >
+                <Edit2 size={12} />
+                <span>Edit</span>
+              </button>
+            )}
             {onCompare && previousSession && (
               <button
                 type="button"
