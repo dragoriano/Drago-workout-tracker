@@ -2,8 +2,9 @@ import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { format } from 'date-fns';
-import { ChevronLeft, Share2, Image as ImageIcon, Camera, Trophy, Clock, Dumbbell, Copy, Download } from 'lucide-react';
+import { ChevronLeft, Share2, Image as ImageIcon, Camera, Trophy, Clock, Dumbbell, Copy, Download, BookmarkPlus, Check } from 'lucide-react';
 import { toPng } from 'html-to-image';
+import { buildProgramFromFreestyle, FREESTYLE_PROGRAM_ID } from '../../utils/customExercises';
 import { isWarmupSet } from '../../utils/strength';
 
 export function WorkoutSummaryPage() {
@@ -11,6 +12,7 @@ export function WorkoutSummaryPage() {
   const navigate = useNavigate();
   const [bgImage, setBgImage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [savedAsProgram, setSavedAsProgram] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -126,7 +128,7 @@ export function WorkoutSummaryPage() {
 
   if (!isHydrated) return <div className="p-4 flex justify-center items-center h-full text-muted">Loading...</div>;
 
-  if (!session || !program) {
+  if (!session) {
     return (
       <div className="p-8 flex flex-col items-center justify-center h-[100dvh] bg-page text-content gap-4 text-center">
         <p className="text-lg font-bold text-red-500">Workout session not found.</p>
@@ -140,7 +142,22 @@ export function WorkoutSummaryPage() {
     );
   }
 
-  const day = program.days.find(d => d.id === session.dayId);
+  const day = program ? program.days.find(d => d.id === session.dayId) : null;
+  const isFreestyle = !program || session.programId === FREESTYLE_PROGRAM_ID;
+  const workoutTitle = day?.name || session.workoutName || 'Quick Workout';
+  const programLabel = program?.name || 'Freestyle Session';
+
+  const handleSaveAsProgram = async () => {
+    if (savedAsProgram || !session.exercisesSnapshot?.length) return;
+    const hasActiveProgram = programs.some((p) => p.status === 'active');
+    const newProgram = buildProgramFromFreestyle(
+      workoutTitle,
+      session.exercisesSnapshot,
+      hasActiveProgram ? 'paused' : 'active',
+    );
+    await useAppStore.getState().saveProgram(newProgram);
+    setSavedAsProgram(true);
+  };
   
   return (
     <div className="flex flex-col h-[100dvh] w-full bg-page text-content overflow-y-auto pb-24">
@@ -188,8 +205,8 @@ export function WorkoutSummaryPage() {
             {/* Top: Workout Title */}
             <div className="text-center pt-2 pb-3 shrink-0">
               <p className="text-primary-400 font-bold text-[9px] tracking-[0.3em] uppercase mb-1">{format(session.date, 'EEEE • MMMM d, yyyy')}</p>
-              <h2 className="text-3xl font-black text-white uppercase tracking-wider leading-none mb-1 line-clamp-2">{day?.name || 'Workout'}</h2>
-              <p className="text-primary-300 font-bold text-[10px] tracking-widest uppercase line-clamp-1">{program.name}</p>
+              <h2 className="text-3xl font-black text-white uppercase tracking-wider leading-none mb-1 line-clamp-2">{workoutTitle}</h2>
+              <p className="text-primary-300 font-bold text-[10px] tracking-widest uppercase line-clamp-1">{programLabel}</p>
             </div>
             
             {/* Stats Row */}
@@ -281,6 +298,21 @@ export function WorkoutSummaryPage() {
         
         {/* Share Section */}
         <div className="w-full max-w-sm flex flex-col gap-4 mt-2">
+          {isFreestyle && session.exercisesSnapshot?.length > 0 && (
+            <button
+              type="button"
+              disabled={savedAsProgram}
+              onClick={handleSaveAsProgram}
+              className={`w-full flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold transition-all ${
+                savedAsProgram
+                  ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                  : 'bg-sky-500/15 border-sky-500/30 text-sky-400 hover:bg-sky-500/25 active:scale-95'
+              }`}
+            >
+              {savedAsProgram ? <Check size={16} /> : <BookmarkPlus size={16} />}
+              {savedAsProgram ? 'Saved to Programs' : 'Save Workout as Program'}
+            </button>
+          )}
           {/* Main Action Group */}
           <div className="grid grid-cols-3 gap-2">
             <button 

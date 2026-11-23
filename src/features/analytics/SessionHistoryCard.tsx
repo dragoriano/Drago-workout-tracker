@@ -5,6 +5,7 @@ import { Card } from '../../components/ui/Card';
 import { EffortScale, WorkoutSession } from '../../types';
 import { cn } from '../../utils/cn';
 import { formatEffortLabel, getSetType, isWarmupSet } from '../../utils/strength';
+import { FREESTYLE_PROGRAM_ID } from '../../utils/customExercises';
 
 interface SessionHistoryCardProps {
   key?: string | number;
@@ -29,7 +30,14 @@ export function SessionHistoryCard({
       <Card className="p-5">
         <div className="mb-4 flex items-center justify-between border-b border-content/5 pb-4">
           <div>
-            <h3 className="font-bold text-lg">{format(session.date, 'EEEE, MMM d')}</h3>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-bold text-lg">{format(session.date, 'EEEE, MMM d')}</h3>
+              {(session.workoutName || session.programId === FREESTYLE_PROGRAM_ID) && (
+                <span className="rounded bg-sky-500/15 border border-sky-500/30 px-2 py-0.5 text-[10px] font-bold text-sky-400">
+                  {session.workoutName || 'Quick Workout'}
+                </span>
+              )}
+            </div>
             <p className="text-sm text-muted">{format(session.date, 'h:mm a')}</p>
           </div>
           <div className="flex items-center gap-1 rounded-lg bg-primary-500/10 px-3 py-1 text-primary-400">

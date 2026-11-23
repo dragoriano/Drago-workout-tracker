@@ -31,6 +31,7 @@ export async function pushToSupabase(uid: string): Promise<void> {
   const sessions = await db.getSessions();
   const goals = await db.getGoals();
   const measurements = await db.getMeasurements();
+  const customExercises = await db.getCustomExercises();
   const settings = await db.getSettings();
   const analytics = await db.getAnalytics();
 
@@ -39,6 +40,7 @@ export async function pushToSupabase(uid: string): Promise<void> {
     sessions,
     goals,
     measurements,
+    customExercises,
     settings,
     analytics,
     lastSync: new Date().toISOString()
@@ -81,6 +83,9 @@ export async function pullFromSupabase(uid: string): Promise<void> {
   }
   if (backup.measurements) {
     for (const m of backup.measurements) await db.saveMeasurement(m);
+  }
+  if (Array.isArray(backup.customExercises)) {
+    for (const ce of backup.customExercises) await db.saveCustomExercise(ce);
   }
   if (backup.settings) await db.saveSettings(backup.settings);
   if (backup.analytics) await db.saveAnalytics(backup.analytics);

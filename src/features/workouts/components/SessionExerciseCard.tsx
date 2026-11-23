@@ -31,6 +31,7 @@ import {
   rpeToRir,
 } from '../../../utils/strength';
 import { evaluateExerciseCoach } from '../../../utils/workoutCoach';
+import type { MuscleRecoveryStatus } from '../../../utils/muscleRecovery';
 
 export interface WorkoutBlockData {
   id: string;
@@ -56,6 +57,8 @@ interface ExerciseItemProps {
   isSupersettedWithPrev: boolean;
   settings: AppSettings | null;
   isDeloadDay?: boolean;
+  muscleReadiness?: MuscleRecoveryStatus | null;
+  onRemoveExercise?: (exId: string) => void;
   dragControls?: ReturnType<typeof useDragControls>;
 }
 
@@ -76,6 +79,8 @@ export function DraggableExerciseItem({
   isSupersettedWithNext,
   settings,
   isDeloadDay,
+  muscleReadiness,
+  onRemoveExercise,
   dragControls,
 }: ExerciseItemProps) {
   const completedExSets = exercise.sets.filter((s) => s.completed).length;
@@ -152,8 +157,9 @@ export function DraggableExerciseItem({
                 </div>
 
                 {(exercise.primaryMuscle ||
-                  (exercise.secondaryMuscles && exercise.secondaryMuscles.length > 0)) && (
-                  <div className="flex flex-wrap items-center gap-x-2 mt-1">
+                  (exercise.secondaryMuscles && exercise.secondaryMuscles.length > 0) ||
+                  muscleReadiness?.readiness === 'fatigued') && (
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
                     {exercise.primaryMuscle && (
                       <span className="text-[10px] text-primary-400/80 font-bold uppercase tracking-wider">
                         {exercise.primaryMuscle}
@@ -165,6 +171,11 @@ export function DraggableExerciseItem({
                           · {m}
                         </span>
                       ))}
+                    {muscleReadiness?.readiness === 'fatigued' && (
+                      <span className="rounded bg-red-500/15 border border-red-500/30 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-red-400">
+                        Fatigued · {muscleReadiness.recoveryPercent}%
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -269,6 +280,20 @@ export function DraggableExerciseItem({
                     title={exercise.supersetId ? 'Unlink Superset' : 'Link Superset'}
                   >
                     {exercise.supersetId ? <Unlink size={16} /> : <Link size={16} />}
+                  </button>
+                )}
+
+                {onRemoveExercise && (
+                  <button
+                    type="button"
+                    className="p-1.5 text-muted/60 hover:text-red-500 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemoveExercise(exercise.id);
+                    }}
+                    title="Remove Exercise"
+                  >
+                    <Trash2 size={15} />
                   </button>
                 )}
               </div>
@@ -628,6 +653,8 @@ interface WorkoutBlockProps {
   handleToggleSuperset: (index: number) => void;
   settings: AppSettings | null;
   isDeloadDay?: boolean;
+  muscleReadinessMap?: Record<string, MuscleRecoveryStatus>;
+  onRemoveExercise?: (exId: string) => void;
   onDragStart: () => void;
 }
 
@@ -647,6 +674,8 @@ export function WorkoutBlock({
   handleToggleSuperset,
   settings,
   isDeloadDay,
+  muscleReadinessMap,
+  onRemoveExercise,
   onDragStart,
 }: WorkoutBlockProps) {
   const controls = useDragControls();
@@ -695,6 +724,8 @@ export function WorkoutBlock({
             settings={settings}
             dragControls={controls}
             isDeloadDay={isDeloadDay}
+            muscleReadiness={muscleReadinessMap?.[exercise.id] ?? null}
+            onRemoveExercise={onRemoveExercise}
           />
         );
       })}

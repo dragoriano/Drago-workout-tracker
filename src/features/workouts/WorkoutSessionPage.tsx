@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calculator, ChevronLeft, RotateCcw, Dumbbell, CheckCircle2, Trophy, X } from 'lucide-react';
+import { Calculator, ChevronLeft, RotateCcw, Dumbbell, CheckCircle2, Trophy, X, Edit2, Plus, Zap } from 'lucide-react';
 import { Exercise, Set, WorkoutSession } from '../../types';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -15,9 +15,21 @@ import {
   computeSmartSets,
   detectSessionPRs,
 } from '../../utils/workoutCoach';
+import {
+  buildFreestyleExercise,
+  buildProgramFromFreestyle,
+  CatalogExerciseItem,
+  FREESTYLE_PROGRAM_ID,
+} from '../../utils/customExercises';
+import {
+  computeMuscleRecovery,
+  MuscleRecoveryStatus,
+  resolveExerciseBroadMuscles,
+} from '../../utils/muscleRecovery';
 import { isWarmupSet } from '../../utils/strength';
 import { WorkoutBlock } from './components/SessionExerciseCard';
 import { RestTimerOverlay } from './components/RestTimerOverlay';
+import { QuickAddExerciseModal } from './components/QuickAddExerciseModal';
 
 export { computeSmartSets };
 
@@ -28,16 +40,22 @@ const ExerciseChartModal = React.lazy(() =>
 export function WorkoutSessionPage() {
   const { programId, dayId } = useParams();
   const navigate = useNavigate();
-  
+  const isFreestyle = !programId && !dayId;
+
   const programs = useAppStore(s => s.programs);
   const sessions = useAppStore(s => s.sessions);
+  const customExercises = useAppStore(s => s.customExercises);
   const settings = useAppStore(s => s.settings);
   const isHydrated = useAppStore(s => s.isHydrated);
 
-  const program = programs.find(p => p.id === programId) || null;
-  const day = program ? program.days.find(d => d.id === dayId) : null;
+  const program = programId ? (programs.find(p => p.id === programId) || null) : null;
+  const day = program && dayId ? program.days.find(d => d.id === dayId) : null;
 
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [freestyleName, setFreestyleName] = useState('Quick Workout');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [isAddExerciseOpen, setIsAddExerciseOpen] = useState(false);
+  const [saveAsProgram, setSaveAsProgram] = useState(false);
   const [startTime, setStartTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
   const [restTimer, setRestTimer] = useState<number | null>(null);
@@ -77,14 +95,16 @@ export function WorkoutSessionPage() {
   }, []);
 
   useEffect(() => {
-    if (!isHydrated || !program || !day || isFinishingRef.current) return;
+    if (!isHydrated || (!isFreestyle && (!program || !day)) || isFinishingRef.current) return;
 
-    const sessionKey = `${programId}_${dayId}`;
+    const sessionKey = isFreestyle ? 'freestyle' : `${programId}_${dayId}`;
     if (initializedSessionKeyRef.current === sessionKey) return;
     initializedSessionKeyRef.current = sessionKey;
 
     // 1. Try to recover active session
-    const cacheKey = `dragoriano_session_${programId}_${dayId}`;
+    const cacheKey = isFreestyle
+      ? 'dragoriano_session_freestyle'
+      : `dragoriano_session_${programId}_${dayId}`;
     const cachedStr = localStorage.getItem(cacheKey);
     if (cachedStr) {
       try {
@@ -108,10 +128,11 @@ export function WorkoutSessionPage() {
               return { ...ex, history: globalHistory };
             });
             setExercises(restoredExercises);
+            if (isFreestyle && cached.workoutName) setFreestyleName(cached.workoutName);
             if (cached.startTime) setStartTime(cached.startTime);
             setExpandedExercises({ [restoredExercises[0].id]: true });
 
-            const isDeload = !!day.isDeloadDay;
+            const isDeload = !!day?.isDeloadDay;
             setIsDeloadDay(isDeload);
             return; // Successfully restored from draft
           } else {
@@ -121,6 +142,12 @@ export function WorkoutSessionPage() {
       } catch (e) {
         console.error("Failed to parse cached session", e);
       }
+    }
+
+    if (isFreestyle || !day) {
+      setIsDeloadDay(false);
+      setExercises([]);
+      return;
     }
 
     // 2. Normal Initialization (Apply Smart Suggestions & Auto Deload)
@@ -147,18 +174,30 @@ export function WorkoutSessionPage() {
     if (processedExercises.length > 0) {
       setExpandedExercises({ [processedExercises[0].id]: true });
     }
-  }, [isHydrated, programId, dayId, program, day]);
+  }, [isHydrated, isFreestyle, programId, dayId, program, day]);
 
   useEffect(() => {
     if (isFinishingRef.current) return;
-    if (programId && dayId && exercises.length > 0) {
-      const cacheKey = `dragoriano_session_${programId}_${dayId}`;
-      localStorage.setItem(cacheKey, JSON.stringify({
-        startTime,
-        exercises
-      }));
+    const cacheKey = isFreestyle
+      ? 'dragoriano_session_freestyle'
+      : programId && dayId
+        ? `dragoriano_session_${programId}_${dayId}`
+        : null;
+    if (!cacheKey) return;
+
+    if (exercises.length > 0) {
+      localStorage.setItem(
+        cacheKey,
+        JSON.stringify({
+          startTime,
+          workoutName: isFreestyle ? freestyleName : undefined,
+          exercises,
+        }),
+      );
+    } else if (isFreestyle) {
+      localStorage.removeItem(cacheKey);
     }
-  }, [exercises, startTime, programId, dayId]);
+  }, [exercises, startTime, freestyleName, isFreestyle, programId, dayId]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -453,11 +492,12 @@ export function WorkoutSessionPage() {
   };
 
   const handleFinishWorkout = async () => {
-    if (!program || !day) return;
+    if ((!isFreestyle && (!program || !day)) || exercises.length === 0) return;
 
     isFinishingRef.current = true;
-    // Clear the active session draft
-    const cacheKey = `dragoriano_session_${program.id}_${day.id}`;
+    const cacheKey = isFreestyle
+      ? 'dragoriano_session_freestyle'
+      : `dragoriano_session_${program!.id}_${day!.id}`;
     localStorage.removeItem(cacheKey);
 
     const sessionId = generateId();
@@ -468,10 +508,12 @@ export function WorkoutSessionPage() {
       history: [...ex.history, { sessionId, date: Date.now(), sets: ex.sets }],
     }));
 
+    const finalTitle = freestyleName.trim() || 'Quick Workout';
     const session: WorkoutSession = {
       id: sessionId,
-      programId: program.id,
-      dayId: day.id,
+      programId: isFreestyle ? FREESTYLE_PROGRAM_ID : program!.id,
+      dayId: isFreestyle ? FREESTYLE_PROGRAM_ID : day!.id,
+      ...(isFreestyle ? { workoutName: finalTitle } : {}),
       date: Date.now(),
       totalVolume,
       PRs: detectedPRs,
@@ -480,22 +522,34 @@ export function WorkoutSessionPage() {
     };
 
     await useAppStore.getState().saveSession(session);
-    const updatedProgram = {
-      ...program,
-      days: program.days.map(d => d.id === day.id ? { ...d, exercises: updatedExercises } : d)
-    };
-    await useAppStore.getState().saveProgram(updatedProgram);
 
-    if (settings?.overloadWarnings) {
-      const sameDaySessions = sessions.filter((s) => s.dayId === day.id && s.id !== session.id);
-      const pctIncrease = computeOverloadSpikePercent(totalVolume, sameDaySessions);
-      if (pctIncrease > 20) {
-        pendingSessionId.current = sessionId;
-        setOverloadPercent(pctIncrease);
-        setShowOverloadWarning(true);
-        return;
+    if (!isFreestyle && program && day) {
+      const updatedProgram = {
+        ...program,
+        days: program.days.map(d => d.id === day.id ? { ...d, exercises: updatedExercises } : d)
+      };
+      await useAppStore.getState().saveProgram(updatedProgram);
+
+      if (settings?.overloadWarnings) {
+        const sameDaySessions = sessions.filter((s) => s.dayId === day.id && s.id !== session.id);
+        const pctIncrease = computeOverloadSpikePercent(totalVolume, sameDaySessions);
+        if (pctIncrease > 20) {
+          pendingSessionId.current = sessionId;
+          setOverloadPercent(pctIncrease);
+          setShowOverloadWarning(true);
+          return;
+        }
       }
+    } else if (isFreestyle && saveAsProgram) {
+      const hasActiveProgram = programs.some((p) => p.status === 'active');
+      const template = buildProgramFromFreestyle(
+        finalTitle,
+        exercises,
+        hasActiveProgram ? 'paused' : 'active',
+      );
+      await useAppStore.getState().saveProgram(template);
     }
+
     finishAndNavigate(sessionId);
   };
 
@@ -569,13 +623,55 @@ export function WorkoutSessionPage() {
     const flattened = newBlocks.flatMap((b) => b.exercises);
     setExercises(flattened);
   };
+  const handleAddSessionExercise = (
+    meta: CatalogExerciseItem,
+    setsCount: number,
+    reps: number,
+  ) => {
+    const newEx = buildFreestyleExercise(meta, sessions, settings, {
+      setsCount,
+      defaultReps: reps,
+      isDeload: isDeloadDay,
+    });
+    setExercises((prev) => [...prev, newEx]);
+    setExpandedExercises((prev) => ({ ...prev, [newEx.id]: true }));
+  };
+
+  const handleRemoveExercise = (exId: string) => {
+    setExercises((prev) => prev.filter((ex) => ex.id !== exId));
+  };
+
+  const muscleRecovery = React.useMemo(
+    () =>
+      computeMuscleRecovery(sessions, {
+        customExercises,
+        resolveFallbackMuscles: getExerciseMuscleGroups,
+      }),
+    [sessions, customExercises],
+  );
+
+  const muscleReadinessMap = React.useMemo(() => {
+    const map: Record<string, MuscleRecoveryStatus> = {};
+    for (const ex of exercises) {
+      const { primary } = resolveExerciseBroadMuscles(
+        ex,
+        customExercises,
+        getExerciseMuscleGroups,
+      );
+      if (!primary) continue;
+      const status = muscleRecovery.find((r) => r.muscle === primary);
+      if (status) map[ex.id] = status;
+    }
+    return map;
+  }, [exercises, muscleRecovery, customExercises]);
+
   const collapseAll = () => setExpandedExercises({});
 
   if (!isHydrated) {
     return <div className="p-4 flex justify-center items-center h-full text-muted">Loading...</div>;
   }
 
-  if (!program || !day) {
+  if (!isFreestyle && (!program || !day)) {
     return (
       <div className="p-8 flex flex-col items-center justify-center h-[100dvh] bg-page text-content gap-4 text-center">
         <p className="text-lg font-bold text-red-500">Workout day or program not found.</p>
@@ -607,8 +703,34 @@ export function WorkoutSessionPage() {
         <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-content hover:bg-page/10 rounded-full transition-colors">
           <ChevronLeft size={24}/>
         </button>
-        <div className="text-center flex-1">
-          <h1 className="text-lg font-black uppercase tracking-wide">{day.name}</h1>
+        <div className="text-center flex-1 min-w-0 px-2">
+          {isFreestyle ? (
+            isEditingTitle ? (
+              <input
+                type="text"
+                autoFocus
+                value={freestyleName}
+                onChange={(e) => setFreestyleName(e.target.value)}
+                onBlur={() => setIsEditingTitle(false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === 'Escape') setIsEditingTitle(false);
+                }}
+                className="w-full max-w-[200px] mx-auto bg-card border border-primary-500/40 rounded-lg px-2 py-0.5 text-center text-base font-black uppercase tracking-wide outline-none"
+                aria-label="Workout name"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsEditingTitle(true)}
+                className="inline-flex items-center justify-center gap-1.5 text-lg font-black uppercase tracking-wide hover:text-primary-400 transition-colors max-w-full"
+              >
+                <span className="truncate">{freestyleName || 'Quick Workout'}</span>
+                <Edit2 size={13} className="text-muted shrink-0" />
+              </button>
+            )
+          ) : (
+            <h1 className="text-lg font-black uppercase tracking-wide truncate">{day!.name}</h1>
+          )}
           <p className="text-xs text-muted font-medium">{exercises.length} exercises • {completedSets}/{totalSets} sets</p>
         </div>
         <div className="flex items-center justify-end gap-1.5 shrink-0">
@@ -622,13 +744,23 @@ export function WorkoutSessionPage() {
           <button 
             onClick={() => {
               if (window.confirm("Restart this workout and clear all unsaved progress?")) {
-                const cacheKey = `dragoriano_session_${programId}_${dayId}`;
+                const cacheKey = isFreestyle
+                  ? 'dragoriano_session_freestyle'
+                  : `dragoriano_session_${programId}_${dayId}`;
                 localStorage.removeItem(cacheKey);
-                // Reset session state
                 setStartTime(Date.now());
-                const isDeload = !!day?.isDeloadDay;
+                if (isFreestyle || !day) {
+                  setExercises(prev =>
+                    prev.map(ex => ({
+                      ...ex,
+                      sets: ex.sets.map(s => ({ ...s, completed: false, rpe: undefined })),
+                    })),
+                  );
+                  return;
+                }
+                const isDeload = !!day.isDeloadDay;
                 setIsDeloadDay(isDeload);
-                const processedExercises = day?.exercises.map(ex => {
+                const processedExercises = day.exercises.map(ex => {
                   const globalHistory = sessions
                     .filter(s => s.exercisesSnapshot?.some(e => e.name.toLowerCase().trim() === ex.name.toLowerCase().trim()))
                     .map(s => {
@@ -642,7 +774,7 @@ export function WorkoutSessionPage() {
                     .sort((a, b) => a.date - b.date);
                   const exWithHistory = { ...ex, history: globalHistory };
                   return { ...exWithHistory, sets: computeSmartSets(exWithHistory, isDeload, settings) };
-                }) || [];
+                });
                 setExercises(processedExercises);
                 if (processedExercises.length > 0) {
                   setExpandedExercises({ [processedExercises[0].id]: true });
@@ -663,39 +795,88 @@ export function WorkoutSessionPage() {
       {isDeloadDay && (
         <div className="bg-sky-500/10 border-b border-sky-500/20 px-4 py-2.5 flex items-center gap-2">
           <span className="text-sky-400 text-sm">❄️</span>
-          <p className="text-sm font-bold text-sky-300">Deload Day <span className="font-normal text-sky-400/70">— Light weights, focus on form & recovery</span></p>
+          <p className="text-sm font-bold text-sky-300">Deload Day <span className="font-normal text-sky-400/70">— Light weights, focus on form &amp; recovery</span></p>
         </div>
       )}
 
       <main className="flex-1 overflow-y-auto overflow-x-hidden w-full p-4 pb-40">
-        <Reorder.Group 
-          axis="y" 
-          values={blocks} 
-          onReorder={handleReorderBlocks} 
-          className="grid gap-4 w-full max-w-full"
-        >
-          {blocks.map((block) => (
-            <WorkoutBlock 
-              key={block.id}
-              block={block}
-              exercises={exercises}
-              expandedExercises={expandedExercises}
-              toggleExercise={toggleExercise}
-              handleToggleSet={handleToggleSet}
-              handleUpdateSet={handleUpdateSet}
-              handleDeleteSet={handleDeleteSet}
-              handleAddSet={handleAddSet}
-              handleOpenNotes={handleOpenNotes}
-              handleOpenSwap={handleOpenSwap}
-              handleOpenPlateCalc={handleOpenPlateCalc}
-              setChartConfig={setChartConfig}
-              handleToggleSuperset={handleToggleSuperset}
-              settings={settings}
-              isDeloadDay={isDeloadDay}
-              onDragStart={collapseAll}
-            />
-          ))}
-        </Reorder.Group>
+        {isFreestyle && exercises.length === 0 ? (
+          <div className="rounded-3xl bg-card border border-content/10 p-6 text-center space-y-4 mt-4">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400">
+              <Zap size={26} />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-content">Quick Freestyle Workout</h2>
+              <p className="text-xs text-muted mt-1">
+                Build your session on the fly. Recovered muscles ready to train:
+              </p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-1.5">
+              {muscleRecovery
+                .filter((m) => m.readiness === 'ready')
+                .slice(0, 5)
+                .map((m) => (
+                  <button
+                    key={m.muscle}
+                    type="button"
+                    onClick={() => setIsAddExerciseOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-3 py-1 text-xs font-bold text-emerald-400"
+                  >
+                    <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                    {m.muscle} · {m.recoveryPercent}%
+                  </button>
+                ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsAddExerciseOpen(true)}
+              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-primary-500 py-3.5 text-sm font-black text-content shadow-lg shadow-primary-500/30 hover:bg-primary-400 active:scale-95 transition-all"
+            >
+              <Plus size={18} /> Add First Exercise
+            </button>
+          </div>
+        ) : (
+          <>
+            <Reorder.Group 
+              axis="y" 
+              values={blocks} 
+              onReorder={handleReorderBlocks} 
+              className="grid gap-4 w-full max-w-full"
+            >
+              {blocks.map((block) => (
+                <WorkoutBlock 
+                  key={block.id}
+                  block={block}
+                  exercises={exercises}
+                  expandedExercises={expandedExercises}
+                  toggleExercise={toggleExercise}
+                  handleToggleSet={handleToggleSet}
+                  handleUpdateSet={handleUpdateSet}
+                  handleDeleteSet={handleDeleteSet}
+                  handleAddSet={handleAddSet}
+                  handleOpenNotes={handleOpenNotes}
+                  handleOpenSwap={handleOpenSwap}
+                  handleOpenPlateCalc={handleOpenPlateCalc}
+                  setChartConfig={setChartConfig}
+                  handleToggleSuperset={handleToggleSuperset}
+                  settings={settings}
+                  isDeloadDay={isDeloadDay}
+                  muscleReadinessMap={muscleReadinessMap}
+                  onRemoveExercise={isFreestyle ? handleRemoveExercise : undefined}
+                  onDragStart={collapseAll}
+                />
+              ))}
+            </Reorder.Group>
+
+            <button
+              type="button"
+              onClick={() => setIsAddExerciseOpen(true)}
+              className="mt-4 w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-content/15 bg-card/40 py-3.5 text-sm font-bold text-primary-400 hover:border-primary-500/40 hover:bg-primary-500/5 active:scale-[0.99] transition-all"
+            >
+              <Plus size={17} /> Add Exercise
+            </button>
+          </>
+        )}
       </main>
 
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-page border-t border-content/5 p-4 pb-safe backdrop-blur-xl">
@@ -706,7 +887,13 @@ export function WorkoutSessionPage() {
           </div>
           <div className="text-sm font-bold text-primary-400">{progressPercent}%</div>
         </div>
-        <button onClick={() => setShowFinishConfirm(true)} className="w-full rounded-2xl bg-primary-500 py-4 text-base font-black text-content shadow-lg shadow-primary-500/40 active:scale-95 flex items-center justify-center gap-2"><CheckCircle2 size={20}/> FINISH WORKOUT</button>
+        <button
+          disabled={exercises.length === 0}
+          onClick={() => setShowFinishConfirm(true)}
+          className="w-full rounded-2xl bg-primary-500 py-4 text-base font-black text-content shadow-lg shadow-primary-500/40 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-40 disabled:pointer-events-none"
+        >
+          <CheckCircle2 size={20}/> FINISH WORKOUT
+        </button>
       </div>
 
       <RestTimerOverlay
@@ -810,12 +997,24 @@ export function WorkoutSessionPage() {
               </div>
               <div className="relative z-10">
                 <h3 className="text-2xl font-black uppercase tracking-wide mb-2">Finish Workout?</h3>
-                <p className="text-muted text-sm font-medium mb-6 leading-relaxed">
+                <p className="text-muted text-sm font-medium mb-4 leading-relaxed">
                   You've completed <span className="text-emerald-500 font-bold">{completedSets}</span> out of <span className="text-content font-bold">{totalSets}</span> sets and lifted a total of <span className="text-primary-500 font-bold">{totalVolume.toLocaleString()} {settings?.weightUnit || 'kg'}</span>.
                   {completedSets < totalSets && (
                     <span className="block mt-2 text-amber-500 font-bold">You have {totalSets - completedSets} unfinished sets.</span>
                   )}
                 </p>
+
+                {isFreestyle && (
+                  <label className="mb-5 flex items-center gap-2.5 rounded-xl bg-surface border border-content/10 px-3 py-2.5 text-xs font-bold text-content cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={saveAsProgram}
+                      onChange={(e) => setSaveAsProgram(e.target.checked)}
+                      className="h-4 w-4 accent-primary-500 rounded"
+                    />
+                    <span>Save this workout as a reusable program</span>
+                  </label>
+                )}
                 
                 <div className="flex gap-3">
                   <button 
@@ -840,6 +1039,12 @@ export function WorkoutSessionPage() {
         )}
       </AnimatePresence>
       {noteConfig && <PromptModal isOpen={noteConfig.isOpen} title="Exercise Notes" initialValue={noteConfig.initialValue} onConfirm={handleSaveNotes} onCancel={() => setNoteConfig(null)} placeholder="Enter any notes for this exercise..." />}
+      <QuickAddExerciseModal
+        isOpen={isAddExerciseOpen}
+        onClose={() => setIsAddExerciseOpen(false)}
+        readyMuscles={muscleRecovery}
+        onAddExercise={handleAddSessionExercise}
+      />
       {showOverloadWarning && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-page/80 p-4 backdrop-blur-sm">
         <div className="w-full max-w-sm rounded-3xl bg-card p-6 text-center border border-amber-500/20">
           <div className="text-4xl mb-3">⚠️</div>

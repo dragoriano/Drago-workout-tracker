@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Dumbbell, Calendar, Clock, ChevronRight, Edit2, Plus,
-  Flame, Weight, Copy,
+  ArrowLeft, BookOpen, Dumbbell, Calendar, Clock, ChevronRight, Edit2, Plus,
+  Flame, Weight, Copy, Zap,
 } from 'lucide-react';
 import { WorkoutProgram } from '../../types';
 import { motion } from 'framer-motion';
@@ -23,11 +23,13 @@ import {
   ChooseGoalModal,
   ChooseSplitModal,
 } from './components/PresetProgramModals';
+import { CustomExerciseModal } from './components/CustomExerciseModal';
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 export function WorkoutsPage() {
   // ── Zustand store ──────────────────────────────────────────────
   const programs = useAppStore((s) => s.programs);
+  const customExercises = useAppStore((s) => s.customExercises);
   const storeSaveProgram = useAppStore((s) => s.saveProgram);
   const hydrate = useAppStore((s) => s.hydrate);
 
@@ -35,6 +37,7 @@ export function WorkoutsPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
+  const [isCustomLibOpen, setIsCustomLibOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameInput, setRenameInput] = useState('');
@@ -191,6 +194,38 @@ export function WorkoutsPage() {
         </div>
 
         <div className="p-4">
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            <button
+              type="button"
+              onClick={() => navigate('/quick-workout')}
+              className="flex items-center gap-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 p-3.5 text-left hover:bg-emerald-500/15 active:scale-[0.98] transition-all"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
+                <Zap size={18} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-content truncate">Quick Workout</p>
+                <p className="text-[11px] text-emerald-400/80 font-medium truncate">Freestyle session</p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsCustomLibOpen(true)}
+              className="flex items-center gap-3 rounded-2xl bg-sky-500/10 border border-sky-500/25 p-3.5 text-left hover:bg-sky-500/15 active:scale-[0.98] transition-all"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-500/20 text-sky-400">
+                <BookOpen size={18} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-content truncate">Custom Exercises</p>
+                <p className="text-[11px] text-sky-400/80 font-medium truncate">
+                  {customExercises.length} {customExercises.length === 1 ? 'exercise' : 'exercises'}
+                </p>
+              </div>
+            </button>
+          </div>
+
           {programs.length === 0 ? (
             <div className="flex h-64 flex-col items-center justify-center text-center">
               <div className="mb-4 rounded-full bg-card p-4 shadow-lg">
@@ -360,6 +395,10 @@ export function WorkoutsPage() {
         onAdvance={advanceWizard}
         onPickRecommendation={handlePickRecommendation}
         onBuildCustom={handleBuildCustomFromWizard}
+      />
+      <CustomExerciseModal
+        isOpen={isCustomLibOpen}
+        onClose={() => setIsCustomLibOpen(false)}
       />
     </div>
   );

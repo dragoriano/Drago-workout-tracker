@@ -341,6 +341,7 @@ export function ExerciseManagerModal({
                         muscleGroup: ex.muscleGroups,
                         primaryMuscle: ex.primaryMuscle,
                         secondaryMuscles: ex.secondaryMuscles,
+                        restTimer: ex.defaultRestTimer ? String(ex.defaultRestTimer) : f.restTimer,
                       }))
                     }
                     placeholder="Exercise name (e.g. Bench Press)"

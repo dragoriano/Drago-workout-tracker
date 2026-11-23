@@ -51,10 +51,32 @@ export type ExerciseHistory = {
  sets: Set[];
 };
 
+export type ExerciseEquipment =
+ | 'Barbell'
+ | 'Dumbbell'
+ | 'Machine'
+ | 'Cable'
+ | 'Bodyweight'
+ | 'Kettlebell'
+ | 'Other';
+
+export type CustomExercise = {
+ id: string;
+ name: string;
+ primaryMuscle: string;
+ secondaryMuscles: string[];
+ muscleGroups: string[];
+ equipment?: ExerciseEquipment;
+ defaultRestTimer?: number;
+ notes?: string;
+ createdAt: number;
+};
+
 export type WorkoutSession = {
  id: string;
  programId: string;
  dayId: string;
+ workoutName?: string;
  date: number;
  totalVolume: number;
  PRs: PR[];

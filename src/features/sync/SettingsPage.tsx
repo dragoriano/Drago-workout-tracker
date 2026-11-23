@@ -132,6 +132,7 @@ export function SettingsPage() {
     const sessions = await db.getSessions();
     const goals = await db.getGoals();
     const measurements = await db.getMeasurements();
+    const customExercises = await db.getCustomExercises();
     const analytics = await db.getAnalytics();
     const settings = await db.getSettings();
     
@@ -140,6 +141,7 @@ export function SettingsPage() {
       sessions,
       goals,
       measurements,
+      customExercises,
       analytics,
       settings,
       exportDate: new Date().toISOString()
@@ -183,6 +185,11 @@ export function SettingsPage() {
         if (Array.isArray(data.measurements)) {
           for (const m of data.measurements) {
             await db.saveMeasurement(m);
+          }
+        }
+        if (Array.isArray(data.customExercises)) {
+          for (const ce of data.customExercises) {
+            await db.saveCustomExercise(ce);
           }
         }
         if (data.analytics) await db.saveAnalytics(data.analytics);

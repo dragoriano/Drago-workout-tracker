@@ -1,38 +1,11 @@
 import React from 'react';
+import { getMuscleColor, mapToMuscleGroup } from '../../utils/muscleRecovery';
+
+export { mapToMuscleGroup, getMuscleColor };
 
 interface MuscleGroupChartProps {
   data: { name: string; volume: number; color: string }[];
   unit?: string;
-}
-
-const MUSCLE_COLORS: Record<string, string> = {
-  'Chest': '#ef4444',
-  'Back': '#3b82f6',
-  'Shoulders': '#f97316',
-  'Arms': '#6366f1',
-  'Legs': '#22c55e',
-  'Core': '#eab308',
-  'Glutes': '#ec4899',
-  'Other': '#6b7280',
-};
-
-// Maps detailed muscle names to broad groups for the chart
-const MUSCLE_GROUP_MAP: Record<string, string> = {
-  'Upper Chest': 'Chest', 'Mid Chest': 'Chest', 'Lower Chest': 'Chest', 'Chest': 'Chest',
-  'Upper Back': 'Back', 'Mid Back': 'Back', 'Lats': 'Back', 'Erector Spinae': 'Back', 'Back': 'Back',
-  'Front Delt': 'Shoulders', 'Side Delt': 'Shoulders', 'Rear Delt': 'Shoulders', 'Shoulders': 'Shoulders',
-  'Biceps': 'Arms', 'Triceps': 'Arms', 'Forearms': 'Arms', 'Forearm Flexors': 'Arms', 'Forearm Extensors': 'Arms', 'Brachioradialis': 'Arms', 'Brachialis': 'Arms', 'Arms': 'Arms',
-  'Quads': 'Legs', 'Hamstrings': 'Legs', 'Calves': 'Legs', 'Legs': 'Legs',
-  'Abdominals': 'Core', 'Obliques': 'Core', 'Core': 'Core', 'Transverse/Anti-Rotation': 'Core',
-  'Glutes': 'Glutes',
-};
-
-export function mapToMuscleGroup(detailed: string): string {
-  return MUSCLE_GROUP_MAP[detailed] || 'Other';
-}
-
-export function getMuscleColor(group: string): string {
-  return MUSCLE_COLORS[group] || MUSCLE_COLORS['Other'];
 }
 
 export function MuscleGroupChart({ data, unit = 'kg' }: MuscleGroupChartProps) {

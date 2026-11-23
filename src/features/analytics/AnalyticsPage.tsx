@@ -6,10 +6,12 @@ import { Flame, TrendingUp, Activity, Trophy, ArrowUp, Zap, Ruler, Calendar, Dum
 import { PremiumIcon, FilledIcon } from '../../components/ui/PremiumIcon';
 import { WorkoutHeatmap } from '../../components/ui/WorkoutHeatmap';
 import { MuscleGroupChart, mapToMuscleGroup, getMuscleColor } from '../../components/ui/MuscleGroupChart';
+import { MuscleRecoveryCard } from '../../components/ui/MuscleRecoveryCard';
 import { getExerciseMuscleGroups } from '../../data/exercises';
 import { PullToRefresh } from '../../components/ui/PullToRefresh';
 import { useAppStore } from '../../store/useAppStore';
 import { computeEffortSummary, computeStreaks, computeTopEstimated1RMs, flattenPRs } from '../../utils/analytics';
+import { computeMuscleRecovery } from '../../utils/muscleRecovery';
 import { isWarmupSet, rpeToRir } from '../../utils/strength';
 import { SessionHistoryCard } from './SessionHistoryCard';
 
@@ -19,6 +21,7 @@ export function AnalyticsPage() {
   // ── Zustand store ────────────────────────────────────────────────
   const sessions = useAppStore((s) => s.sessions);
   const measurements = useAppStore((s) => s.measurements);
+  const customExercises = useAppStore((s) => s.customExercises);
   const settings = useAppStore((s) => s.settings);
   const hydrate = useAppStore((s) => s.hydrate);
   const isHydrated = useAppStore((s) => s.isHydrated);
@@ -50,6 +53,10 @@ export function AnalyticsPage() {
   const unit = settings?.weightUnit || 'kg';
   const effortScale = settings?.effortScale || 'rpe';
   const effortSummary = computeEffortSummary(sessions, 7);
+  const muscleRecovery = computeMuscleRecovery(sessions, {
+    customExercises,
+    resolveFallbackMuscles: getExerciseMuscleGroups,
+  });
 
   // Compute muscle group volume (last 7 days, working sets only)
   const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -191,6 +198,14 @@ export function AnalyticsPage() {
                 <Bar dataKey="volume" fill="#818cf8" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+          </Card>
+
+          {/* Muscle Recovery & Weekly Sets */}
+          <h2 className="text-xl font-bold mb-4 mt-8 flex items-center gap-2">
+            <FilledIcon icon={Activity} size={20} className="text-emerald-400" /> Muscle Recovery &amp; Weekly Sets
+          </h2>
+          <Card className="p-4 mb-8">
+            <MuscleRecoveryCard items={muscleRecovery} />
           </Card>
 
           {/* Muscle Group Volume */}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, ArrowRightLeft, Youtube } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MUSCLE_REGION_MAPPING, getExerciseMuscleGroups, getExerciseMetadata } from '../../data/exercises';
+import { useAppStore } from '../../store/useAppStore';
 import { AutocompleteInput } from './AutocompleteInput';
 
 interface SwapModalProps {
@@ -23,6 +24,7 @@ export function SwapModal({
   onSwap, 
   onClose 
 }: SwapModalProps) {
+  const customExercises = useAppStore((s) => s.customExercises);
   const [searchQuery, setSearchQuery] = useState('');
   
   // Defensive check for legacy data or unexpected types
@@ -35,13 +37,44 @@ export function SwapModal({
     ? initialGroups 
     : getExerciseMuscleGroups(exerciseName);
 
-  // Combine all recommendations for all selected muscle groups (case-insensitive lookup)
-  const allRecs = safeMuscleGroups.flatMap(group => {
+  const safeGroupsLower = safeMuscleGroups.map((g) => g.toLowerCase());
+  const customMatches = customExercises.filter(
+    (ce) =>
+      ce.name.toLowerCase() !== exerciseName.toLowerCase() &&
+      (safeGroupsLower.length === 0 ||
+        safeGroupsLower.includes(ce.primaryMuscle.toLowerCase()) ||
+        ce.muscleGroups.some((g) => safeGroupsLower.includes(g.toLowerCase()))),
+  );
+  const customNamesSet = new Set(customMatches.map((c) => c.name.toLowerCase()));
+
+  // Combine custom recommendations + built-in recommendations (case-insensitive dedupe)
+  const builtInRecs = safeMuscleGroups.flatMap(group => {
     const key = Object.keys(MUSCLE_REGION_MAPPING).find(k => k.toLowerCase() === group.toLowerCase());
-    return key ? (MUSCLE_REGION_MAPPING as any)[key] : [];
+    return key ? (MUSCLE_REGION_MAPPING as Record<string, string[]>)[key] : [];
   });
-  const recommendations = Array.from(new Set(allRecs))
-    .filter(name => name.toLowerCase() !== exerciseName.toLowerCase());
+  const seenNames = new Set<string>([exerciseName.toLowerCase()]);
+  const recommendations: string[] = [];
+  for (const name of [...customMatches.map((c) => c.name), ...builtInRecs]) {
+    const lower = name.toLowerCase();
+    if (seenNames.has(lower)) continue;
+    seenNames.add(lower);
+    recommendations.push(name);
+  }
+
+  const resolveAndSwap = (name: string) => {
+    const customMatch = customExercises.find((c) => c.name.toLowerCase() === name.toLowerCase());
+    if (customMatch) {
+      onSwap(
+        customMatch.name,
+        customMatch.muscleGroups,
+        customMatch.primaryMuscle,
+        customMatch.secondaryMuscles,
+      );
+      return;
+    }
+    const meta = getExerciseMetadata(name);
+    onSwap(name, meta?.muscleGroups, meta?.primaryMuscle, meta?.secondaryMuscles);
+  };
 
   return (
     <AnimatePresence>
@@ -106,13 +139,15 @@ export function SwapModal({
                       className="flex items-center justify-between w-full rounded-xl bg-page/5 dark:bg-content/5 px-4 py-3 hover:bg-page/10 dark:bg-content/10 transition-colors group"
                     >
                       <button
-                        onClick={() => {
-                          const meta = getExerciseMetadata(rec);
-                          onSwap(rec, meta?.muscleGroups, meta?.primaryMuscle, meta?.secondaryMuscles);
-                        }}
-                        className="flex-1 text-left text-sm font-medium text-content group-hover:text-primary-300 transition-colors"
+                        onClick={() => resolveAndSwap(rec)}
+                        className="flex-1 text-left text-sm font-medium text-content group-hover:text-primary-300 transition-colors flex items-center gap-2 min-w-0"
                       >
-                        {rec}
+                        <span className="truncate">{rec}</span>
+                        {customNamesSet.has(rec.toLowerCase()) && (
+                          <span className="shrink-0 rounded bg-sky-500/15 border border-sky-500/30 px-1.5 py-0.5 text-[9px] font-black uppercase text-sky-400">
+                            Custom
+                          </span>
+                        )}
                       </button>
                       <div className="flex items-center gap-3 ml-2">
                         <button
@@ -126,10 +161,7 @@ export function SwapModal({
                           <Youtube size={16}/>
                         </button>
                         <button
-                          onClick={() => {
-                            const meta = getExerciseMetadata(rec);
-                            onSwap(rec, meta?.muscleGroups, meta?.primaryMuscle, meta?.secondaryMuscles);
-                          }}
+                          onClick={() => resolveAndSwap(rec)}
                           className="text-muted hover:text-primary-400 transition-colors p-1"
                           title="Swap"
                         >

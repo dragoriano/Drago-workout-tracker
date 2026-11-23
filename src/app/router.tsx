@@ -67,6 +67,11 @@ const router = createBrowserRouter([
     errorElement: <ErrorBoundary />,
   },
   {
+    path: '/quick-workout',
+    element: withSuspense(WorkoutSessionPage),
+    errorElement: <ErrorBoundary />,
+  },
+  {
     path: '/workout/summary/:sessionId',
     element: withSuspense(WorkoutSummaryPage),
     errorElement: <ErrorBoundary />,

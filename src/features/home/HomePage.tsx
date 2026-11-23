@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { WORKOUT_QUOTES } from '../../data/quotes';
 import { MeasurementModal } from '../../components/ui/MeasurementModal';
 import { computeStreaks, flattenPRs } from '../../utils/analytics';
+import { computeMuscleRecovery, evaluateDayReadiness } from '../../utils/muscleRecovery';
 import { estimateWorkoutDurationMinutes } from '../../utils/workoutCoach';
 import { ProgressRing } from '../../components/ui/ProgressRing';
 import { OnboardingWizard } from './OnboardingWizard';
@@ -21,6 +22,7 @@ export function HomePage() {
   const sessions = useAppStore((s) => s.sessions);
   const settings = useAppStore((s) => s.settings);
   const measurements = useAppStore((s) => s.measurements);
+  const customExercises = useAppStore((s) => s.customExercises);
   const isHydrated = useAppStore((s) => s.isHydrated);
   const hydrate = useAppStore((s) => s.hydrate);
 
@@ -108,6 +110,14 @@ export function HomePage() {
   const estimatedDuration = estimateWorkoutDurationMinutes(nextDay);
   const weeklyVolumeK = Math.round(totalVolume / 1000);
   const volumeTargetK = Math.max(weeklyVolumeK, 20);
+  const muscleRecovery = React.useMemo(
+    () => computeMuscleRecovery(sessions, { customExercises }),
+    [sessions, customExercises],
+  );
+  const nextDayReadiness = React.useMemo(
+    () => (nextDay ? evaluateDayReadiness(nextDay.exercises, muscleRecovery, customExercises) : null),
+    [nextDay, muscleRecovery, customExercises],
+  );
 
   if (!isHydrated) {
     return (
@@ -200,6 +210,59 @@ export function HomePage() {
             />
           </div>
         </Card>
+
+        {/* Muscle Readiness Strip */}
+        <Card className="border-content/5 bg-card/50 p-4 mt-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-muted">
+              Muscle Readiness
+            </h3>
+            <button
+              type="button"
+              onClick={() => navigate('/stats')}
+              className="text-[11px] font-bold uppercase tracking-wider text-primary-400 hover:text-primary-300"
+            >
+              Details →
+            </button>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {muscleRecovery.map((item) => {
+              const dotClass =
+                item.readiness === 'ready'
+                  ? 'bg-emerald-400'
+                  : item.readiness === 'recovering'
+                    ? 'bg-amber-400'
+                    : 'bg-red-400';
+              const pctClass =
+                item.readiness === 'ready'
+                  ? 'text-emerald-400'
+                  : item.readiness === 'recovering'
+                    ? 'text-amber-400'
+                    : 'text-red-400';
+              return (
+                <button
+                  key={item.muscle}
+                  type="button"
+                  onClick={() => navigate('/stats')}
+                  className="shrink-0 rounded-xl bg-page/30 border border-content/5 px-3 py-2 text-left min-w-[82px] hover:border-primary-500/30 transition-colors"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span className={`h-2 w-2 rounded-full ${dotClass}`} />
+                    <span className="text-[11px] font-bold text-content">{item.muscle}</span>
+                  </div>
+                  <div className="mt-1 flex items-baseline justify-between gap-2">
+                    <span className={`text-xs font-black tabular-nums ${pctClass}`}>
+                      {item.recoveryPercent}%
+                    </span>
+                    <span className="text-[10px] font-medium text-muted tabular-nums">
+                      {item.effectiveSets}s
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </Card>
         
         {/* Body Progress Card */}
         <Card className="border-primary-500/20 bg-primary-500/5 p-4 border-2 mt-6">
@@ -271,7 +334,7 @@ export function HomePage() {
             />
             
             <div className="relative z-10">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="inline-block rounded bg-white/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
                   {nextProgram ? nextProgram.name : 'No Program'}
                 </span>
@@ -279,6 +342,17 @@ export function HomePage() {
                   <span className="inline-block rounded bg-emerald-500/80 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm shadow-lg shadow-emerald-500/20">
                     ★ Suggested Next
                   </span>
+                )}
+                {nextDayReadiness && nextDayReadiness.targetMuscles.length > 0 && (
+                  nextDayReadiness.fatiguedMuscles.length > 0 ? (
+                    <span className="inline-block rounded bg-red-500/80 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+                      ⚠ {nextDayReadiness.fatiguedMuscles[0].muscle} {nextDayReadiness.fatiguedMuscles[0].recoveryPercent}%
+                    </span>
+                  ) : nextDayReadiness.allReady ? (
+                    <span className="inline-block rounded bg-white/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-200 backdrop-blur-sm">
+                      ✓ Muscles Ready
+                    </span>
+                  ) : null
                 )}
               </div>
               <h2 className="mt-2 text-3xl font-bold text-white line-clamp-1">
@@ -322,6 +396,25 @@ export function HomePage() {
               </Button>
             </div>
           </Card>
+
+          <button
+            type="button"
+            onClick={() => navigate('/quick-workout')}
+            className="mt-3 w-full rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3.5 flex items-center justify-between text-left hover:bg-emerald-500/15 active:scale-[0.99] transition-all"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
+                <Zap size={18} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-content">Quick Freestyle Workout</p>
+                <p className="text-[11px] text-muted truncate">
+                  Train ad-hoc without a program or pick fresh muscles
+                </p>
+              </div>
+            </div>
+            <ArrowRight size={18} className="text-emerald-400 shrink-0" />
+          </button>
         </div>
 
         <div className="mt-8">

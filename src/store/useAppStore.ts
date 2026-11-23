@@ -1,6 +1,13 @@
 import { create } from 'zustand';
 import { db } from '../storage/db';
-import { WorkoutProgram, WorkoutSession, AppSettings, Goal, Measurement } from '../types';
+import {
+  AppSettings,
+  CustomExercise,
+  Goal,
+  Measurement,
+  WorkoutProgram,
+  WorkoutSession,
+} from '../types';
 import { applyThemeColor, applyThemeMode } from '../utils/theme';
 
 // ── App Store ────────────────────────────────────────────────────────
@@ -15,6 +22,7 @@ interface AppState {
   settings: AppSettings | null;
   goals: Goal[];
   measurements: Measurement[];
+  customExercises: CustomExercise[];
   isLoading: boolean;
   isHydrated: boolean;
 
@@ -44,6 +52,11 @@ interface AppState {
   loadMeasurements: () => Promise<void>;
   saveMeasurement: (m: Measurement) => Promise<void>;
   deleteMeasurement: (id: string) => Promise<void>;
+
+  // ── Custom exercise actions ──────────────────────────────────────
+  loadCustomExercises: () => Promise<void>;
+  saveCustomExercise: (ex: CustomExercise) => Promise<void>;
+  deleteCustomExercise: (id: string) => Promise<void>;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -67,6 +80,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   settings: null,
   goals: [],
   measurements: [],
+  customExercises: [],
   isLoading: false,
   isHydrated: false,
 
@@ -92,11 +106,12 @@ export const useAppStore = create<AppState>((set, get) => ({
           db.getSettings().then(res => { console.debug('[Store] Settings loaded'); return res; }).catch(() => null),
           db.getGoals().then(res => { console.debug('[Store] Goals loaded'); return res; }).catch(() => [] as Goal[]),
           db.getMeasurements().then(res => { console.debug('[Store] Measurements loaded'); return res; }).catch(() => [] as Measurement[]),
+          db.getCustomExercises().then(res => { console.debug('[Store] Custom exercises loaded'); return res; }).catch(() => [] as CustomExercise[]),
         ]),
         timeoutPromise
-      ]) as [WorkoutProgram[], WorkoutSession[], AppSettings | null, Goal[], Measurement[]];
+      ]) as [WorkoutProgram[], WorkoutSession[], AppSettings | null, Goal[], Measurement[], CustomExercise[]];
 
-      const [programs, sessions, settings, goals, measurements] = result;
+      const [programs, sessions, settings, goals, measurements, customExercises] = result;
 
       set({
         programs,
@@ -104,6 +119,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         settings: settings || DEFAULT_SETTINGS,
         goals,
         measurements: measurements.sort((a, b) => a.date - b.date),
+        customExercises: [...customExercises].sort((a, b) => b.createdAt - a.createdAt),
       });
       console.log('[Store] Hydration complete');
     } catch (e) {
@@ -197,5 +213,23 @@ export const useAppStore = create<AppState>((set, get) => ({
   deleteMeasurement: async (id) => {
     await db.deleteMeasurement(id);
     set((s) => ({ measurements: s.measurements.filter((mm) => mm.id !== id) }));
+  },
+
+  // ── Custom Exercises ─────────────────────────────────────────────
+  loadCustomExercises: async () => {
+    const customExercises = await db.getCustomExercises();
+    set({ customExercises: [...customExercises].sort((a, b) => b.createdAt - a.createdAt) });
+  },
+  saveCustomExercise: async (ex) => {
+    await db.saveCustomExercise(ex);
+    set((s) => ({
+      customExercises: s.customExercises.some((c) => c.id === ex.id)
+        ? s.customExercises.map((c) => (c.id === ex.id ? ex : c))
+        : [ex, ...s.customExercises].sort((a, b) => b.createdAt - a.createdAt),
+    }));
+  },
+  deleteCustomExercise: async (id) => {
+    await db.deleteCustomExercise(id);
+    set((s) => ({ customExercises: s.customExercises.filter((c) => c.id !== id) }));
   },
 }));

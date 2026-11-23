@@ -1,5 +1,13 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import { WorkoutProgram, WorkoutSession, Analytics, AppSettings, Goal, Measurement } from '../types';
+import {
+  Analytics,
+  AppSettings,
+  CustomExercise,
+  Goal,
+  Measurement,
+  WorkoutProgram,
+  WorkoutSession,
+} from '../types';
 
 interface WorkoutDB extends DBSchema {
   programs: {
@@ -33,10 +41,14 @@ interface WorkoutDB extends DBSchema {
       'by-type': string;
     };
   };
+  customExercises: {
+    key: string;
+    value: CustomExercise;
+  };
 }
 
 const DB_NAME = 'dragoriano-workout-tracker';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 let dbPromise: Promise<IDBPDatabase<WorkoutDB>> | undefined;
 
@@ -82,6 +94,10 @@ export const initDB = () => {
           if (!mStore.indexNames.contains('by-type')) {
             mStore.createIndex('by-type', 'type');
           }
+        }
+
+        if (!db.objectStoreNames.contains('customExercises')) {
+          db.createObjectStore('customExercises', { keyPath: 'id' });
         }
       },
     });
@@ -189,6 +205,19 @@ export const db = {
   async deleteMeasurement(id: string) {
     const db = await initDB();
     await db.delete('measurements', id);
+  },
+
+  async getCustomExercises() {
+    const db = await initDB();
+    return db.getAll('customExercises');
+  },
+  async saveCustomExercise(exercise: CustomExercise) {
+    const db = await initDB();
+    await db.put('customExercises', exercise);
+  },
+  async deleteCustomExercise(id: string) {
+    const db = await initDB();
+    await db.delete('customExercises', id);
   },
 
   async clearAll() {
