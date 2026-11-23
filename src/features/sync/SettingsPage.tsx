@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   ArrowLeft, Cloud, Moon, Palette, Sparkles, AlertTriangle, 
   TrendingDown, Download, RefreshCw, Trash2, ChevronRight, X, QrCode, Upload, Camera, ScanLine, Volume2, ShieldAlert, Activity,
-  CloudUpload, CloudDownload, Mic
+  CloudUpload, CloudDownload, Mic, Calculator
 } from 'lucide-react';
 import { PremiumIcon, FilledIcon } from '../../components/ui/PremiumIcon';
 import { QRCodeSVG } from 'qrcode.react';
@@ -14,6 +14,8 @@ import { Button } from '../../components/ui/Button';
 import { applyThemeColor, applyThemeMode } from '../../utils/theme';
 import { useAppStore, DEFAULT_SETTINGS } from '../../store/useAppStore';
 import { PullToRefresh } from '../../components/ui/PullToRefresh';
+import { PlateCalculatorModal } from '../../components/ui/PlateCalculatorModal';
+import { BARBELL_PRESETS, DEFAULT_BARBELL_WEIGHT, WeightUnit } from '../../utils/strength';
 import type { User } from '@supabase/supabase-js';
 
 const QRCodeScanner = React.lazy(() =>
@@ -34,6 +36,7 @@ export function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
+  const [showPlateCalc, setShowPlateCalc] = useState(false);
 
   useEffect(() => {
     return onAuthChange((newUser) => {
@@ -43,6 +46,15 @@ export function SettingsPage() {
 
   const updateSetting = async (key: keyof AppSettings, value: any) => {
     await updateSettings({ [key]: value });
+  };
+
+  const handleWeightUnitChange = async (nextUnit: WeightUnit) => {
+    if (settings.weightUnit === nextUnit) return;
+    await updateSettings({
+      weightUnit: nextUnit,
+      barbellWeight: undefined,
+      availablePlates: undefined,
+    });
   };
 
   const handleSignIn = async () => {
@@ -345,11 +357,11 @@ export function SettingsPage() {
         </div>
 
         <div className="px-4 space-y-6 mt-4">
-          {/* WEIGHT UNIT */}
+          {/* PREFERENCES */}
           <section>
             <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">Preferences</h2>
-            <div className="rounded-2xl bg-card p-4">
-              <div className="flex items-center justify-between">
+            <div className="rounded-2xl bg-card divide-y divide-content/5">
+              <div className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-3">
                   <PremiumIcon icon={ShieldAlert} color="primary" variant="soft" size="sm" />
                   <div>
@@ -359,15 +371,64 @@ export function SettingsPage() {
                 </div>
                 <div className="flex rounded-lg bg-page/10 p-1">
                   <button
-                    onClick={() => updateSetting('weightUnit', 'kg')}
+                    onClick={() => handleWeightUnitChange('kg')}
                     className={`rounded-md px-3 py-1 text-sm font-bold transition-all ${settings.weightUnit !== 'lbs' ? 'bg-card text-content shadow-sm' : 'text-muted'}`}
                   >kg</button>
                   <button
-                    onClick={() => updateSetting('weightUnit', 'lbs')}
+                    onClick={() => handleWeightUnitChange('lbs')}
                     className={`rounded-md px-3 py-1 text-sm font-bold transition-all ${settings.weightUnit === 'lbs' ? 'bg-card text-content shadow-sm' : 'text-muted'}`}
                   >lbs</button>
                 </div>
               </div>
+
+              {(() => {
+                const unit: WeightUnit = settings.weightUnit === 'lbs' ? 'lbs' : 'kg';
+                const currentBar = settings.barbellWeight ?? DEFAULT_BARBELL_WEIGHT[unit];
+                return (
+                  <>
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <PremiumIcon icon={Calculator} color="primary" variant="soft" size="sm" />
+                          <div>
+                            <h3 className="font-bold text-content">Barbell Weight</h3>
+                            <p className="text-xs text-muted">Default bar used for plate loading</p>
+                          </div>
+                        </div>
+                        <span className="text-sm font-black text-primary-400">
+                          {currentBar} {unit}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {BARBELL_PRESETS[unit].map((preset) => (
+                          <button
+                            key={preset}
+                            onClick={() => updateSetting('barbellWeight', preset)}
+                            className={`rounded-xl py-2 text-xs font-bold border transition-all ${
+                              currentBar === preset
+                                ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
+                                : 'bg-surface text-muted border-content/10 hover:text-content'
+                            }`}
+                          >
+                            {preset} {unit}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setShowPlateCalc(true)}
+                      className="w-full flex items-center justify-between p-4 text-left hover:bg-content/5 transition-colors rounded-b-2xl"
+                    >
+                      <div>
+                        <h3 className="font-bold text-content text-sm">Configure Plate Calculator</h3>
+                        <p className="text-xs text-muted">Customize available gym plates & preview loads</p>
+                      </div>
+                      <ChevronRight size={18} className="text-muted" />
+                    </button>
+                  </>
+                );
+              })()}
             </div>
           </section>
 
@@ -744,6 +805,11 @@ export function SettingsPage() {
           />
         </React.Suspense>
       )}
+
+      <PlateCalculatorModal
+        isOpen={showPlateCalc}
+        onClose={() => setShowPlateCalc(false)}
+      />
     </>
   );
 }

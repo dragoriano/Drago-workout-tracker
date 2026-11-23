@@ -59,7 +59,7 @@ export type WorkoutSession = {
 export type PR = {
  exerciseId: string;
  exerciseName: string;
- type: 'weight' | 'reps' | 'volume';
+ type: 'weight' | 'reps' | 'volume' | '1rm';
  value: number;
  previousValue: number;
 };
@@ -87,6 +87,8 @@ export type AppSettings = {
  voiceCountdownEnabled: boolean;
  syncEnabled: boolean;
  weightUnit?: 'kg' | 'lbs';
+ barbellWeight?: number;
+ availablePlates?: number[];
  hasSeenOnboarding?: boolean;
 };
 

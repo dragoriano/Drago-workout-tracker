@@ -1,5 +1,6 @@
 import { differenceInCalendarDays, startOfDay, subDays } from 'date-fns';
 import { PR, WorkoutSession } from '../types';
+import { getBestSet1RM } from './strength';
 
 export function computeStreaks(sessions: WorkoutSession[]): { current: number; longest: number } {
   if (sessions.length === 0) return { current: 0, longest: 0 };
@@ -64,4 +65,42 @@ export function flattenPRs(sessions: WorkoutSession[]): Array<PR & { date: numbe
   });
 
   return Array.from(bestPRs.values()).sort((a, b) => b.date - a.date);
+}
+
+export interface StrengthBenchmark {
+  exerciseName: string;
+  e1rm: number;
+  weight: number;
+  reps: number;
+  date: number;
+}
+
+export function computeTopEstimated1RMs(sessions: WorkoutSession[]): StrengthBenchmark[] {
+  const bestByExercise = new Map<string, StrengthBenchmark>();
+
+  for (const session of sessions) {
+    if (!session.date || isNaN(new Date(session.date).getTime())) continue;
+    for (const ex of session.exercisesSnapshot || []) {
+      const best = getBestSet1RM(ex.sets);
+      if (!best) continue;
+
+      const key = ex.name.toLowerCase().trim();
+      const existing = bestByExercise.get(key);
+      if (
+        !existing ||
+        best.e1rm > existing.e1rm ||
+        (best.e1rm === existing.e1rm && session.date > existing.date)
+      ) {
+        bestByExercise.set(key, {
+          exerciseName: ex.name,
+          e1rm: best.e1rm,
+          weight: best.weight,
+          reps: best.reps,
+          date: session.date,
+        });
+      }
+    }
+  }
+
+  return Array.from(bestByExercise.values()).sort((a, b) => b.e1rm - a.e1rm);
 }

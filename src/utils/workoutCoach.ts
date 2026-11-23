@@ -1,4 +1,5 @@
 import { AppSettings, Exercise, PR, Set, WorkoutDay, WorkoutSession } from '../types';
+import { calculateEstimated1RM } from './strength';
 import { generateId } from './uuid';
 
 export function computeSmartSets(
@@ -104,20 +105,32 @@ export function detectSessionPRs(exercises: Exercise[]): {
 
   for (const ex of exercises) {
     let maxWeightThisSession = 0;
+    let maxE1RMThisSession = 0;
     for (const set of ex.sets) {
       if (set.completed) {
         totalVolume += set.weight * set.reps;
         if (set.weight > maxWeightThisSession) {
           maxWeightThisSession = set.weight;
         }
+        const e1rm = calculateEstimated1RM(set.weight, set.reps);
+        if (e1rm > maxE1RMThisSession) {
+          maxE1RMThisSession = e1rm;
+        }
       }
     }
 
     let previousMaxWeight = 0;
+    let previousMaxE1RM = 0;
     for (const hist of ex.history) {
       for (const set of hist.sets) {
-        if (set.completed && set.weight > previousMaxWeight) {
-          previousMaxWeight = set.weight;
+        if (set.completed) {
+          if (set.weight > previousMaxWeight) {
+            previousMaxWeight = set.weight;
+          }
+          const e1rm = calculateEstimated1RM(set.weight, set.reps);
+          if (e1rm > previousMaxE1RM) {
+            previousMaxE1RM = e1rm;
+          }
         }
       }
     }
@@ -129,6 +142,16 @@ export function detectSessionPRs(exercises: Exercise[]): {
         type: 'weight',
         value: maxWeightThisSession,
         previousValue: previousMaxWeight,
+      });
+    }
+
+    if (maxE1RMThisSession > previousMaxE1RM && maxE1RMThisSession > 0) {
+      detectedPRs.push({
+        exerciseId: ex.id,
+        exerciseName: ex.name,
+        type: '1rm',
+        value: maxE1RMThisSession,
+        previousValue: previousMaxE1RM,
       });
     }
   }

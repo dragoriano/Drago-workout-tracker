@@ -204,29 +204,35 @@ describe('estimateWorkoutDurationMinutes', () => {
 });
 
 describe('detectSessionPRs', () => {
-  it('sums only completed sets for totalVolume and detects new weight PRs', () => {
+  it('sums only completed sets and detects weight PRs and 1RM PRs independently', () => {
     const exercises: Exercise[] = [
       makeExercise({
         id: 'bench',
         name: 'Bench Press',
         sets: [
           { id: '1', weight: 100, reps: 5, completed: true },
-          { id: '2', weight: 105, reps: 3, completed: true },
+          { id: '2', weight: 105, reps: 3, completed: true }, // Weight PR (105 > 100), e1RM 115.5 < 116.7
           { id: '3', weight: 110, reps: 1, completed: false },
         ],
         history: [{ sessionId: 'prev', date: 1000, sets: makeSets(100, 5, true, 3) }],
       }),
       makeExercise({
+        id: 'squat',
+        name: 'Barbell Squat',
+        sets: [{ id: '4', weight: 100, reps: 8, completed: true }], // e1RM PR 126.7 > 116.7 without weight PR
+        history: [{ sessionId: 'prev', date: 1000, sets: makeSets(100, 5, true, 3) }],
+      }),
+      makeExercise({
         id: 'row',
         name: 'Barbell Row',
-        sets: [{ id: '4', weight: 80, reps: 8, completed: true }],
+        sets: [{ id: '5', weight: 80, reps: 8, completed: true }],
         history: [{ sessionId: 'prev', date: 1000, sets: makeSets(90, 8, true, 3) }],
       }),
     ];
 
     const { totalVolume, detectedPRs } = detectSessionPRs(exercises);
 
-    assert.equal(totalVolume, 100 * 5 + 105 * 3 + 80 * 8);
+    assert.equal(totalVolume, 100 * 5 + 105 * 3 + 100 * 8 + 80 * 8);
     assert.deepEqual(detectedPRs, [
       {
         exerciseId: 'bench',
@@ -234,6 +240,13 @@ describe('detectSessionPRs', () => {
         type: 'weight',
         value: 105,
         previousValue: 100,
+      },
+      {
+        exerciseId: 'squat',
+        exerciseName: 'Barbell Squat',
+        type: '1rm',
+        value: 126.7,
+        previousValue: 116.7,
       },
     ]);
   });

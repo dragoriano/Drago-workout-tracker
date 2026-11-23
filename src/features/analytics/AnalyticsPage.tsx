@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Card } from '../../components/ui/Card';
 import { format, subDays, startOfDay, formatISO } from 'date-fns';
-import { Flame, TrendingUp, Activity, Trophy, ArrowUp, Zap, Ruler, Calendar, Dumbbell } from 'lucide-react';
+import { Flame, TrendingUp, Activity, Trophy, ArrowUp, Zap, Ruler, Calendar, Dumbbell, Gauge } from 'lucide-react';
 import { PremiumIcon, FilledIcon } from '../../components/ui/PremiumIcon';
 import { WorkoutHeatmap } from '../../components/ui/WorkoutHeatmap';
 import { MuscleGroupChart, mapToMuscleGroup, getMuscleColor } from '../../components/ui/MuscleGroupChart';
 import { getExerciseMuscleGroups } from '../../data/exercises';
 import { PullToRefresh } from '../../components/ui/PullToRefresh';
 import { useAppStore } from '../../store/useAppStore';
-import { computeStreaks, flattenPRs } from '../../utils/analytics';
+import { computeStreaks, computeTopEstimated1RMs, flattenPRs } from '../../utils/analytics';
 import { SessionHistoryCard } from './SessionHistoryCard';
 
 export { computeStreaks, flattenPRs };
@@ -44,6 +44,7 @@ export function AnalyticsPage() {
   const volumeData = processVolumeData();
   const { current: currentStreak, longest: longestStreak } = computeStreaks(sessions);
   const allPRs = flattenPRs(sessions);
+  const top1RMs = computeTopEstimated1RMs(sessions);
   const sortedSessionsDesc = [...sessions].sort((a, b) => b.date - a.date);
   const unit = settings?.weightUnit || 'kg';
 
@@ -246,6 +247,43 @@ export function AnalyticsPage() {
             )}
           </Card>
 
+          {/* Strength Benchmarks (Est. 1RM) */}
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <FilledIcon icon={Gauge} size={20} className="text-emerald-400" /> Strength Benchmarks (Est. 1RM)
+          </h2>
+          <Card className="p-4 mb-8">
+            {top1RMs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center text-muted">
+                <Gauge size={32} className="mb-2 opacity-30" />
+                <p className="text-sm">Log completed sets to see estimated 1RM benchmarks.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-content/5">
+                {top1RMs.slice(0, 10).map((item, i) => (
+                  <div key={item.exerciseName + i} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                    <div className="flex items-center gap-3 min-w-0 pr-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 font-black text-xs">
+                        {i + 1}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-content truncate">{item.exerciseName}</p>
+                        <p className="text-xs text-muted">
+                          Best set: {item.weight} {unit} × {item.reps} · {format(item.date, 'MMM d, yyyy')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-black text-emerald-400 tabular-nums">
+                        {item.e1rm} {unit}
+                      </p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted">e1RM</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
           {/* PR table */}
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <FilledIcon icon={Trophy} size={20} className="text-yellow-500" /> Personal Records
@@ -272,7 +310,7 @@ export function AnalyticsPage() {
                     <div className="text-right">
                       <p className="text-sm font-black text-content flex items-center gap-1 justify-end">
                         <ArrowUp size={12}className="text-emerald-400" />
-                        {pr.value} {pr.type === 'weight' ? unit : pr.type === 'reps' ? 'reps' : 'vol'}
+                        {pr.value} {pr.type === '1rm' ? `${unit} e1RM` : pr.type === 'weight' ? unit : pr.type === 'reps' ? 'reps' : 'vol'}
                       </p>
                       <p className="text-[10px] text-muted">was {pr.previousValue}</p>
                     </div>

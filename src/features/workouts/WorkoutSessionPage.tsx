@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, RotateCcw, Dumbbell, CheckCircle2, Trophy, X } from 'lucide-react';
+import { Calculator, ChevronLeft, RotateCcw, Dumbbell, CheckCircle2, Trophy, X } from 'lucide-react';
 import { Exercise, Set, WorkoutSession } from '../../types';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { PromptModal } from '../../components/ui/PromptModal';
 import { SwapModal } from '../../components/ui/SwapModal';
+import { PlateCalculatorModal } from '../../components/ui/PlateCalculatorModal';
 import { getExerciseMuscleGroups } from '../../data/exercises';
 import { generateId } from '../../utils/uuid';
 import { useAppStore } from '../../store/useAppStore';
@@ -48,6 +49,12 @@ export function WorkoutSessionPage() {
   const [noteConfig, setNoteConfig] = useState<{isOpen: boolean, exerciseId: string, initialValue: string} | null>(null);
   const [swapConfig, setSwapConfig] = useState<{isOpen: boolean, exercise: Exercise} | null>(null);
   const [chartConfig, setChartConfig] = useState<{isOpen: boolean, exercise: Exercise | null}>({isOpen: false, exercise: null});
+  const [plateCalcConfig, setPlateCalcConfig] = useState<{
+    isOpen: boolean;
+    exerciseId?: string;
+    exerciseName?: string;
+    weight: number;
+  }>({ isOpen: false, weight: 0 });
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [achievedPRs, setAchievedPRs] = useState<string[]>([]);
   const [prNotification, setPrNotification] = useState<{ exerciseName: string, weight: number } | null>(null);
@@ -351,6 +358,18 @@ export function WorkoutSessionPage() {
     setSwapConfig({ isOpen: true, exercise: { ...ex, muscleGroup } });
   };
 
+  const handleOpenPlateCalc = (e: React.MouseEvent, ex: Exercise) => {
+    e.stopPropagation();
+    const nextUncompleted = ex.sets.find((s) => !s.completed && s.weight > 0);
+    const firstWeighted = ex.sets.find((s) => s.weight > 0);
+    setPlateCalcConfig({
+      isOpen: true,
+      exerciseId: ex.id,
+      exerciseName: ex.name,
+      weight: nextUncompleted?.weight ?? firstWeighted?.weight ?? 0,
+    });
+  };
+
   const handleApplySwap = async (newName: string, newMuscleGroups?: string[], primary?: string, secondary?: string[]) => {
     if (!swapConfig) return;
 
@@ -570,7 +589,14 @@ export function WorkoutSessionPage() {
           <h1 className="text-lg font-black uppercase tracking-wide">{day.name}</h1>
           <p className="text-xs text-muted font-medium">{exercises.length} exercises • {completedSets}/{totalSets} sets</p>
         </div>
-        <div className="flex items-center justify-end gap-1.5 w-[76px] shrink-0">
+        <div className="flex items-center justify-end gap-1.5 shrink-0">
+          <button
+            onClick={() => setPlateCalcConfig({ isOpen: true, weight: 0 })}
+            className="p-1.5 text-muted hover:text-primary-400 transition-colors"
+            title="Plate Calculator"
+          >
+            <Calculator size={16} />
+          </button>
           <button 
             onClick={() => {
               if (window.confirm("Restart this workout and clear all unsaved progress?")) {
@@ -639,6 +665,7 @@ export function WorkoutSessionPage() {
               handleAddSet={handleAddSet}
               handleOpenNotes={handleOpenNotes}
               handleOpenSwap={handleOpenSwap}
+              handleOpenPlateCalc={handleOpenPlateCalc}
               setChartConfig={setChartConfig}
               handleToggleSuperset={handleToggleSuperset}
               settings={settings}
@@ -719,6 +746,32 @@ export function WorkoutSessionPage() {
         </React.Suspense>
       )}
       {swapConfig && <SwapModal isOpen={swapConfig.isOpen} exerciseName={swapConfig.exercise.name} muscleGroup={swapConfig.exercise.muscleGroup} primaryMuscle={swapConfig.exercise.primaryMuscle} secondaryMuscles={swapConfig.exercise.secondaryMuscles} onSwap={handleApplySwap} onClose={() => setSwapConfig(null)} />}
+      <PlateCalculatorModal
+        isOpen={plateCalcConfig.isOpen}
+        initialWeight={plateCalcConfig.weight}
+        exerciseName={plateCalcConfig.exerciseName}
+        onApplyWeight={
+          plateCalcConfig.exerciseId
+            ? (newWeight) => {
+                const targetExId = plateCalcConfig.exerciseId;
+                setExercises((prev) =>
+                  prev.map((ex) => {
+                    if (ex.id !== targetExId || ex.sets.length === 0) return ex;
+                    const nextIdx = ex.sets.findIndex((s) => !s.completed);
+                    const idxToUpdate = nextIdx !== -1 ? nextIdx : ex.sets.length - 1;
+                    return {
+                      ...ex,
+                      sets: ex.sets.map((s, idx) =>
+                        idx === idxToUpdate ? { ...s, weight: newWeight } : s,
+                      ),
+                    };
+                  }),
+                );
+              }
+            : undefined
+        }
+        onClose={() => setPlateCalcConfig({ isOpen: false, weight: 0 })}
+      />
       
       <AnimatePresence>
         {showFinishConfirm && (

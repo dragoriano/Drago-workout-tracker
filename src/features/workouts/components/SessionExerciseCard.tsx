@@ -2,6 +2,7 @@ import React from 'react';
 import {
   AlignLeft,
   ArrowRightLeft,
+  Calculator,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -18,6 +19,7 @@ import {
 import { AnimatePresence, motion, Reorder, useDragControls } from 'framer-motion';
 import { AppSettings, Exercise, Set } from '../../../types';
 import { cn } from '../../../utils/cn';
+import { getBestSet1RM } from '../../../utils/strength';
 
 export interface WorkoutBlockData {
   id: string;
@@ -37,6 +39,7 @@ interface ExerciseItemProps {
   onOpenNotes: (e: React.MouseEvent, ex: Exercise) => void;
   onOpenSwap: (e: React.MouseEvent, ex: Exercise) => void;
   onOpenChart: (e: React.MouseEvent, ex: Exercise) => void;
+  onOpenPlateCalc: (e: React.MouseEvent, ex: Exercise) => void;
   onToggleSuperset: (index: number) => void;
   isSupersettedWithNext: boolean;
   isSupersettedWithPrev: boolean;
@@ -57,6 +60,7 @@ export function DraggableExerciseItem({
   onOpenNotes,
   onOpenSwap,
   onOpenChart,
+  onOpenPlateCalc,
   onToggleSuperset,
   isSupersettedWithNext,
   settings,
@@ -66,6 +70,8 @@ export function DraggableExerciseItem({
   const completedExSets = exercise.sets.filter((s) => s.completed).length;
   const totalExSets = exercise.sets.length;
   const lastSession = exercise.history[exercise.history.length - 1];
+  const best1RM = getBestSet1RM(exercise.sets, true);
+  const unit = settings?.weightUnit || 'kg';
 
   const [isPressing, setIsPressing] = React.useState(false);
   const pressTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -165,10 +171,16 @@ export function DraggableExerciseItem({
             </div>
 
             <div className="mt-3 flex items-center justify-between border-t border-content/5 pt-3">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <p className="text-[10px] text-muted font-bold uppercase tracking-widest">
                   {completedExSets}/{totalExSets} Sets
                 </p>
+                {best1RM && (
+                  <span className="rounded-md bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 text-[10px] font-bold text-emerald-400 tabular-nums">
+                    e1RM {best1RM.e1rm}
+                    {unit}
+                  </span>
+                )}
                 {exercise.history && exercise.history.length > 0 && (
                   <button
                     onClick={(e) => {
@@ -183,6 +195,14 @@ export function DraggableExerciseItem({
               </div>
 
               <div className="flex items-center gap-1">
+                <button
+                  className="text-muted hover:text-primary-400 p-1.5 transition-colors"
+                  onClick={(e) => onOpenPlateCalc(e, exercise)}
+                  title="Plate Calculator"
+                >
+                  <Calculator size={16} />
+                </button>
+
                 <button
                   className="text-red-500/60 hover:text-red-500 p-1.5 transition-colors"
                   onClick={(e) => {
@@ -453,6 +473,7 @@ interface WorkoutBlockProps {
   handleAddSet: (exId: string) => void;
   handleOpenNotes: (e: React.MouseEvent, ex: Exercise) => void;
   handleOpenSwap: (e: React.MouseEvent, ex: Exercise) => void;
+  handleOpenPlateCalc: (e: React.MouseEvent, ex: Exercise) => void;
   setChartConfig: React.Dispatch<React.SetStateAction<{ isOpen: boolean; exercise: Exercise | null }>>;
   handleToggleSuperset: (index: number) => void;
   settings: AppSettings | null;
@@ -471,6 +492,7 @@ export function WorkoutBlock({
   handleAddSet,
   handleOpenNotes,
   handleOpenSwap,
+  handleOpenPlateCalc,
   setChartConfig,
   handleToggleSuperset,
   settings,
@@ -512,6 +534,7 @@ export function WorkoutBlock({
             onSetAdd={handleAddSet}
             onOpenNotes={handleOpenNotes}
             onOpenSwap={handleOpenSwap}
+            onOpenPlateCalc={handleOpenPlateCalc}
             onOpenChart={(e, ex) => {
               e.stopPropagation();
               setChartConfig({ isOpen: true, exercise: ex });

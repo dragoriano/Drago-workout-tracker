@@ -256,7 +256,7 @@ export function WorkoutSummaryPage() {
                     {session.PRs.slice(0, 3).map((pr, i) => (
                       <div key={i} className="flex justify-between items-center text-[11px] bg-black/10 px-2 py-1 rounded">
                         <span className="text-white/80 truncate max-w-[150px] font-medium">{pr.exerciseName}</span>
-                        <span className="text-yellow-400 font-bold tabular-nums">{pr.value} {pr.type === 'weight' ? (settings?.weightUnit || 'kg') : pr.type === 'reps' ? 'reps' : 'vol'}</span>
+                        <span className="text-yellow-400 font-bold tabular-nums">{pr.value} {pr.type === '1rm' ? `${settings?.weightUnit || 'kg'} e1RM` : pr.type === 'weight' ? (settings?.weightUnit || 'kg') : pr.type === 'reps' ? 'reps' : 'vol'}</span>
                       </div>
                     ))}
                     {session.PRs.length > 3 && (
