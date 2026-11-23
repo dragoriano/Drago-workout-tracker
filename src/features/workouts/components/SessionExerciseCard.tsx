@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Flame,
   GripVertical,
   Link,
   Plus,
@@ -17,7 +18,7 @@ import {
   Youtube,
 } from 'lucide-react';
 import { AnimatePresence, motion, Reorder, useDragControls } from 'framer-motion';
-import { AppSettings, EffortScale, Exercise, Set } from '../../../types';
+import type { AppSettings, EffortScale, Exercise, Set } from '../../../types';
 import { cn } from '../../../utils/cn';
 import {
   formatEffortLabel,
@@ -29,13 +30,60 @@ import {
   rirToRpe,
   RPE_OPTIONS,
   rpeToRir,
+  type WeightUnit,
 } from '../../../utils/strength';
+import {
+  REST_TIMER_PRESETS,
+  stepSetReps,
+  stepSetWeight,
+} from '../../../utils/warmupGenerator';
 import { evaluateExerciseCoach } from '../../../utils/workoutCoach';
 import type { MuscleRecoveryStatus } from '../../../utils/muscleRecovery';
 
 export interface WorkoutBlockData {
   id: string;
   exercises: Exercise[];
+}
+
+interface QuickAdjustTarget {
+  set: Set;
+  label: string;
+}
+
+function getQuickAdjustTarget(sets: Set[]): QuickAdjustTarget | null {
+  let workingOrdinal = 0;
+  let lastWorkingOrdinal = 0;
+
+  for (const s of sets) {
+    if (isWarmupSet(s)) continue;
+    workingOrdinal++;
+    lastWorkingOrdinal = workingOrdinal;
+    if (!s.completed) {
+      const st = getSetType(s);
+      const label =
+        st === 'drop'
+          ? `Set ${workingOrdinal} (D)`
+          : st === 'failure'
+            ? `Set ${workingOrdinal} (F)`
+            : `Set ${workingOrdinal}`;
+      return { set: s, label };
+    }
+  }
+
+  if (sets.length === 0) return null;
+
+  const fallback = sets[sets.length - 1];
+  if (isWarmupSet(fallback)) {
+    return { set: fallback, label: 'Warmup' };
+  }
+  const st = getSetType(fallback);
+  const label =
+    st === 'drop'
+      ? `Set ${lastWorkingOrdinal} (D)`
+      : st === 'failure'
+        ? `Set ${lastWorkingOrdinal} (F)`
+        : `Set ${lastWorkingOrdinal}`;
+  return { set: fallback, label };
 }
 
 interface ExerciseItemProps {
@@ -48,6 +96,8 @@ interface ExerciseItemProps {
   onSetUpdate: (exId: string, setId: string, field: keyof Set, value: Set[keyof Set]) => void;
   onSetDelete: (exId: string, setId: string) => void;
   onSetAdd: (exId: string) => void;
+  onUpdateRestTimer: (exId: string, seconds: number) => void;
+  onGenerateWarmup: (exId: string) => void;
   onOpenNotes: (e: React.MouseEvent, ex: Exercise) => void;
   onOpenSwap: (e: React.MouseEvent, ex: Exercise) => void;
   onOpenChart: (e: React.MouseEvent, ex: Exercise) => void;
@@ -71,6 +121,8 @@ export function DraggableExerciseItem({
   onSetUpdate,
   onSetDelete,
   onSetAdd,
+  onUpdateRestTimer,
+  onGenerateWarmup,
   onOpenNotes,
   onOpenSwap,
   onOpenChart,
@@ -92,10 +144,15 @@ export function DraggableExerciseItem({
   const displaySetsTotal = workingSets.length > 0 ? workingSets.length : totalExSets;
   const lastSession = exercise.history[exercise.history.length - 1];
   const best1RM = getBestSet1RM(exercise.sets, true);
-  const unit = settings?.weightUnit || 'kg';
+  const unit: WeightUnit = settings?.weightUnit === 'lbs' ? 'lbs' : 'kg';
+  const weightStep = unit === 'lbs' ? 5 : 2.5;
   const effortScale: EffortScale = settings?.effortScale || 'rpe';
   const coach = evaluateExerciseCoach(exercise, !!isDeloadDay, settings);
+  const quickTarget = getQuickAdjustTarget(exercise.sets);
+  const firstWorkingWeight = workingSets[0]?.weight ?? 0;
+  const canGenerateWarmup = Number.isFinite(firstWorkingWeight) && firstWorkingWeight > 0;
 
+  const [showRestPresets, setShowRestPresets] = React.useState(false);
   const [isPressing, setIsPressing] = React.useState(false);
   const pressTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -450,6 +507,170 @@ export function DraggableExerciseItem({
                 </div>
               )}
 
+              <div className="mt-2 mb-3 rounded-xl bg-page/60 border border-content/10 p-2.5 space-y-2 w-full min-w-0">
+                <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {quickTarget ? (
+                      <>
+                        <span className="rounded-md bg-primary-500/15 border border-primary-500/25 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-primary-400 shrink-0">
+                          {quickTarget.label}
+                        </span>
+                        <span className="text-[11px] font-bold text-muted tabular-nums truncate">
+                          {quickTarget.set.weight}
+                          {unit} × {quickTarget.set.reps}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
+                        Quick Controls
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setShowRestPresets((prev) => !prev)}
+                      aria-expanded={showRestPresets}
+                      aria-label={`Rest timer ${exercise.restTimerConfig} seconds, tap to change`}
+                      className={cn(
+                        'inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-bold tabular-nums transition-all active:scale-95',
+                        showRestPresets
+                          ? 'bg-primary-500/20 border-primary-500/40 text-primary-400'
+                          : 'bg-surface border-content/10 text-content hover:border-primary-500/30',
+                      )}
+                    >
+                      <span aria-hidden="true">⏱</span>
+                      <span>{exercise.restTimerConfig}s</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={!canGenerateWarmup}
+                      onClick={() => onGenerateWarmup(exercise.id)}
+                      title={
+                        canGenerateWarmup
+                          ? `Generate warm-up ramp from ${firstWorkingWeight}${unit}`
+                          : 'Set a working weight above 0 to generate warm-ups'
+                      }
+                      className={cn(
+                        'inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-all',
+                        canGenerateWarmup
+                          ? 'bg-sky-500/15 border-sky-500/35 text-sky-400 hover:bg-sky-500/25 active:scale-95'
+                          : 'bg-surface/40 border-content/5 text-muted/40 opacity-50 cursor-not-allowed',
+                      )}
+                    >
+                      <Flame size={12} className="shrink-0" />
+                      <span>Warm-Up</span>
+                    </button>
+                  </div>
+                </div>
+
+                {showRestPresets && (
+                  <div className="grid grid-cols-6 gap-1 pt-0.5">
+                    {REST_TIMER_PRESETS.map((preset) => {
+                      const isActive = exercise.restTimerConfig === preset;
+                      return (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => {
+                            onUpdateRestTimer(exercise.id, preset);
+                            setShowRestPresets(false);
+                          }}
+                          className={cn(
+                            'h-8 rounded-lg border text-[11px] font-bold tabular-nums transition-all active:scale-95',
+                            isActive
+                              ? 'bg-primary-500 border-primary-500 text-white shadow-sm shadow-primary-500/30'
+                              : 'bg-surface border-content/10 text-muted hover:text-content',
+                          )}
+                        >
+                          {preset}s
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {quickTarget && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center rounded-xl bg-surface border border-content/10 overflow-hidden min-w-0">
+                      <button
+                        type="button"
+                        disabled={quickTarget.set.weight <= 0}
+                        onClick={() =>
+                          onSetUpdate(
+                            exercise.id,
+                            quickTarget.set.id,
+                            'weight',
+                            stepSetWeight(quickTarget.set.weight, -weightStep),
+                          )
+                        }
+                        aria-label={`Decrease ${quickTarget.label} weight by ${weightStep} ${unit}`}
+                        className="flex-1 h-9 flex items-center justify-center text-xs font-bold text-content hover:bg-content/5 active:bg-content/10 transition-colors tabular-nums disabled:opacity-35 disabled:pointer-events-none"
+                      >
+                        -{weightStep}
+                      </button>
+                      <span className="px-1.5 text-[10px] font-bold uppercase text-muted border-x border-content/10 select-none shrink-0">
+                        {unit}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onSetUpdate(
+                            exercise.id,
+                            quickTarget.set.id,
+                            'weight',
+                            stepSetWeight(quickTarget.set.weight, weightStep),
+                          )
+                        }
+                        aria-label={`Increase ${quickTarget.label} weight by ${weightStep} ${unit}`}
+                        className="flex-1 h-9 flex items-center justify-center text-xs font-bold text-primary-400 hover:bg-primary-500/10 active:bg-primary-500/20 transition-colors tabular-nums"
+                      >
+                        +{weightStep}
+                      </button>
+                    </div>
+
+                    <div className="flex items-center rounded-xl bg-surface border border-content/10 overflow-hidden min-w-0">
+                      <button
+                        type="button"
+                        disabled={quickTarget.set.reps <= 0}
+                        onClick={() =>
+                          onSetUpdate(
+                            exercise.id,
+                            quickTarget.set.id,
+                            'reps',
+                            stepSetReps(quickTarget.set.reps, -1),
+                          )
+                        }
+                        aria-label={`Decrease ${quickTarget.label} reps by 1`}
+                        className="flex-1 h-9 flex items-center justify-center text-xs font-bold text-content hover:bg-content/5 active:bg-content/10 transition-colors tabular-nums disabled:opacity-35 disabled:pointer-events-none"
+                      >
+                        -1
+                      </button>
+                      <span className="px-1.5 text-[10px] font-bold uppercase text-muted border-x border-content/10 select-none shrink-0">
+                        reps
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onSetUpdate(
+                            exercise.id,
+                            quickTarget.set.id,
+                            'reps',
+                            stepSetReps(quickTarget.set.reps, 1),
+                          )
+                        }
+                        aria-label={`Increase ${quickTarget.label} reps by 1`}
+                        className="flex-1 h-9 flex items-center justify-center text-xs font-bold text-primary-400 hover:bg-primary-500/10 active:bg-primary-500/20 transition-colors tabular-nums"
+                      >
+                        +1
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-[34px_1fr_1fr_52px_34px_26px] items-center gap-1.5 px-1 text-[10px] font-bold uppercase tracking-wider text-muted mt-2">
                 <span className="text-center">Set</span>
                 <span className="text-center">{unit}</span>
@@ -646,6 +867,8 @@ interface WorkoutBlockProps {
   handleUpdateSet: (exId: string, setId: string, field: keyof Set, value: Set[keyof Set]) => void;
   handleDeleteSet: (exId: string, setId: string) => void;
   handleAddSet: (exId: string) => void;
+  handleUpdateRestTimer: (exId: string, seconds: number) => void;
+  handleGenerateWarmup: (exId: string) => void;
   handleOpenNotes: (e: React.MouseEvent, ex: Exercise) => void;
   handleOpenSwap: (e: React.MouseEvent, ex: Exercise) => void;
   handleOpenPlateCalc: (e: React.MouseEvent, ex: Exercise) => void;
@@ -667,6 +890,8 @@ export function WorkoutBlock({
   handleUpdateSet,
   handleDeleteSet,
   handleAddSet,
+  handleUpdateRestTimer,
+  handleGenerateWarmup,
   handleOpenNotes,
   handleOpenSwap,
   handleOpenPlateCalc,
@@ -711,6 +936,8 @@ export function WorkoutBlock({
             onSetUpdate={handleUpdateSet}
             onSetDelete={handleDeleteSet}
             onSetAdd={handleAddSet}
+            onUpdateRestTimer={handleUpdateRestTimer}
+            onGenerateWarmup={handleGenerateWarmup}
             onOpenNotes={handleOpenNotes}
             onOpenSwap={handleOpenSwap}
             onOpenPlateCalc={handleOpenPlateCalc}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Calculator, ChevronLeft, RotateCcw, Dumbbell, CheckCircle2, Trophy, X, Edit2, Plus, Zap } from 'lucide-react';
-import { Exercise, Set, WorkoutSession } from '../../types';
+import type { Exercise, Set, WorkoutSession } from '../../types';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { PromptModal } from '../../components/ui/PromptModal';
@@ -26,7 +26,13 @@ import {
   MuscleRecoveryStatus,
   resolveExerciseBroadMuscles,
 } from '../../utils/muscleRecovery';
-import { isWarmupSet } from '../../utils/strength';
+import {
+  DEFAULT_BARBELL_WEIGHT,
+  DEFAULT_PLATES,
+  isWarmupSet,
+  type WeightUnit,
+} from '../../utils/strength';
+import { applyWarmupSets, generateWarmupSets } from '../../utils/warmupGenerator';
 import { WorkoutBlock } from './components/SessionExerciseCard';
 import { RestTimerOverlay } from './components/RestTimerOverlay';
 import { QuickAddExerciseModal } from './components/QuickAddExerciseModal';
@@ -264,6 +270,42 @@ export function WorkoutSessionPage() {
         })
       };
     }));
+  };
+
+  const handleUpdateRestTimer = (exerciseId: string, seconds: number) => {
+    setExercises(prev =>
+      prev.map(ex => (ex.id === exerciseId ? { ...ex, restTimerConfig: seconds } : ex)),
+    );
+  };
+
+  const handleGenerateWarmup = (exerciseId: string) => {
+    const unit: WeightUnit = settings?.weightUnit === 'lbs' ? 'lbs' : 'kg';
+    const barbellWeight = settings?.barbellWeight ?? DEFAULT_BARBELL_WEIGHT[unit];
+    const availablePlates =
+      settings?.availablePlates && settings.availablePlates.length > 0
+        ? settings.availablePlates
+        : DEFAULT_PLATES[unit];
+
+    setExercises(prev =>
+      prev.map(ex => {
+        if (ex.id !== exerciseId) return ex;
+        const firstWorking = ex.sets.find(s => !isWarmupSet(s));
+        const workingWeight = firstWorking?.weight ?? 0;
+        if (!Number.isFinite(workingWeight) || workingWeight <= 0) return ex;
+
+        const warmups = generateWarmupSets(workingWeight, {
+          barbellWeight,
+          availablePlates,
+          unit,
+        });
+        if (warmups.length === 0) return ex;
+
+        return {
+          ...ex,
+          sets: applyWarmupSets(ex.sets, warmups),
+        };
+      }),
+    );
   };
 
   const handleToggleSet = (exerciseId: string, setId: string) => {
@@ -854,6 +896,8 @@ export function WorkoutSessionPage() {
                   handleUpdateSet={handleUpdateSet}
                   handleDeleteSet={handleDeleteSet}
                   handleAddSet={handleAddSet}
+                  handleUpdateRestTimer={handleUpdateRestTimer}
+                  handleGenerateWarmup={handleGenerateWarmup}
                   handleOpenNotes={handleOpenNotes}
                   handleOpenSwap={handleOpenSwap}
                   handleOpenPlateCalc={handleOpenPlateCalc}
