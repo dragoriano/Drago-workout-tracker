@@ -32,11 +32,17 @@ export type Exercise = {
  supersetOrder?: number; // Order within the superset
 };
 
+export type SetType = 'working' | 'warmup' | 'drop' | 'failure';
+
+export type EffortScale = 'rpe' | 'rir';
+
 export type Set = {
  id: string;
  weight: number;
  reps: number;
  completed: boolean;
+ setType?: SetType;
+ rpe?: number;
 };
 
 export type ExerciseHistory = {
@@ -87,6 +93,7 @@ export type AppSettings = {
  voiceCountdownEnabled: boolean;
  syncEnabled: boolean;
  weightUnit?: 'kg' | 'lbs';
+ effortScale?: EffortScale;
  barbellWeight?: number;
  availablePlates?: number[];
  hasSeenOnboarding?: boolean;

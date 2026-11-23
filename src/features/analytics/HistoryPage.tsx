@@ -42,7 +42,13 @@ export function HistoryPage() {
       ) : (
         <div className="grid gap-4">
           {sortedSessions.map((session, index) => (
-            <SessionHistoryCard key={session.id} session={session} index={index} unit={unit} />
+            <SessionHistoryCard
+              key={session.id}
+              session={session}
+              index={index}
+              unit={unit}
+              effortScale={settings?.effortScale || 'rpe'}
+            />
           ))}
         </div>
       )}

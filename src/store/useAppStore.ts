@@ -57,6 +57,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   voiceCountdownEnabled: false,
   syncEnabled: false,
   weightUnit: 'kg',
+  effortScale: 'rpe',
 };
 
 export const useAppStore = create<AppState>((set, get) => ({

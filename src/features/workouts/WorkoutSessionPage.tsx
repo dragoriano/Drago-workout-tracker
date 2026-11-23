@@ -15,6 +15,7 @@ import {
   computeSmartSets,
   detectSessionPRs,
 } from '../../utils/workoutCoach';
+import { isWarmupSet } from '../../utils/strength';
 import { WorkoutBlock } from './components/SessionExerciseCard';
 import { RestTimerOverlay } from './components/RestTimerOverlay';
 
@@ -176,14 +177,16 @@ export function WorkoutSessionPage() {
   const handleAddSet = (exerciseId: string) => {
     setExercises(prev => prev.map(ex => {
       if (ex.id === exerciseId) {
-        const lastSet = ex.sets[ex.sets.length - 1];
+        const workingSets = ex.sets.filter(s => !isWarmupSet(s));
+        const refSet = workingSets[workingSets.length - 1] ?? ex.sets[ex.sets.length - 1];
         return {
           ...ex,
           sets: [...ex.sets, {
             id: generateId(),
-            weight: lastSet ? lastSet.weight : 0,
-            reps: lastSet ? lastSet.reps : 0,
-            completed: false
+            weight: refSet ? refSet.weight : 0,
+            reps: refSet ? refSet.reps : 0,
+            completed: false,
+            setType: 'working',
           }]
         };
       }
@@ -203,15 +206,24 @@ export function WorkoutSessionPage() {
     }));
   };
 
-  const handleUpdateSet = (exerciseId: string, setId: string, field: keyof Set, value: any) => {
+  const handleUpdateSet = (
+    exerciseId: string,
+    setId: string,
+    field: keyof Set,
+    value: Set[keyof Set],
+  ) => {
     setExercises(prev => prev.map(ex => {
-      if (ex.id === exerciseId) {
-        return {
-          ...ex,
-          sets: ex.sets.map(s => s.id === setId ? { ...s, [field]: value } : s)
-        };
-      }
-      return ex;
+      if (ex.id !== exerciseId) return ex;
+      return {
+        ...ex,
+        sets: ex.sets.map(s => {
+          if (s.id !== setId) return s;
+          if (field === 'setType' && value === 'warmup') {
+            return { ...s, setType: 'warmup', rpe: undefined };
+          }
+          return { ...s, [field]: value };
+        })
+      };
     }));
   };
 
@@ -247,17 +259,18 @@ export function WorkoutSessionPage() {
         return { ...s, completed: !s.completed };
       });
 
-      const setCompleted = newSets.find(s => s.id === setId)?.completed;
-      if (setCompleted) {
-        startRestTimer(ex.restTimerConfig);
-        
-        // PR Detection
-        const currentWeight = newSets.find(s => s.id === setId)?.weight || 0;
-        if (currentWeight > 0) {
+      const toggledSet = newSets.find(s => s.id === setId);
+      if (toggledSet?.completed) {
+        const isWarmup = isWarmupSet(toggledSet);
+        startRestTimer(isWarmup ? Math.min(ex.restTimerConfig, 60) : ex.restTimerConfig);
+
+        // PR Detection (working sets only)
+        const currentWeight = toggledSet.weight || 0;
+        if (!isWarmup && currentWeight > 0) {
           let previousMaxWeight = 0;
           ex.history.forEach(hist => {
             hist.sets.forEach(hs => {
-              if (hs.completed && hs.weight > previousMaxWeight) previousMaxWeight = hs.weight;
+              if (hs.completed && !isWarmupSet(hs) && hs.weight > previousMaxWeight) previousMaxWeight = hs.weight;
             });
           });
           
@@ -360,13 +373,15 @@ export function WorkoutSessionPage() {
 
   const handleOpenPlateCalc = (e: React.MouseEvent, ex: Exercise) => {
     e.stopPropagation();
+    const nextWorking = ex.sets.find((s) => !s.completed && !isWarmupSet(s) && s.weight > 0);
     const nextUncompleted = ex.sets.find((s) => !s.completed && s.weight > 0);
+    const firstWorking = ex.sets.find((s) => !isWarmupSet(s) && s.weight > 0);
     const firstWeighted = ex.sets.find((s) => s.weight > 0);
     setPlateCalcConfig({
       isOpen: true,
       exerciseId: ex.id,
       exerciseName: ex.name,
-      weight: nextUncompleted?.weight ?? firstWeighted?.weight ?? 0,
+      weight: nextWorking?.weight ?? nextUncompleted?.weight ?? firstWorking?.weight ?? firstWeighted?.weight ?? 0,
     });
   };
 
@@ -576,7 +591,14 @@ export function WorkoutSessionPage() {
 
   const totalSets = exercises.reduce((acc, ex) => acc + ex.sets.length, 0);
   const completedSets = exercises.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed).length, 0);
-  const totalVolume = exercises.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed).reduce((sum, s) => sum + (s.weight * s.reps), 0), 0);
+  const totalVolume = exercises.reduce(
+    (acc, ex) =>
+      acc +
+      ex.sets
+        .filter((s) => s.completed && !isWarmupSet(s))
+        .reduce((sum, s) => sum + s.weight * s.reps, 0),
+    0,
+  );
   const progressPercent = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
 
   return (
@@ -757,7 +779,8 @@ export function WorkoutSessionPage() {
                 setExercises((prev) =>
                   prev.map((ex) => {
                     if (ex.id !== targetExId || ex.sets.length === 0) return ex;
-                    const nextIdx = ex.sets.findIndex((s) => !s.completed);
+                    const nextWorkingIdx = ex.sets.findIndex((s) => !s.completed && !isWarmupSet(s));
+                    const nextIdx = nextWorkingIdx !== -1 ? nextWorkingIdx : ex.sets.findIndex((s) => !s.completed);
                     const idxToUpdate = nextIdx !== -1 ? nextIdx : ex.sets.length - 1;
                     return {
                       ...ex,

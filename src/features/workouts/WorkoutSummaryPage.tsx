@@ -4,6 +4,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { format } from 'date-fns';
 import { ChevronLeft, Share2, Image as ImageIcon, Camera, Trophy, Clock, Dumbbell, Copy, Download } from 'lucide-react';
 import { toPng } from 'html-to-image';
+import { isWarmupSet } from '../../utils/strength';
 
 export function WorkoutSummaryPage() {
   const { sessionId } = useParams();
@@ -219,8 +220,10 @@ export function WorkoutSummaryPage() {
                   <div className="space-y-1 flex-1 overflow-hidden">
                     {session.exercisesSnapshot.slice(0, session.PRs.length > 0 ? 5 : 7).map((ex, i) => {
                       const completedSets = ex.sets.filter(s => s.completed);
-                      const maxWeight = completedSets.length > 0 ? Math.max(...completedSets.map(s => s.weight)) : 0;
-                      const bestSet = completedSets.find(s => s.weight === maxWeight);
+                      const completedWorking = completedSets.filter(s => !isWarmupSet(s));
+                      const displaySets = completedWorking.length > 0 ? completedWorking : completedSets;
+                      const maxWeight = displaySets.length > 0 ? Math.max(...displaySets.map(s => s.weight)) : 0;
+                      const bestSet = displaySets.find(s => s.weight === maxWeight);
                       return (
                         <div key={i} className="flex items-center justify-between bg-white/5 backdrop-blur-sm rounded-xl px-3 py-1.5 border border-white/10 shrink-0">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -228,7 +231,7 @@ export function WorkoutSummaryPage() {
                             <span className="text-[11px] text-white/90 font-bold truncate pr-2">{ex.name}</span>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-[9px] text-white/50 font-bold">{completedSets.length} sets</span>
+                            <span className="text-[9px] text-white/50 font-bold">{displaySets.length} sets</span>
                             {bestSet && (
                               <span className="text-[10px] text-primary-300 font-bold tabular-nums">
                                 {bestSet.weight}×{bestSet.reps}

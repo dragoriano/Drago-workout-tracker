@@ -5,6 +5,7 @@ import {
   computeSmartSets,
   detectSessionPRs,
   estimateWorkoutDurationMinutes,
+  evaluateExerciseCoach,
 } from './workoutCoach.ts';
 import { AppSettings, Exercise, Set, WorkoutDay, WorkoutSession } from '../types/index.ts';
 
@@ -164,6 +165,86 @@ describe('computeSmartSets', () => {
     assert.deepEqual(resultThree.map((s) => s.weight), [85, 85]);
     assert.deepEqual(resultDisabled.map((s) => s.weight), [100, 100]);
   });
+
+  it('excludes warmup sets from streak fails, preserves warmup weights and set types, and clears rpe', () => {
+    const exercise = makeExercise({
+      sets: [
+        { id: 't0', weight: 40, reps: 10, completed: true, setType: 'warmup' },
+        { id: 't1', weight: 80, reps: 8, completed: true, setType: 'working', rpe: 8 },
+        { id: 't2', weight: 80, reps: 8, completed: true, setType: 'failure', rpe: 9.5 },
+      ],
+      history: [
+        {
+          sessionId: 's1',
+          date: 1000,
+          sets: [
+            { id: 'h1w', weight: 40, reps: 10, completed: false, setType: 'warmup' },
+            { id: 'h1a', weight: 80, reps: 8, completed: true, setType: 'working', rpe: 8 },
+            { id: 'h1b', weight: 80, reps: 8, completed: true, setType: 'failure', rpe: 9 },
+          ],
+        },
+        {
+          sessionId: 's2',
+          date: 2000,
+          sets: [
+            { id: 'h2w', weight: 42.5, reps: 10, completed: false, setType: 'warmup' },
+            { id: 'h2a', weight: 80, reps: 8, completed: true, setType: 'working', rpe: 8 },
+            { id: 'h2b', weight: 80, reps: 8, completed: true, setType: 'failure', rpe: 9 },
+          ],
+        },
+      ],
+    });
+
+    const evalRes = evaluateExerciseCoach(exercise, false, BASE_SETTINGS);
+    const smartSets = computeSmartSets(exercise, false, BASE_SETTINGS);
+
+    assert.equal(evalRes.status, 'overload');
+    assert.equal(evalRes.avgRecentRpe, 8.5);
+    assert.deepEqual(
+      smartSets.map((s) => ({
+        weight: s.weight,
+        setType: s.setType,
+        completed: s.completed,
+        rpe: s.rpe,
+      })),
+      [
+        { weight: 42.5, setType: 'warmup', completed: false, rpe: undefined },
+        { weight: 82.5, setType: 'working', completed: false, rpe: undefined },
+        { weight: 82.5, setType: 'failure', completed: false, rpe: undefined },
+      ],
+    );
+  });
+
+  it('holds weight with rpe_hold status when completed working sets average RPE >= 9.5', () => {
+    const maxedOut = makeExercise({
+      sets: makeSets(100, 5, false, 2),
+      history: [
+        {
+          sessionId: 's1',
+          date: 1000,
+          sets: [
+            { id: 'a1', weight: 100, reps: 5, completed: true, rpe: 9.5 },
+            { id: 'a2', weight: 100, reps: 5, completed: true, rpe: 10 },
+          ],
+        },
+        {
+          sessionId: 's2',
+          date: 2000,
+          sets: [
+            { id: 'b1', weight: 100, reps: 5, completed: true, rpe: 9.5 },
+            { id: 'b2', weight: 100, reps: 5, completed: true, rpe: 9.5 },
+          ],
+        },
+      ],
+    });
+
+    const evalRes = evaluateExerciseCoach(maxedOut, false, BASE_SETTINGS);
+    const resultSets = computeSmartSets(maxedOut, false, BASE_SETTINGS);
+
+    assert.equal(evalRes.status, 'rpe_hold');
+    assert.equal(evalRes.avgRecentRpe, 9.5);
+    assert.deepEqual(resultSets.map((s) => s.weight), [100, 100]);
+  });
 });
 
 describe('estimateWorkoutDurationMinutes', () => {
@@ -247,6 +328,50 @@ describe('detectSessionPRs', () => {
         type: '1rm',
         value: 126.7,
         previousValue: 116.7,
+      },
+    ]);
+  });
+
+  it('excludes warmup sets from totalVolume and weight/1RM PRs while counting drop and failure sets', () => {
+    const exercises: Exercise[] = [
+      makeExercise({
+        id: 'deadlift',
+        name: 'Deadlift',
+        sets: [
+          { id: 'w1', weight: 200, reps: 5, completed: true, setType: 'warmup' },
+          { id: 'f1', weight: 150, reps: 5, completed: true, setType: 'failure' },
+          { id: 'd1', weight: 120, reps: 8, completed: true, setType: 'drop' },
+        ],
+        history: [
+          {
+            sessionId: 'prev',
+            date: 1000,
+            sets: [
+              { id: 'hw1', weight: 220, reps: 3, completed: true, setType: 'warmup' },
+              { id: 'hw2', weight: 140, reps: 5, completed: true },
+            ],
+          },
+        ],
+      }),
+    ];
+
+    const { totalVolume, detectedPRs } = detectSessionPRs(exercises);
+
+    assert.equal(totalVolume, 150 * 5 + 120 * 8);
+    assert.deepEqual(detectedPRs, [
+      {
+        exerciseId: 'deadlift',
+        exerciseName: 'Deadlift',
+        type: 'weight',
+        value: 150,
+        previousValue: 140,
+      },
+      {
+        exerciseId: 'deadlift',
+        exerciseName: 'Deadlift',
+        type: '1rm',
+        value: 175,
+        previousValue: 163.3,
       },
     ]);
   });

@@ -5,7 +5,7 @@ import { Exercise } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { format } from 'date-fns';
-import { getBestSet1RM, getTrainingPercentages } from '../../utils/strength';
+import { getBestSet1RM, getTrainingPercentages, isWarmupSet } from '../../utils/strength';
 import { cn } from '../../utils/cn';
 
 interface ExerciseChartModalProps {
@@ -26,7 +26,7 @@ export function ExerciseChartModal({ isOpen, exercise, onClose }: ExerciseChartM
     .map((h) => {
       let maxWeight = 0;
       h.sets.forEach((s) => {
-        if (s.completed && s.weight > maxWeight) {
+        if (s.completed && !isWarmupSet(s) && s.weight > maxWeight) {
           maxWeight = s.weight;
         }
       });

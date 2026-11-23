@@ -1,6 +1,6 @@
 import { differenceInCalendarDays, startOfDay, subDays } from 'date-fns';
 import { PR, WorkoutSession } from '../types';
-import { getBestSet1RM } from './strength';
+import { getBestSet1RM, isWarmupSet } from './strength';
 
 export function computeStreaks(sessions: WorkoutSession[]): { current: number; longest: number } {
   if (sessions.length === 0) return { current: 0, longest: 0 };
@@ -103,4 +103,65 @@ export function computeTopEstimated1RMs(sessions: WorkoutSession[]): StrengthBen
   }
 
   return Array.from(bestByExercise.values()).sort((a, b) => b.e1rm - a.e1rm);
+}
+
+export interface EffortSummary {
+  avgRpe: number | null;
+  ratedSetsCount: number;
+  hardSetsCount: number;
+  failureSetsCount: number;
+  dropSetsCount: number;
+  warmupSetsCount: number;
+  workingSetsCount: number;
+}
+
+export function computeEffortSummary(
+  sessions: WorkoutSession[],
+  daysWindow = 7,
+  now = Date.now(),
+): EffortSummary {
+  const cutoff = now - daysWindow * 24 * 60 * 60 * 1000;
+  let rpeSum = 0;
+  let ratedSetsCount = 0;
+  let hardSetsCount = 0;
+  let failureSetsCount = 0;
+  let dropSetsCount = 0;
+  let warmupSetsCount = 0;
+  let workingSetsCount = 0;
+
+  for (const session of sessions) {
+    if (!session.date || isNaN(new Date(session.date).getTime()) || session.date < cutoff) {
+      continue;
+    }
+    for (const ex of session.exercisesSnapshot || []) {
+      for (const set of ex.sets || []) {
+        if (!set.completed) continue;
+        if (isWarmupSet(set)) {
+          warmupSetsCount++;
+          continue;
+        }
+        workingSetsCount++;
+        if (set.setType === 'failure') failureSetsCount++;
+        else if (set.setType === 'drop') dropSetsCount++;
+
+        if (typeof set.rpe === 'number' && Number.isFinite(set.rpe) && set.rpe > 0) {
+          rpeSum += set.rpe;
+          ratedSetsCount++;
+          if (set.rpe >= 8) {
+            hardSetsCount++;
+          }
+        }
+      }
+    }
+  }
+
+  return {
+    avgRpe: ratedSetsCount > 0 ? Math.round((rpeSum / ratedSetsCount) * 10) / 10 : null,
+    ratedSetsCount,
+    hardSetsCount,
+    failureSetsCount,
+    dropSetsCount,
+    warmupSetsCount,
+    workingSetsCount,
+  };
 }

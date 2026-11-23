@@ -2,16 +2,24 @@ import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { Clock, Dumbbell, Trophy } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
-import { WorkoutSession } from '../../types';
+import { EffortScale, WorkoutSession } from '../../types';
+import { cn } from '../../utils/cn';
+import { formatEffortLabel, getSetType, isWarmupSet } from '../../utils/strength';
 
 interface SessionHistoryCardProps {
   key?: string | number;
   session: WorkoutSession;
   index: number;
   unit: string;
+  effortScale?: EffortScale;
 }
 
-export function SessionHistoryCard({ session, index, unit }: SessionHistoryCardProps) {
+export function SessionHistoryCard({
+  session,
+  index,
+  unit,
+  effortScale = 'rpe',
+}: SessionHistoryCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -55,31 +63,86 @@ export function SessionHistoryCard({ session, index, unit }: SessionHistoryCardP
           {session.exercisesSnapshot?.map((ex) => {
             const completedSets = ex.sets.filter((s) => s.completed);
             if (completedSets.length === 0) return null;
+            const workingCount = completedSets.filter((s) => !isWarmupSet(s)).length;
+            const warmupCount = completedSets.length - workingCount;
+            let workingOrdinal = 0;
 
             return (
               <div key={ex.id} className="rounded-xl bg-page/5 p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-bold text-content">{ex.name.replace(/_/g, ' ')}</span>
                   <span className="text-[10px] font-black tracking-widest text-muted uppercase">
-                    {completedSets.length} Sets
+                    {workingCount > 0 ? workingCount : completedSets.length} Sets
+                    {warmupCount > 0 ? ` · ${warmupCount}W` : ''}
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {completedSets.map((set, sIdx) => (
-                    <div
-                      key={set.id}
-                      className="flex flex-col items-center justify-center rounded-lg bg-card/50 border border-content/5 px-2.5 py-1.5 min-w-[50px]"
-                    >
-                      <span className="text-[10px] font-bold text-muted uppercase mb-0.5">S{sIdx + 1}</span>
-                      <div className="flex flex-col items-center leading-tight">
-                        <span className="text-xs font-black text-primary-400">
-                          {set.weight}
-                          <span className="text-[10px] text-muted font-normal ml-0.5">{unit}</span>
+                  {completedSets.map((set) => {
+                    const setType = getSetType(set);
+                    const warmup = setType === 'warmup';
+                    if (!warmup) workingOrdinal++;
+
+                    const badgeText =
+                      setType === 'warmup'
+                        ? 'W'
+                        : setType === 'drop'
+                          ? 'D'
+                          : setType === 'failure'
+                            ? 'F'
+                            : `S${workingOrdinal}`;
+
+                    const badgeColor =
+                      setType === 'warmup'
+                        ? 'text-sky-400'
+                        : setType === 'drop'
+                          ? 'text-amber-400'
+                          : setType === 'failure'
+                            ? 'text-red-400'
+                            : 'text-muted';
+
+                    const chipBorder =
+                      setType === 'warmup'
+                        ? 'opacity-75 border-sky-500/20'
+                        : setType === 'drop'
+                          ? 'border-amber-500/25'
+                          : setType === 'failure'
+                            ? 'border-red-500/25'
+                            : 'border-content/5';
+
+                    const effortLabel = !warmup ? formatEffortLabel(set.rpe, effortScale) : '';
+                    const effortColor =
+                      set.rpe !== undefined && set.rpe >= 9.5
+                        ? 'text-red-400'
+                        : set.rpe !== undefined && set.rpe >= 8.5
+                          ? 'text-amber-400'
+                          : 'text-emerald-400';
+
+                    return (
+                      <div
+                        key={set.id}
+                        className={cn(
+                          'flex flex-col items-center justify-center rounded-lg bg-card/50 border px-2.5 py-1.5 min-w-[50px]',
+                          chipBorder,
+                        )}
+                      >
+                        <span className={cn('text-[10px] font-black uppercase mb-0.5', badgeColor)}>
+                          {badgeText}
                         </span>
-                        <span className="text-[10px] font-bold text-content mt-0.5">{set.reps} reps</span>
+                        <div className="flex flex-col items-center leading-tight">
+                          <span className={cn('text-xs font-black', warmup ? 'text-sky-400' : 'text-primary-400')}>
+                            {set.weight}
+                            <span className="text-[10px] text-muted font-normal ml-0.5">{unit}</span>
+                          </span>
+                          <span className="text-[10px] font-bold text-content mt-0.5">{set.reps} reps</span>
+                          {effortLabel && (
+                            <span className={cn('text-[9px] font-bold mt-0.5 tabular-nums', effortColor)}>
+                              {effortLabel}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );

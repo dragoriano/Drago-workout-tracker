@@ -1,6 +1,44 @@
-import type { Set } from '../types';
+import type { EffortScale, Set, SetType } from '../types';
 
 export type WeightUnit = 'kg' | 'lbs';
+
+export const SET_TYPE_ORDER: readonly SetType[] = ['working', 'warmup', 'drop', 'failure'];
+export const RPE_OPTIONS = [6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10] as const;
+export const RIR_OPTIONS = [4, 3, 2, 1, 0] as const;
+
+export function getSetType(set: Pick<Set, 'setType'>): SetType {
+  return set.setType ?? 'working';
+}
+
+export function isWarmupSet(set: Pick<Set, 'setType'>): boolean {
+  return set.setType === 'warmup';
+}
+
+export function isWorkingSet(set: Pick<Set, 'setType'>): boolean {
+  return set.setType !== 'warmup';
+}
+
+export function getNextSetType(current?: SetType): SetType {
+  const normalized = current ?? 'working';
+  const idx = SET_TYPE_ORDER.indexOf(normalized);
+  return SET_TYPE_ORDER[(idx + 1) % SET_TYPE_ORDER.length];
+}
+
+export function rpeToRir(rpe: number): number {
+  return Math.round(Math.max(0, Math.min(4, 10 - rpe)) * 10) / 10;
+}
+
+export function rirToRpe(rir: number): number {
+  return Math.round(Math.max(6, Math.min(10, 10 - rir)) * 10) / 10;
+}
+
+export function formatEffortLabel(
+  rpe: number | undefined,
+  scale: EffortScale = 'rpe',
+): string {
+  if (rpe === undefined || !Number.isFinite(rpe) || rpe <= 0) return '';
+  return scale === 'rir' ? `RIR ${rpeToRir(rpe)}` : `RPE ${rpe}`;
+}
 
 export const DEFAULT_BARBELL_WEIGHT: Record<WeightUnit, number> = {
   kg: 20,
@@ -34,7 +72,7 @@ export function getBestSet1RM(
   let best: { e1rm: number; weight: number; reps: number } | null = null;
 
   for (const s of sets) {
-    if ((!includeIncomplete && !s.completed) || s.weight <= 0 || s.reps <= 0) {
+    if (isWarmupSet(s) || (!includeIncomplete && !s.completed) || s.weight <= 0 || s.reps <= 0) {
       continue;
     }
     const e1rm = calculateEstimated1RM(s.weight, s.reps);

@@ -2,12 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   ArrowLeft, Cloud, Moon, Palette, Sparkles, AlertTriangle, 
   TrendingDown, Download, RefreshCw, Trash2, ChevronRight, X, QrCode, Upload, Camera, ScanLine, Volume2, ShieldAlert, Activity,
-  CloudUpload, CloudDownload, Mic, Calculator
+  CloudUpload, CloudDownload, Mic, Calculator, Gauge
 } from 'lucide-react';
 import { PremiumIcon, FilledIcon } from '../../components/ui/PremiumIcon';
 import { QRCodeSVG } from 'qrcode.react';
 import { useNavigate } from 'react-router-dom';
-import { AppSettings } from '../../types';
+import { AppSettings, EffortScale } from '../../types';
 import { db, closeDB } from '../../storage/db';
 import { signInWithGoogle, signOutUser, onAuthChange, pushToSupabase, pullFromSupabase } from '../../storage/supabaseSync';
 import { Button } from '../../components/ui/Button';
@@ -251,7 +251,13 @@ export function SettingsPage() {
           lastUpdated: e.lastUpdated,
           supersetId: e.supersetId,
           history: [], // Strip history — too large for QR
-          sets: e.sets.map(s => ({ id: s.id, weight: s.weight, reps: s.reps, completed: false }))
+          sets: e.sets.map(s => ({
+            id: s.id,
+            weight: s.weight,
+            reps: s.reps,
+            completed: false,
+            ...(s.setType && s.setType !== 'working' ? { setType: s.setType } : {}),
+          }))
         }))
       }))
     }));
@@ -378,6 +384,31 @@ export function SettingsPage() {
                     onClick={() => handleWeightUnitChange('lbs')}
                     className={`rounded-md px-3 py-1 text-sm font-bold transition-all ${settings.weightUnit === 'lbs' ? 'bg-card text-content shadow-sm' : 'text-muted'}`}
                   >lbs</button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <PremiumIcon icon={Gauge} color="amber" variant="soft" size="sm" />
+                  <div>
+                    <h3 className="font-bold text-content">Effort Scale</h3>
+                    <p className="text-xs text-muted">RPE (6–10) or RIR (0–4 reps in reserve)</p>
+                  </div>
+                </div>
+                <div className="flex rounded-lg bg-page/10 p-1">
+                  {(['rpe', 'rir'] as EffortScale[]).map((scale) => (
+                    <button
+                      key={scale}
+                      onClick={() => updateSetting('effortScale', scale)}
+                      className={`rounded-md px-3 py-1 text-sm font-bold uppercase transition-all ${
+                        (settings.effortScale || 'rpe') === scale
+                          ? 'bg-card text-content shadow-sm'
+                          : 'text-muted'
+                      }`}
+                    >
+                      {scale}
+                    </button>
+                  ))}
                 </div>
               </div>
 

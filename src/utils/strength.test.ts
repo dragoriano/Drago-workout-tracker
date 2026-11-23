@@ -4,8 +4,15 @@ import {
   calculateBarbellPlates,
   calculateEstimated1RM,
   DEFAULT_PLATES,
+  formatEffortLabel,
   getBestSet1RM,
+  getNextSetType,
+  getSetType,
   getTrainingPercentages,
+  isWarmupSet,
+  isWorkingSet,
+  rirToRpe,
+  rpeToRir,
 } from './strength.ts';
 import type { Set } from '../types/index.ts';
 
@@ -37,6 +44,44 @@ describe('getBestSet1RM', () => {
 
     assert.deepEqual(completedBest, { e1rm: 120, weight: 90, reps: 10 });
     assert.deepEqual(anyBest, { e1rm: 139.3, weight: 110, reps: 8 });
+  });
+
+  it('excludes warmup sets while keeping drop and failure sets', () => {
+    const sets: Set[] = [
+      { id: 'w1', weight: 180, reps: 5, completed: true, setType: 'warmup' },
+      { id: 'f1', weight: 100, reps: 6, completed: true, setType: 'failure' },
+      { id: 'd1', weight: 80, reps: 10, completed: true, setType: 'drop' },
+    ];
+
+    assert.deepEqual(getBestSet1RM(sets), { e1rm: 120, weight: 100, reps: 6 });
+    assert.equal(getBestSet1RM([sets[0]], true), null);
+  });
+});
+
+describe('set type & effort helpers', () => {
+  it('defaults undefined setType to working and cycles working -> warmup -> drop -> failure', () => {
+    assert.equal(getSetType({ setType: undefined }), 'working');
+    assert.equal(isWorkingSet({ setType: undefined }), true);
+    assert.equal(isWarmupSet({ setType: 'warmup' }), true);
+    assert.equal(isWorkingSet({ setType: 'warmup' }), false);
+
+    assert.equal(getNextSetType(undefined), 'warmup');
+    assert.equal(getNextSetType('working'), 'warmup');
+    assert.equal(getNextSetType('warmup'), 'drop');
+    assert.equal(getNextSetType('drop'), 'failure');
+    assert.equal(getNextSetType('failure'), 'working');
+  });
+
+  it('converts between RPE and RIR and formats effort labels cleanly', () => {
+    assert.equal(rpeToRir(10), 0);
+    assert.equal(rpeToRir(8.5), 1.5);
+    assert.equal(rpeToRir(6), 4);
+    assert.equal(rirToRpe(2), 8);
+    assert.equal(rirToRpe(0), 10);
+
+    assert.equal(formatEffortLabel(undefined, 'rpe'), '');
+    assert.equal(formatEffortLabel(8.5, 'rpe'), 'RPE 8.5');
+    assert.equal(formatEffortLabel(8.5, 'rir'), 'RIR 1.5');
   });
 });
 

@@ -9,7 +9,8 @@ import { MuscleGroupChart, mapToMuscleGroup, getMuscleColor } from '../../compon
 import { getExerciseMuscleGroups } from '../../data/exercises';
 import { PullToRefresh } from '../../components/ui/PullToRefresh';
 import { useAppStore } from '../../store/useAppStore';
-import { computeStreaks, computeTopEstimated1RMs, flattenPRs } from '../../utils/analytics';
+import { computeEffortSummary, computeStreaks, computeTopEstimated1RMs, flattenPRs } from '../../utils/analytics';
+import { isWarmupSet, rpeToRir } from '../../utils/strength';
 import { SessionHistoryCard } from './SessionHistoryCard';
 
 export { computeStreaks, flattenPRs };
@@ -47,8 +48,10 @@ export function AnalyticsPage() {
   const top1RMs = computeTopEstimated1RMs(sessions);
   const sortedSessionsDesc = [...sessions].sort((a, b) => b.date - a.date);
   const unit = settings?.weightUnit || 'kg';
+  const effortScale = settings?.effortScale || 'rpe';
+  const effortSummary = computeEffortSummary(sessions, 7);
 
-  // Compute muscle group volume (last 7 days)
+  // Compute muscle group volume (last 7 days, working sets only)
   const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const weekSessions = sessions.filter(s => s.date && s.date >= oneWeekAgo);
   const muscleVolumeMap = new Map<string, number>();
@@ -56,7 +59,9 @@ export function AnalyticsPage() {
     (s.exercisesSnapshot || []).forEach(ex => {
       const groups = (ex.muscleGroup && ex.muscleGroup.length > 0) ? ex.muscleGroup : getExerciseMuscleGroups(ex.name);
       const primary = groups.length > 0 ? mapToMuscleGroup(groups[0]) : 'Other';
-      const exVolume = ex.sets.filter(set => set.completed).reduce((sum, set) => sum + (set.weight * set.reps), 0);
+      const exVolume = ex.sets
+        .filter(set => set.completed && !isWarmupSet(set))
+        .reduce((sum, set) => sum + (set.weight * set.reps), 0);
       muscleVolumeMap.set(primary, (muscleVolumeMap.get(primary) || 0) + exVolume);
     });
   });
@@ -194,6 +199,69 @@ export function AnalyticsPage() {
           </h2>
           <Card className="p-4 mb-8">
             <MuscleGroupChart data={muscleGroupData} unit={unit} />
+          </Card>
+
+          {/* Training Effort (7 days) */}
+          <h2 className="text-xl font-bold mb-4 mt-8 flex items-center gap-2">
+            <FilledIcon icon={Zap} size={20} className="text-amber-400" /> Training Effort (7 days)
+          </h2>
+          <Card className="p-4 mb-8">
+            {effortSummary.workingSetsCount === 0 && effortSummary.ratedSetsCount === 0 ? (
+              <div className="flex flex-col items-center justify-center py-6 text-center text-muted">
+                <Zap size={28} className="mb-2 opacity-30" />
+                <p className="text-sm">Log set types (W/D/F) and RPE/RIR during workouts to track training intensity.</p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-3 gap-2.5">
+                  <div className="rounded-xl bg-page/20 border border-content/5 p-3 text-center">
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">
+                      Avg {effortScale.toUpperCase()}
+                    </span>
+                    <p className="mt-1 text-xl font-black text-emerald-400 tabular-nums">
+                      {effortSummary.avgRpe !== null
+                        ? effortScale === 'rir'
+                          ? rpeToRir(effortSummary.avgRpe)
+                          : effortSummary.avgRpe
+                        : '—'}
+                    </p>
+                    <span className="block text-[10px] text-muted mt-0.5">
+                      {effortSummary.ratedSetsCount > 0 ? `${effortSummary.ratedSetsCount} rated` : 'Unrated'}
+                    </span>
+                  </div>
+
+                  <div className="rounded-xl bg-page/20 border border-content/5 p-3 text-center">
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">
+                      Hard Sets
+                    </span>
+                    <p className="mt-1 text-xl font-black text-amber-400 tabular-nums">
+                      {effortSummary.hardSetsCount}
+                    </p>
+                    <span className="block text-[10px] text-muted mt-0.5">
+                      {effortScale === 'rir' ? 'RIR ≤ 2' : 'RPE 8+'}
+                    </span>
+                  </div>
+
+                  <div className="rounded-xl bg-page/20 border border-content/5 p-3 text-center">
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">
+                      Failure / Drop
+                    </span>
+                    <p className="mt-1 text-xl font-black text-red-400 tabular-nums">
+                      {effortSummary.failureSetsCount}F · {effortSummary.dropSetsCount}D
+                    </p>
+                    <span className="block text-[10px] text-muted mt-0.5">
+                      of {effortSummary.workingSetsCount} sets
+                    </span>
+                  </div>
+                </div>
+
+                {effortSummary.warmupSetsCount > 0 && (
+                  <p className="mt-3 text-center text-[11px] font-medium text-sky-400/80">
+                    {effortSummary.warmupSetsCount} warmup {effortSummary.warmupSetsCount === 1 ? 'set' : 'sets'} logged &amp; excluded from volume/PRs
+                  </p>
+                )}
+              </>
+            )}
           </Card>
           
           {/* Body Measurements Chart */}
@@ -336,7 +404,13 @@ export function AnalyticsPage() {
           ) : (
             <div className="grid gap-4">
               {filteredSessions.map((session, index) => (
-                <SessionHistoryCard key={session.id} session={session} index={index} unit={unit} />
+                <SessionHistoryCard
+                  key={session.id}
+                  session={session}
+                  index={index}
+                  unit={unit}
+                  effortScale={effortScale}
+                />
               ))}
             </div>
           )}
