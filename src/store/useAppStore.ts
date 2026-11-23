@@ -9,6 +9,7 @@ import {
   WorkoutSession,
 } from '../types';
 import { applyThemeColor, applyThemeMode } from '../utils/theme';
+import { reconcileAutoGoals } from '../utils/goalsSync';
 
 // ── App Store ────────────────────────────────────────────────────────
 // Centralised state for the entire application. Every page reads from
@@ -47,6 +48,7 @@ interface AppState {
   loadGoals: () => Promise<void>;
   saveGoal: (goal: Goal) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
+  syncAutoGoals: () => Promise<Goal[]>;
 
   // ── Measurement actions ──────────────────────────────────────────
   loadMeasurements: () => Promise<void>;
@@ -121,6 +123,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         measurements: measurements.sort((a, b) => a.date - b.date),
         customExercises: [...customExercises].sort((a, b) => b.createdAt - a.createdAt),
       });
+      await get().syncAutoGoals();
       console.log('[Store] Hydration complete');
     } catch (e) {
       console.error('[Store] Failed to hydrate app store or timed out:', e);
@@ -161,6 +164,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         ? s.sessions.map((ss) => (ss.id === session.id ? session : ss))
         : [...s.sessions, session].sort((a, b) => a.date - b.date),
     }));
+    await get().syncAutoGoals();
   },
   deleteSession: async (id) => {
     await db.deleteSession(id);
@@ -196,6 +200,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     await db.deleteGoal(id);
     set((s) => ({ goals: s.goals.filter((g) => g.id !== id) }));
   },
+  syncAutoGoals: async () => {
+    const { goals, sessions, measurements } = get();
+    if (goals.length === 0) return [];
+    const { updatedGoals, changedGoals, newlyCompleted } = reconcileAutoGoals(
+      goals,
+      sessions,
+      measurements,
+    );
+    if (changedGoals.length > 0) {
+      await Promise.all(changedGoals.map((g) => db.saveGoal(g)));
+      set({ goals: updatedGoals });
+    }
+    return newlyCompleted;
+  },
 
   // ── Measurements ─────────────────────────────────────────────────
   loadMeasurements: async () => {
@@ -209,6 +227,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         ? s.measurements.map((mm) => (mm.id === m.id ? m : mm))
         : [...s.measurements, m].sort((a, b) => a.date - b.date),
     }));
+    await get().syncAutoGoals();
   },
   deleteMeasurement: async (id) => {
     await db.deleteMeasurement(id);

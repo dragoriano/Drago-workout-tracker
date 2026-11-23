@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Dumbbell, Flame, Trophy, ArrowRight, Clock, BarChart3, Star, Ruler, Zap } from 'lucide-react';
+import { Dumbbell, Flame, Trophy, ArrowRight, Clock, BarChart3, Star, Ruler, Zap, Target } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { WORKOUT_QUOTES } from '../../data/quotes';
 import { MeasurementModal } from '../../components/ui/MeasurementModal';
 import { computeStreaks, flattenPRs } from '../../utils/analytics';
+import { computeMeasurementTrend } from '../../utils/bodyTrends';
+import { computeGoalProgressPercent } from '../../utils/goalsSync';
 import { computeMuscleRecovery, evaluateDayReadiness } from '../../utils/muscleRecovery';
 import { estimateWorkoutDurationMinutes } from '../../utils/workoutCoach';
 import { ProgressRing } from '../../components/ui/ProgressRing';
@@ -22,6 +24,7 @@ export function HomePage() {
   const sessions = useAppStore((s) => s.sessions);
   const settings = useAppStore((s) => s.settings);
   const measurements = useAppStore((s) => s.measurements);
+  const goals = useAppStore((s) => s.goals);
   const customExercises = useAppStore((s) => s.customExercises);
   const isHydrated = useAppStore((s) => s.isHydrated);
   const hydrate = useAppStore((s) => s.hydrate);
@@ -92,10 +95,16 @@ export function HomePage() {
     }
   }, [isHydrated, nextProgram, settings, suggestedDayId, programs]);
 
-  const latestWeight = (() => {
-    const weightLog = measurements.filter(m => m.type === 'weight').sort((a, b) => b.date - a.date);
-    return weightLog.length > 0 ? weightLog[0].value : null;
-  })();
+  const weightTrend = React.useMemo(
+    () => computeMeasurementTrend(measurements, 'weight'),
+    [measurements],
+  );
+  const latestWeight = weightTrend.latest?.value ?? null;
+  const activeGoals = React.useMemo(
+    () => goals.filter((g) => !g.completed).sort((a, b) => b.createdAt - a.createdAt),
+    [goals],
+  );
+  const topGoal = activeGoals[0] ?? null;
 
   const { current: currentStreak, longest: bestStreak } = computeStreaks(sessions);
   const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -266,19 +275,31 @@ export function HomePage() {
         
         {/* Body Progress Card */}
         <Card className="border-primary-500/20 bg-primary-500/5 p-4 border-2 mt-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3 min-w-0">
               <PremiumIcon icon={Ruler} color="primary" variant="gradient" size="md" animate="float" />
-              <div>
+              <div className="min-w-0">
                 <h3 className="font-bold text-content text-sm">Body Progress</h3>
-                <p className="text-xs text-muted">
-                  {latestWeight ? `Last weight: ${latestWeight}${settings?.weightUnit || 'kg'}` : 'Start tracking today'}
+                <p className="text-xs text-muted truncate">
+                  {latestWeight
+                    ? `${latestWeight}${settings?.weightUnit || 'kg'}${
+                        weightTrend.movingAvg7d !== null
+                          ? ` · 7d avg ${weightTrend.movingAvg7d}${settings?.weightUnit || 'kg'}`
+                          : ''
+                      }`
+                    : 'Start tracking today'}
                 </p>
+                {weightTrend.weeklyRate !== null && (
+                  <p className="text-[10px] font-bold text-blue-400 mt-0.5 tabular-nums">
+                    Trend: {weightTrend.weeklyRate > 0 ? '+' : ''}
+                    {weightTrend.weeklyRate} {settings?.weightUnit || 'kg'}/wk
+                  </p>
+                )}
               </div>
             </div>
             <Button 
               size="sm" 
-              className="rounded-xl px-4 py-2 font-bold shadow-md shadow-primary-500/20"
+              className="rounded-xl px-4 py-2 font-bold shadow-md shadow-primary-500/20 shrink-0"
               onClick={() => setIsMeasurementModalOpen(true)}
             >
               LOG PROGRESS
@@ -442,6 +463,35 @@ export function HomePage() {
               <span className="mt-1 text-[9px] font-bold uppercase tracking-wider text-muted">New PRs</span>
             </Card>
           </div>
+
+          {topGoal && (
+            <button
+              type="button"
+              onClick={() => navigate('/goals')}
+              className="mt-4 w-full rounded-2xl border border-content/5 bg-card/60 p-4 text-left hover:border-primary-500/30 transition-colors"
+            >
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Target size={15} className="text-primary-400 shrink-0" />
+                  <span className="text-xs font-bold text-content truncate">{topGoal.title}</span>
+                  {topGoal.trackingType && topGoal.trackingType !== 'manual' && (
+                    <span className="rounded bg-sky-500/15 px-1.5 py-0.5 text-[9px] font-black uppercase text-sky-400 shrink-0">
+                      Auto
+                    </span>
+                  )}
+                </div>
+                <span className="text-[11px] font-bold text-muted shrink-0 tabular-nums">
+                  {topGoal.currentValue}/{topGoal.targetValue} {topGoal.unit} ({computeGoalProgressPercent(topGoal)}%)
+                </span>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-content/10 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-primary-500 transition-all duration-500"
+                  style={{ width: `${computeGoalProgressPercent(topGoal)}%` }}
+                />
+              </div>
+            </button>
+          )}
         </div>
       </PullToRefresh>
 

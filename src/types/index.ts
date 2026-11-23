@@ -121,6 +121,17 @@ export type AppSettings = {
  hasSeenOnboarding?: boolean;
 };
 
+export type GoalTrackingType =
+ | 'manual'
+ | 'exercise_e1rm'
+ | 'exercise_weight'
+ | 'monthly_workouts'
+ | 'weekly_volume'
+ | 'streak_days'
+ | 'body_weight';
+
+export type GoalDirection = 'increase' | 'decrease';
+
 export type Goal = {
  id: string;
  title: string;
@@ -130,6 +141,10 @@ export type Goal = {
  deadline: number | null; // timestamp
  completed: boolean;
  createdAt: number;
+ trackingType?: GoalTrackingType;
+ linkedExerciseName?: string;
+ startValue?: number;
+ direction?: GoalDirection;
 };
 
 export type Measurement = {

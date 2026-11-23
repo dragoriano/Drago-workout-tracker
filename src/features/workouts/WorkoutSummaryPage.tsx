@@ -2,10 +2,12 @@ import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { format } from 'date-fns';
-import { ChevronLeft, Share2, Image as ImageIcon, Camera, Trophy, Clock, Dumbbell, Copy, Download, BookmarkPlus, Check } from 'lucide-react';
+import { ChevronLeft, Share2, Image as ImageIcon, Camera, Trophy, Clock, Dumbbell, Copy, Download, BookmarkPlus, Check, GitCompareArrows } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { buildProgramFromFreestyle, FREESTYLE_PROGRAM_ID } from '../../utils/customExercises';
+import { compareSessions, findPreviousComparableSession } from '../../utils/sessionComparison';
 import { isWarmupSet } from '../../utils/strength';
+import { SessionCompareModal } from '../analytics/SessionCompareModal';
 
 export function WorkoutSummaryPage() {
   const { sessionId } = useParams();
@@ -13,6 +15,7 @@ export function WorkoutSummaryPage() {
   const [bgImage, setBgImage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [savedAsProgram, setSavedAsProgram] = useState(false);
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -146,6 +149,9 @@ export function WorkoutSummaryPage() {
   const isFreestyle = !program || session.programId === FREESTYLE_PROGRAM_ID;
   const workoutTitle = day?.name || session.workoutName || 'Quick Workout';
   const programLabel = program?.name || 'Freestyle Session';
+  const unit = settings?.weightUnit || 'kg';
+  const previousSession = findPreviousComparableSession(session, sessions);
+  const comparison = compareSessions(session, previousSession);
 
   const handleSaveAsProgram = async () => {
     if (savedAsProgram || !session.exercisesSnapshot?.length) return;
@@ -219,7 +225,17 @@ export function WorkoutSummaryPage() {
               <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-2.5 flex flex-col items-center border border-white/5">
                 <Dumbbell size={14}className="text-primary-400 mb-1" />
                 <span className="text-sm font-bold text-white">{(session.totalVolume / 1000).toFixed(1)}k</span>
-                <span className="text-[8px] text-white/40 uppercase tracking-widest font-bold">Vol ({settings?.weightUnit || 'kg'})</span>
+                <span className="text-[8px] text-white/40 uppercase tracking-widest font-bold">Vol ({unit})</span>
+                {comparison && comparison.volumeDeltaPct !== null && (
+                  <span
+                    className={`mt-0.5 text-[8px] font-bold tabular-nums ${
+                      comparison.volumeDeltaPct >= 0 ? 'text-emerald-400' : 'text-red-400'
+                    }`}
+                  >
+                    {comparison.volumeDeltaPct > 0 ? '+' : ''}
+                    {comparison.volumeDeltaPct}% vs last
+                  </span>
+                )}
               </div>
               <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-2.5 flex flex-col items-center border border-white/5">
                 <Trophy size={14}className="text-yellow-400 mb-1" />
@@ -298,6 +314,32 @@ export function WorkoutSummaryPage() {
         
         {/* Share Section */}
         <div className="w-full max-w-sm flex flex-col gap-4 mt-2">
+          {comparison && (
+            <div className="rounded-2xl bg-card border border-content/10 p-4 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted">
+                  vs {format(comparison.previousDate, 'MMM d')}
+                </p>
+                <p className="text-sm font-bold text-content mt-0.5 tabular-nums">
+                  <span className={comparison.volumeDelta >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                    {comparison.volumeDelta > 0 ? '+' : ''}
+                    {comparison.volumeDelta.toLocaleString()} {unit}
+                  </span>
+                  <span className="text-xs text-muted font-medium ml-1.5">
+                    · {comparison.improvedCount} improved
+                  </span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCompareOpen(true)}
+                className="shrink-0 flex items-center gap-1.5 rounded-xl bg-sky-500/15 border border-sky-500/30 px-3 py-2 text-xs font-bold text-sky-400 hover:bg-sky-500/25 active:scale-95 transition-all"
+              >
+                <GitCompareArrows size={14} /> Full Diff
+              </button>
+            </div>
+          )}
+
           {isFreestyle && session.exercisesSnapshot?.length > 0 && (
             <button
               type="button"
@@ -387,6 +429,15 @@ export function WorkoutSummaryPage() {
         </div>
 
       </div>
+
+      <SessionCompareModal
+        isOpen={isCompareOpen}
+        session={session}
+        initialBaseline={previousSession}
+        allSessions={sessions}
+        unit={unit}
+        onClose={() => setIsCompareOpen(false)}
+      />
     </div>
   );
 }

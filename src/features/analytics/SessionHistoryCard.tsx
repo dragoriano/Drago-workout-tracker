@@ -1,11 +1,12 @@
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import { Clock, Dumbbell, Trophy } from 'lucide-react';
+import { Clock, Dumbbell, GitCompareArrows, Trophy } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { EffortScale, WorkoutSession } from '../../types';
 import { cn } from '../../utils/cn';
 import { formatEffortLabel, getSetType, isWarmupSet } from '../../utils/strength';
 import { FREESTYLE_PROGRAM_ID } from '../../utils/customExercises';
+import { compareSessions } from '../../utils/sessionComparison';
 
 interface SessionHistoryCardProps {
   key?: string | number;
@@ -13,6 +14,8 @@ interface SessionHistoryCardProps {
   index: number;
   unit: string;
   effortScale?: EffortScale;
+  previousSession?: WorkoutSession | null;
+  onCompare?: (session: WorkoutSession, baseline: WorkoutSession | null) => void;
 }
 
 export function SessionHistoryCard({
@@ -20,7 +23,10 @@ export function SessionHistoryCard({
   index,
   unit,
   effortScale = 'rpe',
+  previousSession = null,
+  onCompare,
 }: SessionHistoryCardProps) {
+  const comparison = previousSession ? compareSessions(session, previousSession) : null;
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -40,9 +46,22 @@ export function SessionHistoryCard({
             </div>
             <p className="text-sm text-muted">{format(session.date, 'h:mm a')}</p>
           </div>
-          <div className="flex items-center gap-1 rounded-lg bg-primary-500/10 px-3 py-1 text-primary-400">
-            <Clock size={14} />
-            <span className="text-sm font-medium">{Math.floor(session.duration / 60)}m</span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {onCompare && previousSession && (
+              <button
+                type="button"
+                onClick={() => onCompare(session, previousSession)}
+                className="flex items-center gap-1 rounded-lg bg-sky-500/10 border border-sky-500/25 px-2.5 py-1 text-xs font-bold text-sky-400 hover:bg-sky-500/20 transition-colors"
+                title="Compare with previous session"
+              >
+                <GitCompareArrows size={13} />
+                <span>Diff</span>
+              </button>
+            )}
+            <div className="flex items-center gap-1 rounded-lg bg-primary-500/10 px-3 py-1 text-primary-400">
+              <Clock size={14} />
+              <span className="text-sm font-medium">{Math.floor(session.duration / 60)}m</span>
+            </div>
           </div>
         </div>
 
@@ -56,6 +75,24 @@ export function SessionHistoryCard({
               {(session.totalVolume || 0).toLocaleString()}{' '}
               <span className="text-sm font-normal text-muted">{unit}</span>
             </p>
+            {comparison && (
+              <p
+                className={cn(
+                  'mt-0.5 text-[11px] font-bold tabular-nums',
+                  comparison.volumeDelta > 0
+                    ? 'text-emerald-400'
+                    : comparison.volumeDelta < 0
+                      ? 'text-red-400'
+                      : 'text-muted',
+                )}
+              >
+                {comparison.volumeDelta > 0 ? '+' : ''}
+                {comparison.volumeDelta.toLocaleString()} {unit}
+                {comparison.volumeDeltaPct !== null
+                  ? ` (${comparison.volumeDeltaPct > 0 ? '+' : ''}${comparison.volumeDeltaPct}%)`
+                  : ''}
+              </p>
+            )}
           </div>
           <div className="rounded-xl bg-page/20 p-3">
             <div className="flex items-center gap-2 text-muted">

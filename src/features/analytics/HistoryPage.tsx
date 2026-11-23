@@ -1,13 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Calendar } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { WorkoutHeatmap } from '../../components/ui/WorkoutHeatmap';
 import { useAppStore } from '../../store/useAppStore';
+import { WorkoutSession } from '../../types';
+import { findPreviousComparableSession } from '../../utils/sessionComparison';
+import { SessionCompareModal } from './SessionCompareModal';
 import { SessionHistoryCard } from './SessionHistoryCard';
 
 export function HistoryPage() {
   const sessions = useAppStore((s) => s.sessions);
   const settings = useAppStore((s) => s.settings);
+  const [compareState, setCompareState] = useState<{
+    isOpen: boolean;
+    session: WorkoutSession | null;
+    baseline: WorkoutSession | null;
+  }>({ isOpen: false, session: null, baseline: null });
 
   const sortedSessions = React.useMemo(() => {
     return [...sessions].sort((a, b) => b.date - a.date);
@@ -48,10 +56,23 @@ export function HistoryPage() {
               index={index}
               unit={unit}
               effortScale={settings?.effortScale || 'rpe'}
+              previousSession={findPreviousComparableSession(session, sessions)}
+              onCompare={(target, baseline) =>
+                setCompareState({ isOpen: true, session: target, baseline })
+              }
             />
           ))}
         </div>
       )}
+
+      <SessionCompareModal
+        isOpen={compareState.isOpen}
+        session={compareState.session}
+        initialBaseline={compareState.baseline}
+        allSessions={sessions}
+        unit={unit}
+        onClose={() => setCompareState({ isOpen: false, session: null, baseline: null })}
+      />
     </div>
   );
 }
