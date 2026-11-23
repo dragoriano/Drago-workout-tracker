@@ -1,0 +1,6741 @@
+{
+  "version": "2.0",
+  "total_exercises": 436,
+  "exercises": [
+    {
+      "id": "BA0001",
+      "name": "Barbell Flat Standard Bench Press",
+      "equipment": "barbell",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "standard"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "BA0002",
+      "name": "Barbell Flat Close-Grip Bench Press",
+      "equipment": "barbell",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "close-grip"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "BA0003",
+      "name": "Barbell Flat Wide-Grip Bench Press",
+      "equipment": "barbell",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "wide-grip"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "BA0004",
+      "name": "Barbell Flat Neutral-Grip Bench Press",
+      "equipment": "barbell",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "neutral-grip"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "BA0005",
+      "name": "Barbell Incline Standard Bench Press",
+      "equipment": "barbell",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "standard"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "BA0006",
+      "name": "Barbell Incline Close-Grip Bench Press",
+      "equipment": "barbell",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "close-grip"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "BA0007",
+      "name": "Barbell Incline Wide-Grip Bench Press",
+      "equipment": "barbell",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "wide-grip"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "BA0008",
+      "name": "Barbell Incline Neutral-Grip Bench Press",
+      "equipment": "barbell",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "neutral-grip"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "BA0009",
+      "name": "Barbell Decline Standard Bench Press",
+      "equipment": "barbell",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "standard"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "BA0010",
+      "name": "Barbell Decline Close-Grip Bench Press",
+      "equipment": "barbell",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "close-grip"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "BA0011",
+      "name": "Barbell Decline Wide-Grip Bench Press",
+      "equipment": "barbell",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "wide-grip"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "BA0012",
+      "name": "Barbell Decline Neutral-Grip Bench Press",
+      "equipment": "barbell",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "neutral-grip"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "BA0013",
+      "name": "Barbell Bent Over Row",
+      "equipment": "barbell",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "bent_over"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "BA0014",
+      "name": "Barbell Pendlay Row",
+      "equipment": "barbell",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "pendlay"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "BA0015",
+      "name": "Barbell Single Arm Row",
+      "equipment": "barbell",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "single_arm"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "BA0016",
+      "name": "Barbell Chest Supported Row",
+      "equipment": "barbell",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "chest_supported"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "BA0017",
+      "name": "Barbell Seal Row",
+      "equipment": "barbell",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "seal"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "BA0018",
+      "name": "Barbell Standard Curl",
+      "equipment": "barbell",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "standard"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BA0019",
+      "name": "Barbell Hammer Curl",
+      "equipment": "barbell",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "hammer"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BA0020",
+      "name": "Barbell Incline Curl",
+      "equipment": "barbell",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "incline"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BA0021",
+      "name": "Barbell Preacher Curl",
+      "equipment": "barbell",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "preacher"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BA0022",
+      "name": "Barbell Reverse Curl",
+      "equipment": "barbell",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "reverse"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BA0023",
+      "name": "Barbell Drag Curl",
+      "equipment": "barbell",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "drag"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BA0024",
+      "name": "Barbell Spider Curl",
+      "equipment": "barbell",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "spider"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BA0025",
+      "name": "Barbell Pushdown",
+      "equipment": "barbell",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "pushdown"
+      ],
+      "muscle_sub_region": "lateral_head"
+    },
+    {
+      "id": "BA0026",
+      "name": "Barbell Overhead Extension",
+      "equipment": "barbell",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "overhead_extension"
+      ],
+      "muscle_sub_region": "long_head"
+    },
+    {
+      "id": "BA0027",
+      "name": "Barbell Skullcrusher",
+      "equipment": "barbell",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "skullcrusher"
+      ],
+      "muscle_sub_region": "medial_head"
+    },
+    {
+      "id": "BA0028",
+      "name": "Barbell Kickback",
+      "equipment": "barbell",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "kickback"
+      ],
+      "muscle_sub_region": "medial_head"
+    },
+    {
+      "id": "BA0029",
+      "name": "Barbell JM Press",
+      "equipment": "barbell",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "jm_press"
+      ],
+      "muscle_sub_region": "medial_head"
+    },
+    {
+      "id": "BA0030",
+      "name": "Barbell Overhead Press",
+      "equipment": "barbell",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "overhead_press"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "BA0031",
+      "name": "Barbell Arnold Press",
+      "equipment": "barbell",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "arnold_press"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "BA0032",
+      "name": "Barbell Lateral Raise",
+      "equipment": "barbell",
+      "primary_muscle": "Side Delt",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "lateral_raise"
+      ],
+      "muscle_sub_region": "lateral"
+    },
+    {
+      "id": "BA0033",
+      "name": "Barbell Front Raise",
+      "equipment": "barbell",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "front_raise"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "BA0034",
+      "name": "Barbell Rear Delt Fly",
+      "equipment": "barbell",
+      "primary_muscle": "Rear Delt",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "rear_delt_fly"
+      ],
+      "muscle_sub_region": "rear"
+    },
+    {
+      "id": "BA0035",
+      "name": "Barbell Upright Row",
+      "equipment": "barbell",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps",
+        "Rear Delt",
+        "Biceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "upright_row"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "BA0036",
+      "name": "Barbell Squat",
+      "equipment": "barbell",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BA0037",
+      "name": "Barbell Front Squat",
+      "equipment": "barbell",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "front_squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BA0038",
+      "name": "Barbell Hack Squat",
+      "equipment": "barbell",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "hack_squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BA0039",
+      "name": "Barbell Lunge",
+      "equipment": "barbell",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "lunge"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BA0040",
+      "name": "Barbell Bulgarian Split Squat",
+      "equipment": "barbell",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "bulgarian_split_squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BA0041",
+      "name": "Barbell Step Up",
+      "equipment": "barbell",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "step_up"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BA0042",
+      "name": "Barbell Deadlift",
+      "equipment": "barbell",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "deadlift"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BA0043",
+      "name": "Barbell Romanian Deadlift",
+      "equipment": "barbell",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "romanian_deadlift"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BA0044",
+      "name": "Barbell Stiff Leg Deadlift",
+      "equipment": "barbell",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "stiff_leg_deadlift"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BA0045",
+      "name": "Barbell Hip Thrust",
+      "equipment": "barbell",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "hip_thrust"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BA0046",
+      "name": "Barbell Good Morning",
+      "equipment": "barbell",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "good_morning"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "DU0047",
+      "name": "Dumbbell Flat Standard Bench Press",
+      "equipment": "dumbbell",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "standard"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "DU0048",
+      "name": "Dumbbell Flat Close-Grip Bench Press",
+      "equipment": "dumbbell",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "close-grip"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "DU0049",
+      "name": "Dumbbell Flat Wide-Grip Bench Press",
+      "equipment": "dumbbell",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "wide-grip"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "DU0050",
+      "name": "Dumbbell Flat Neutral-Grip Bench Press",
+      "equipment": "dumbbell",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "neutral-grip"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "DU0051",
+      "name": "Dumbbell Incline Standard Bench Press",
+      "equipment": "dumbbell",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "standard"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "DU0052",
+      "name": "Dumbbell Incline Close-Grip Bench Press",
+      "equipment": "dumbbell",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "close-grip"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "DU0053",
+      "name": "Dumbbell Incline Wide-Grip Bench Press",
+      "equipment": "dumbbell",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "wide-grip"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "DU0054",
+      "name": "Dumbbell Incline Neutral-Grip Bench Press",
+      "equipment": "dumbbell",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "neutral-grip"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "DU0055",
+      "name": "Dumbbell Decline Standard Bench Press",
+      "equipment": "dumbbell",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "standard"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "DU0056",
+      "name": "Dumbbell Decline Close-Grip Bench Press",
+      "equipment": "dumbbell",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "close-grip"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "DU0057",
+      "name": "Dumbbell Decline Wide-Grip Bench Press",
+      "equipment": "dumbbell",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "wide-grip"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "DU0058",
+      "name": "Dumbbell Decline Neutral-Grip Bench Press",
+      "equipment": "dumbbell",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "neutral-grip"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "DU0059",
+      "name": "Dumbbell Bent Over Row",
+      "equipment": "dumbbell",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "bent_over"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "DU0060",
+      "name": "Dumbbell Pendlay Row",
+      "equipment": "dumbbell",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "pendlay"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "DU0061",
+      "name": "Dumbbell Single Arm Row",
+      "equipment": "dumbbell",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "single_arm"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "DU0062",
+      "name": "Dumbbell Chest Supported Row",
+      "equipment": "dumbbell",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "chest_supported"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "DU0063",
+      "name": "Dumbbell Seal Row",
+      "equipment": "dumbbell",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "seal"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "DU0064",
+      "name": "Dumbbell Standard Curl",
+      "equipment": "dumbbell",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "standard"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "DU0065",
+      "name": "Dumbbell Hammer Curl",
+      "equipment": "dumbbell",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "hammer"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "DU0066",
+      "name": "Dumbbell Incline Curl",
+      "equipment": "dumbbell",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "incline"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "DU0067",
+      "name": "Dumbbell Preacher Curl",
+      "equipment": "dumbbell",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "preacher"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "DU0068",
+      "name": "Dumbbell Reverse Curl",
+      "equipment": "dumbbell",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "reverse"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "DU0069",
+      "name": "Dumbbell Drag Curl",
+      "equipment": "dumbbell",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "drag"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "DU0070",
+      "name": "Dumbbell Spider Curl",
+      "equipment": "dumbbell",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "spider"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "DU0071",
+      "name": "Dumbbell Pushdown",
+      "equipment": "dumbbell",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "pushdown"
+      ],
+      "muscle_sub_region": "lateral_head"
+    },
+    {
+      "id": "DU0072",
+      "name": "Dumbbell Overhead Extension",
+      "equipment": "dumbbell",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "overhead_extension"
+      ],
+      "muscle_sub_region": "long_head"
+    },
+    {
+      "id": "DU0073",
+      "name": "Dumbbell Skullcrusher",
+      "equipment": "dumbbell",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "skullcrusher"
+      ],
+      "muscle_sub_region": "medial_head"
+    },
+    {
+      "id": "DU0074",
+      "name": "Dumbbell Kickback",
+      "equipment": "dumbbell",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "kickback"
+      ],
+      "muscle_sub_region": "medial_head"
+    },
+    {
+      "id": "DU0075",
+      "name": "Dumbbell JM Press",
+      "equipment": "dumbbell",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "jm_press"
+      ],
+      "muscle_sub_region": "medial_head"
+    },
+    {
+      "id": "DU0076",
+      "name": "Dumbbell Overhead Press",
+      "equipment": "dumbbell",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "overhead_press"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "DU0077",
+      "name": "Dumbbell Arnold Press",
+      "equipment": "dumbbell",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "arnold_press"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "DU0078",
+      "name": "Dumbbell Lateral Raise",
+      "equipment": "dumbbell",
+      "primary_muscle": "Side Delt",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "lateral_raise"
+      ],
+      "muscle_sub_region": "lateral"
+    },
+    {
+      "id": "DU0079",
+      "name": "Dumbbell Front Raise",
+      "equipment": "dumbbell",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "front_raise"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "DU0080",
+      "name": "Dumbbell Rear Delt Fly",
+      "equipment": "dumbbell",
+      "primary_muscle": "Rear Delt",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "rear_delt_fly"
+      ],
+      "muscle_sub_region": "rear"
+    },
+    {
+      "id": "DU0081",
+      "name": "Dumbbell Upright Row",
+      "equipment": "dumbbell",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps",
+        "Rear Delt",
+        "Biceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "upright_row"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "DU0082",
+      "name": "Dumbbell Squat",
+      "equipment": "dumbbell",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "DU0083",
+      "name": "Dumbbell Front Squat",
+      "equipment": "dumbbell",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "front_squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "DU0084",
+      "name": "Dumbbell Hack Squat",
+      "equipment": "dumbbell",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "hack_squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "DU0085",
+      "name": "Dumbbell Lunge",
+      "equipment": "dumbbell",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "lunge"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "DU0086",
+      "name": "Dumbbell Bulgarian Split Squat",
+      "equipment": "dumbbell",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "bulgarian_split_squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "DU0087",
+      "name": "Dumbbell Step Up",
+      "equipment": "dumbbell",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "step_up"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "DU0088",
+      "name": "Dumbbell Deadlift",
+      "equipment": "dumbbell",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "deadlift"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "DU0089",
+      "name": "Dumbbell Romanian Deadlift",
+      "equipment": "dumbbell",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "romanian_deadlift"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "DU0090",
+      "name": "Dumbbell Stiff Leg Deadlift",
+      "equipment": "dumbbell",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "stiff_leg_deadlift"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "DU0091",
+      "name": "Dumbbell Hip Thrust",
+      "equipment": "dumbbell",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "hip_thrust"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "DU0092",
+      "name": "Dumbbell Good Morning",
+      "equipment": "dumbbell",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "good_morning"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "CA0093",
+      "name": "Cable Flat Standard Bench Press",
+      "equipment": "cable",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "standard"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "CA0094",
+      "name": "Cable Flat Close-Grip Bench Press",
+      "equipment": "cable",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "close-grip"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "CA0095",
+      "name": "Cable Flat Wide-Grip Bench Press",
+      "equipment": "cable",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "wide-grip"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "CA0096",
+      "name": "Cable Flat Neutral-Grip Bench Press",
+      "equipment": "cable",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "neutral-grip"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "CA0097",
+      "name": "Cable Incline Standard Bench Press",
+      "equipment": "cable",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "standard"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "CA0098",
+      "name": "Cable Incline Close-Grip Bench Press",
+      "equipment": "cable",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "close-grip"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "CA0099",
+      "name": "Cable Incline Wide-Grip Bench Press",
+      "equipment": "cable",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "wide-grip"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "CA0100",
+      "name": "Cable Incline Neutral-Grip Bench Press",
+      "equipment": "cable",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "neutral-grip"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "CA0101",
+      "name": "Cable Decline Standard Bench Press",
+      "equipment": "cable",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "standard"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "CA0102",
+      "name": "Cable Decline Close-Grip Bench Press",
+      "equipment": "cable",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "close-grip"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "CA0103",
+      "name": "Cable Decline Wide-Grip Bench Press",
+      "equipment": "cable",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "wide-grip"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "CA0104",
+      "name": "Cable Decline Neutral-Grip Bench Press",
+      "equipment": "cable",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "neutral-grip"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "CA0105",
+      "name": "Cable Bent Over Row",
+      "equipment": "cable",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "bent_over"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "CA0106",
+      "name": "Cable Pendlay Row",
+      "equipment": "cable",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "pendlay"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "CA0107",
+      "name": "Cable Single Arm Row",
+      "equipment": "cable",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "single_arm"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "CA0108",
+      "name": "Cable Chest Supported Row",
+      "equipment": "cable",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "chest_supported"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "CA0109",
+      "name": "Cable Seal Row",
+      "equipment": "cable",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "seal"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "CA0110",
+      "name": "Cable Standard Curl",
+      "equipment": "cable",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "standard"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "CA0111",
+      "name": "Cable Hammer Curl",
+      "equipment": "cable",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "hammer"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "CA0112",
+      "name": "Cable Incline Curl",
+      "equipment": "cable",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "incline"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "CA0113",
+      "name": "Cable Preacher Curl",
+      "equipment": "cable",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "preacher"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "CA0114",
+      "name": "Cable Reverse Curl",
+      "equipment": "cable",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "reverse"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "CA0115",
+      "name": "Cable Drag Curl",
+      "equipment": "cable",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "drag"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "CA0116",
+      "name": "Cable Spider Curl",
+      "equipment": "cable",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "spider"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "CA0117",
+      "name": "Cable Pushdown",
+      "equipment": "cable",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "pushdown"
+      ],
+      "muscle_sub_region": "lateral_head"
+    },
+    {
+      "id": "CA0118",
+      "name": "Cable Overhead Extension",
+      "equipment": "cable",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "overhead_extension"
+      ],
+      "muscle_sub_region": "long_head"
+    },
+    {
+      "id": "CA0119",
+      "name": "Cable Skullcrusher",
+      "equipment": "cable",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "skullcrusher"
+      ],
+      "muscle_sub_region": "medial_head"
+    },
+    {
+      "id": "CA0120",
+      "name": "Cable Kickback",
+      "equipment": "cable",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "kickback"
+      ],
+      "muscle_sub_region": "medial_head"
+    },
+    {
+      "id": "CA0121",
+      "name": "Cable JM Press",
+      "equipment": "cable",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "jm_press"
+      ],
+      "muscle_sub_region": "medial_head"
+    },
+    {
+      "id": "CA0122",
+      "name": "Cable Overhead Press",
+      "equipment": "cable",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "overhead_press"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "CA0123",
+      "name": "Cable Arnold Press",
+      "equipment": "cable",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "arnold_press"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "CA0124",
+      "name": "Cable Lateral Raise",
+      "equipment": "cable",
+      "primary_muscle": "Side Delt",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "lateral_raise"
+      ],
+      "muscle_sub_region": "lateral"
+    },
+    {
+      "id": "CA0125",
+      "name": "Cable Front Raise",
+      "equipment": "cable",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "front_raise"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "CA0126",
+      "name": "Cable Rear Delt Fly",
+      "equipment": "cable",
+      "primary_muscle": "Rear Delt",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "rear_delt_fly"
+      ],
+      "muscle_sub_region": "rear"
+    },
+    {
+      "id": "CA0127",
+      "name": "Cable Upright Row",
+      "equipment": "cable",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps",
+        "Rear Delt",
+        "Biceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "upright_row"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "CA0128",
+      "name": "Cable Squat",
+      "equipment": "cable",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "CA0129",
+      "name": "Cable Front Squat",
+      "equipment": "cable",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "front_squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "CA0130",
+      "name": "Cable Hack Squat",
+      "equipment": "cable",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "hack_squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "CA0131",
+      "name": "Cable Lunge",
+      "equipment": "cable",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "lunge"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "CA0132",
+      "name": "Cable Bulgarian Split Squat",
+      "equipment": "cable",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "bulgarian_split_squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "CA0133",
+      "name": "Cable Step Up",
+      "equipment": "cable",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "step_up"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "CA0134",
+      "name": "Cable Deadlift",
+      "equipment": "cable",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "deadlift"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "CA0135",
+      "name": "Cable Romanian Deadlift",
+      "equipment": "cable",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "romanian_deadlift"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "CA0136",
+      "name": "Cable Stiff Leg Deadlift",
+      "equipment": "cable",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "stiff_leg_deadlift"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "CA0137",
+      "name": "Cable Hip Thrust",
+      "equipment": "cable",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "hip_thrust"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "CA0138",
+      "name": "Cable Good Morning",
+      "equipment": "cable",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "good_morning"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "MA0139",
+      "name": "Machine Flat Standard Bench Press",
+      "equipment": "machine",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "standard"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "MA0140",
+      "name": "Machine Flat Close-Grip Bench Press",
+      "equipment": "machine",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "close-grip"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "MA0141",
+      "name": "Machine Flat Wide-Grip Bench Press",
+      "equipment": "machine",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "wide-grip"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "MA0142",
+      "name": "Machine Flat Neutral-Grip Bench Press",
+      "equipment": "machine",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "neutral-grip"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "MA0143",
+      "name": "Machine Incline Standard Bench Press",
+      "equipment": "machine",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "standard"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "MA0144",
+      "name": "Machine Incline Close-Grip Bench Press",
+      "equipment": "machine",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "close-grip"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "MA0145",
+      "name": "Machine Incline Wide-Grip Bench Press",
+      "equipment": "machine",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "wide-grip"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "MA0146",
+      "name": "Machine Incline Neutral-Grip Bench Press",
+      "equipment": "machine",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "neutral-grip"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "MA0147",
+      "name": "Machine Decline Standard Bench Press",
+      "equipment": "machine",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "standard"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "MA0148",
+      "name": "Machine Decline Close-Grip Bench Press",
+      "equipment": "machine",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "close-grip"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "MA0149",
+      "name": "Machine Decline Wide-Grip Bench Press",
+      "equipment": "machine",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "wide-grip"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "MA0150",
+      "name": "Machine Decline Neutral-Grip Bench Press",
+      "equipment": "machine",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "neutral-grip"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "MA0151",
+      "name": "Machine Bent Over Row",
+      "equipment": "machine",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "bent_over"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "MA0152",
+      "name": "Machine Pendlay Row",
+      "equipment": "machine",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "pendlay"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "MA0153",
+      "name": "Machine Single Arm Row",
+      "equipment": "machine",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "single_arm"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "MA0154",
+      "name": "Machine Chest Supported Row",
+      "equipment": "machine",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "chest_supported"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "MA0155",
+      "name": "Machine Seal Row",
+      "equipment": "machine",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "seal"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "MA0156",
+      "name": "Machine Standard Curl",
+      "equipment": "machine",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "standard"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "MA0157",
+      "name": "Machine Hammer Curl",
+      "equipment": "machine",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "hammer"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "MA0158",
+      "name": "Machine Incline Curl",
+      "equipment": "machine",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "incline"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "MA0159",
+      "name": "Machine Preacher Curl",
+      "equipment": "machine",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "preacher"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "MA0160",
+      "name": "Machine Reverse Curl",
+      "equipment": "machine",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "reverse"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "MA0161",
+      "name": "Machine Drag Curl",
+      "equipment": "machine",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "drag"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "MA0162",
+      "name": "Machine Spider Curl",
+      "equipment": "machine",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "spider"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "MA0163",
+      "name": "Machine Pushdown",
+      "equipment": "machine",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "pushdown"
+      ],
+      "muscle_sub_region": "lateral_head"
+    },
+    {
+      "id": "MA0164",
+      "name": "Machine Overhead Extension",
+      "equipment": "machine",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "overhead_extension"
+      ],
+      "muscle_sub_region": "long_head"
+    },
+    {
+      "id": "MA0165",
+      "name": "Machine Skullcrusher",
+      "equipment": "machine",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "skullcrusher"
+      ],
+      "muscle_sub_region": "medial_head"
+    },
+    {
+      "id": "MA0166",
+      "name": "Machine Kickback",
+      "equipment": "machine",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "kickback"
+      ],
+      "muscle_sub_region": "medial_head"
+    },
+    {
+      "id": "MA0167",
+      "name": "Machine JM Press",
+      "equipment": "machine",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "jm_press"
+      ],
+      "muscle_sub_region": "medial_head"
+    },
+    {
+      "id": "MA0168",
+      "name": "Machine Overhead Press",
+      "equipment": "machine",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "overhead_press"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "MA0169",
+      "name": "Machine Arnold Press",
+      "equipment": "machine",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "arnold_press"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "MA0170",
+      "name": "Machine Lateral Raise",
+      "equipment": "machine",
+      "primary_muscle": "Side Delt",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "lateral_raise"
+      ],
+      "muscle_sub_region": "lateral"
+    },
+    {
+      "id": "MA0171",
+      "name": "Machine Front Raise",
+      "equipment": "machine",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "front_raise"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "MA0172",
+      "name": "Machine Rear Delt Fly",
+      "equipment": "machine",
+      "primary_muscle": "Rear Delt",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "rear_delt_fly"
+      ],
+      "muscle_sub_region": "rear"
+    },
+    {
+      "id": "MA0173",
+      "name": "Machine Upright Row",
+      "equipment": "machine",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps",
+        "Rear Delt",
+        "Biceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "upright_row"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "MA0174",
+      "name": "Machine Squat",
+      "equipment": "machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "MA0175",
+      "name": "Machine Front Squat",
+      "equipment": "machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "front_squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "MA0176",
+      "name": "Machine Hack Squat",
+      "equipment": "machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "hack_squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "MA0177",
+      "name": "Machine Lunge",
+      "equipment": "machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "lunge"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "MA0178",
+      "name": "Machine Bulgarian Split Squat",
+      "equipment": "machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "bulgarian_split_squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "MA0179",
+      "name": "Machine Step Up",
+      "equipment": "machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "step_up"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "MA0180",
+      "name": "Machine Deadlift",
+      "equipment": "machine",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "deadlift"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "MA0181",
+      "name": "Machine Romanian Deadlift",
+      "equipment": "machine",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "romanian_deadlift"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "MA0182",
+      "name": "Machine Stiff Leg Deadlift",
+      "equipment": "machine",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "stiff_leg_deadlift"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "MA0183",
+      "name": "Machine Hip Thrust",
+      "equipment": "machine",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "hip_thrust"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "MA0184",
+      "name": "Machine Good Morning",
+      "equipment": "machine",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "good_morning"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "SM0185",
+      "name": "Smith_Machine Flat Standard Bench Press",
+      "equipment": "smith_machine",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "standard"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "SM0186",
+      "name": "Smith_Machine Flat Close-Grip Bench Press",
+      "equipment": "smith_machine",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "close-grip"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "SM0187",
+      "name": "Smith_Machine Flat Wide-Grip Bench Press",
+      "equipment": "smith_machine",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "wide-grip"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "SM0188",
+      "name": "Smith_Machine Flat Neutral-Grip Bench Press",
+      "equipment": "smith_machine",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_flat",
+        "neutral-grip"
+      ],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "SM0189",
+      "name": "Smith_Machine Incline Standard Bench Press",
+      "equipment": "smith_machine",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "standard"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "SM0190",
+      "name": "Smith_Machine Incline Close-Grip Bench Press",
+      "equipment": "smith_machine",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "close-grip"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "SM0191",
+      "name": "Smith_Machine Incline Wide-Grip Bench Press",
+      "equipment": "smith_machine",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "wide-grip"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "SM0192",
+      "name": "Smith_Machine Incline Neutral-Grip Bench Press",
+      "equipment": "smith_machine",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_incline",
+        "neutral-grip"
+      ],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "SM0193",
+      "name": "Smith_Machine Decline Standard Bench Press",
+      "equipment": "smith_machine",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "standard"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "SM0194",
+      "name": "Smith_Machine Decline Close-Grip Bench Press",
+      "equipment": "smith_machine",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "close-grip"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "SM0195",
+      "name": "Smith_Machine Decline Wide-Grip Bench Press",
+      "equipment": "smith_machine",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "wide-grip"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "SM0196",
+      "name": "Smith_Machine Decline Neutral-Grip Bench Press",
+      "equipment": "smith_machine",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Shoulders",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "angle_decline",
+        "neutral-grip"
+      ],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "SM0197",
+      "name": "Smith_Machine Bent Over Row",
+      "equipment": "smith_machine",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "bent_over"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "SM0198",
+      "name": "Smith_Machine Pendlay Row",
+      "equipment": "smith_machine",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "pendlay"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "SM0199",
+      "name": "Smith_Machine Single Arm Row",
+      "equipment": "smith_machine",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "single_arm"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "SM0200",
+      "name": "Smith_Machine Chest Supported Row",
+      "equipment": "smith_machine",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "chest_supported"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "SM0201",
+      "name": "Smith_Machine Seal Row",
+      "equipment": "smith_machine",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "seal"
+      ],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "SM0202",
+      "name": "Smith_Machine Standard Curl",
+      "equipment": "smith_machine",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "standard"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "SM0203",
+      "name": "Smith_Machine Hammer Curl",
+      "equipment": "smith_machine",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "hammer"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "SM0204",
+      "name": "Smith_Machine Incline Curl",
+      "equipment": "smith_machine",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "incline"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "SM0205",
+      "name": "Smith_Machine Preacher Curl",
+      "equipment": "smith_machine",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "preacher"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "SM0206",
+      "name": "Smith_Machine Reverse Curl",
+      "equipment": "smith_machine",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "reverse"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "SM0207",
+      "name": "Smith_Machine Drag Curl",
+      "equipment": "smith_machine",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "drag"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "SM0208",
+      "name": "Smith_Machine Spider Curl",
+      "equipment": "smith_machine",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis",
+        "Forearms"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "spider"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "SM0209",
+      "name": "Smith_Machine Pushdown",
+      "equipment": "smith_machine",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "pushdown"
+      ],
+      "muscle_sub_region": "lateral_head"
+    },
+    {
+      "id": "SM0210",
+      "name": "Smith_Machine Overhead Extension",
+      "equipment": "smith_machine",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "overhead_extension"
+      ],
+      "muscle_sub_region": "long_head"
+    },
+    {
+      "id": "SM0211",
+      "name": "Smith_Machine Skullcrusher",
+      "equipment": "smith_machine",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "skullcrusher"
+      ],
+      "muscle_sub_region": "medial_head"
+    },
+    {
+      "id": "SM0212",
+      "name": "Smith_Machine Kickback",
+      "equipment": "smith_machine",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "kickback"
+      ],
+      "muscle_sub_region": "medial_head"
+    },
+    {
+      "id": "SM0213",
+      "name": "Smith_Machine JM Press",
+      "equipment": "smith_machine",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "jm_press"
+      ],
+      "muscle_sub_region": "medial_head"
+    },
+    {
+      "id": "SM0214",
+      "name": "Smith_Machine Overhead Press",
+      "equipment": "smith_machine",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "overhead_press"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "SM0215",
+      "name": "Smith_Machine Arnold Press",
+      "equipment": "smith_machine",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "arnold_press"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "SM0216",
+      "name": "Smith_Machine Lateral Raise",
+      "equipment": "smith_machine",
+      "primary_muscle": "Side Delt",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "lateral_raise"
+      ],
+      "muscle_sub_region": "lateral"
+    },
+    {
+      "id": "SM0217",
+      "name": "Smith_Machine Front Raise",
+      "equipment": "smith_machine",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "front_raise"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "SM0218",
+      "name": "Smith_Machine Rear Delt Fly",
+      "equipment": "smith_machine",
+      "primary_muscle": "Rear Delt",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "rear_delt_fly"
+      ],
+      "muscle_sub_region": "rear"
+    },
+    {
+      "id": "SM0219",
+      "name": "Smith_Machine Upright Row",
+      "equipment": "smith_machine",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [
+        "Triceps",
+        "Rear Delt",
+        "Biceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "upright_row"
+      ],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "SM0220",
+      "name": "Smith_Machine Squat",
+      "equipment": "smith_machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "SM0221",
+      "name": "Smith_Machine Front Squat",
+      "equipment": "smith_machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "front_squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "SM0222",
+      "name": "Smith_Machine Hack Squat",
+      "equipment": "smith_machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "hack_squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "SM0223",
+      "name": "Smith_Machine Lunge",
+      "equipment": "smith_machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "lunge"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "SM0224",
+      "name": "Smith_Machine Bulgarian Split Squat",
+      "equipment": "smith_machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "bulgarian_split_squat"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "SM0225",
+      "name": "Smith_Machine Step Up",
+      "equipment": "smith_machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "step_up"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "SM0226",
+      "name": "Smith_Machine Deadlift",
+      "equipment": "smith_machine",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "deadlift"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "SM0227",
+      "name": "Smith_Machine Romanian Deadlift",
+      "equipment": "smith_machine",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "romanian_deadlift"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "SM0228",
+      "name": "Smith_Machine Stiff Leg Deadlift",
+      "equipment": "smith_machine",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "stiff_leg_deadlift"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "SM0229",
+      "name": "Smith_Machine Hip Thrust",
+      "equipment": "smith_machine",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "hip_thrust"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "SM0230",
+      "name": "Smith_Machine Good Morning",
+      "equipment": "smith_machine",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae",
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "good_morning"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "FA0277",
+      "name": "Barbell Wrist Curl",
+      "equipment": "barbell",
+      "primary_muscle": "Forearm Flexors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "flexion"
+      ],
+      "muscle_sub_region": "flexors"
+    },
+    {
+      "id": "FA0278",
+      "name": "Barbell Reverse Wrist Curl",
+      "equipment": "barbell",
+      "primary_muscle": "Forearm Extensors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "extension"
+      ],
+      "muscle_sub_region": "extensors"
+    },
+    {
+      "id": "FA0279",
+      "name": "Barbell Behind Back Wrist Curl",
+      "equipment": "barbell",
+      "primary_muscle": "Forearm Flexors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "flexion"
+      ],
+      "muscle_sub_region": "flexors"
+    },
+    {
+      "id": "FA0280",
+      "name": "Barbell Reverse Grip Curl",
+      "equipment": "barbell",
+      "primary_muscle": "Forearm Extensors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "brachioradialis"
+      ],
+      "muscle_sub_region": "extensors"
+    },
+    {
+      "id": "FA0281",
+      "name": "Barbell Hammer Curl Hold",
+      "equipment": "barbell",
+      "primary_muscle": "Brachioradialis",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "isometric"
+      ],
+      "muscle_sub_region": "brachioradialis"
+    },
+    {
+      "id": "FA0282",
+      "name": "Barbell Farmer Carry",
+      "equipment": "barbell",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "carry"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0283",
+      "name": "Barbell Dead Hang",
+      "equipment": "barbell",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "isometric"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0284",
+      "name": "Barbell Towel Grip Hang",
+      "equipment": "barbell",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "advanced"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0285",
+      "name": "Barbell Plate Pinch Hold",
+      "equipment": "barbell",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "pinch"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0286",
+      "name": "Barbell Wrist Roller",
+      "equipment": "barbell",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "rotation"
+      ],
+      "muscle_sub_region": "mixed"
+    },
+    {
+      "id": "FA0287",
+      "name": "Dumbbell Wrist Curl",
+      "equipment": "dumbbell",
+      "primary_muscle": "Forearm Flexors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "flexion"
+      ],
+      "muscle_sub_region": "flexors"
+    },
+    {
+      "id": "FA0288",
+      "name": "Dumbbell Reverse Wrist Curl",
+      "equipment": "dumbbell",
+      "primary_muscle": "Forearm Extensors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "extension"
+      ],
+      "muscle_sub_region": "extensors"
+    },
+    {
+      "id": "FA0289",
+      "name": "Dumbbell Behind Back Wrist Curl",
+      "equipment": "dumbbell",
+      "primary_muscle": "Forearm Flexors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "flexion"
+      ],
+      "muscle_sub_region": "flexors"
+    },
+    {
+      "id": "FA0290",
+      "name": "Dumbbell Reverse Grip Curl",
+      "equipment": "dumbbell",
+      "primary_muscle": "Forearm Extensors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "brachioradialis"
+      ],
+      "muscle_sub_region": "extensors"
+    },
+    {
+      "id": "FA0291",
+      "name": "Dumbbell Hammer Curl Hold",
+      "equipment": "dumbbell",
+      "primary_muscle": "Brachioradialis",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "isometric"
+      ],
+      "muscle_sub_region": "brachioradialis"
+    },
+    {
+      "id": "FA0292",
+      "name": "Dumbbell Farmer Carry",
+      "equipment": "dumbbell",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "carry"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0293",
+      "name": "Dumbbell Dead Hang",
+      "equipment": "dumbbell",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "isometric"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0294",
+      "name": "Dumbbell Towel Grip Hang",
+      "equipment": "dumbbell",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "advanced"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0295",
+      "name": "Dumbbell Plate Pinch Hold",
+      "equipment": "dumbbell",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "pinch"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0296",
+      "name": "Dumbbell Wrist Roller",
+      "equipment": "dumbbell",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "rotation"
+      ],
+      "muscle_sub_region": "mixed"
+    },
+    {
+      "id": "FA0297",
+      "name": "Cable Wrist Curl",
+      "equipment": "cable",
+      "primary_muscle": "Forearm Flexors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "flexion"
+      ],
+      "muscle_sub_region": "flexors"
+    },
+    {
+      "id": "FA0298",
+      "name": "Cable Reverse Wrist Curl",
+      "equipment": "cable",
+      "primary_muscle": "Forearm Extensors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "extension"
+      ],
+      "muscle_sub_region": "extensors"
+    },
+    {
+      "id": "FA0299",
+      "name": "Cable Behind Back Wrist Curl",
+      "equipment": "cable",
+      "primary_muscle": "Forearm Flexors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "flexion"
+      ],
+      "muscle_sub_region": "flexors"
+    },
+    {
+      "id": "FA0300",
+      "name": "Cable Reverse Grip Curl",
+      "equipment": "cable",
+      "primary_muscle": "Forearm Extensors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "brachioradialis"
+      ],
+      "muscle_sub_region": "extensors"
+    },
+    {
+      "id": "FA0301",
+      "name": "Cable Hammer Curl Hold",
+      "equipment": "cable",
+      "primary_muscle": "Brachioradialis",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "isometric"
+      ],
+      "muscle_sub_region": "brachioradialis"
+    },
+    {
+      "id": "FA0302",
+      "name": "Cable Farmer Carry",
+      "equipment": "cable",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "carry"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0303",
+      "name": "Cable Dead Hang",
+      "equipment": "cable",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "isometric"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0304",
+      "name": "Cable Towel Grip Hang",
+      "equipment": "cable",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "advanced"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0305",
+      "name": "Cable Plate Pinch Hold",
+      "equipment": "cable",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "pinch"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0306",
+      "name": "Cable Wrist Roller",
+      "equipment": "cable",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "rotation"
+      ],
+      "muscle_sub_region": "mixed"
+    },
+    {
+      "id": "FA0307",
+      "name": "Machine Wrist Curl",
+      "equipment": "machine",
+      "primary_muscle": "Forearm Flexors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "flexion"
+      ],
+      "muscle_sub_region": "flexors"
+    },
+    {
+      "id": "FA0308",
+      "name": "Machine Reverse Wrist Curl",
+      "equipment": "machine",
+      "primary_muscle": "Forearm Extensors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "extension"
+      ],
+      "muscle_sub_region": "extensors"
+    },
+    {
+      "id": "FA0309",
+      "name": "Machine Behind Back Wrist Curl",
+      "equipment": "machine",
+      "primary_muscle": "Forearm Flexors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "flexion"
+      ],
+      "muscle_sub_region": "flexors"
+    },
+    {
+      "id": "FA0310",
+      "name": "Machine Reverse Grip Curl",
+      "equipment": "machine",
+      "primary_muscle": "Forearm Extensors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "brachioradialis"
+      ],
+      "muscle_sub_region": "extensors"
+    },
+    {
+      "id": "FA0311",
+      "name": "Machine Hammer Curl Hold",
+      "equipment": "machine",
+      "primary_muscle": "Brachioradialis",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "isometric"
+      ],
+      "muscle_sub_region": "brachioradialis"
+    },
+    {
+      "id": "FA0312",
+      "name": "Machine Farmer Carry",
+      "equipment": "machine",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "carry"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0313",
+      "name": "Machine Dead Hang",
+      "equipment": "machine",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "isometric"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0314",
+      "name": "Machine Towel Grip Hang",
+      "equipment": "machine",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "advanced"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0315",
+      "name": "Machine Plate Pinch Hold",
+      "equipment": "machine",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "pinch"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0316",
+      "name": "Machine Wrist Roller",
+      "equipment": "machine",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "rotation"
+      ],
+      "muscle_sub_region": "mixed"
+    },
+    {
+      "id": "FA0317",
+      "name": "Smith_Machine Wrist Curl",
+      "equipment": "smith_machine",
+      "primary_muscle": "Forearm Flexors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "flexion"
+      ],
+      "muscle_sub_region": "flexors"
+    },
+    {
+      "id": "FA0318",
+      "name": "Smith_Machine Reverse Wrist Curl",
+      "equipment": "smith_machine",
+      "primary_muscle": "Forearm Extensors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "extension"
+      ],
+      "muscle_sub_region": "extensors"
+    },
+    {
+      "id": "FA0319",
+      "name": "Smith_Machine Behind Back Wrist Curl",
+      "equipment": "smith_machine",
+      "primary_muscle": "Forearm Flexors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "flexion"
+      ],
+      "muscle_sub_region": "flexors"
+    },
+    {
+      "id": "FA0320",
+      "name": "Smith_Machine Reverse Grip Curl",
+      "equipment": "smith_machine",
+      "primary_muscle": "Forearm Extensors",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "brachioradialis"
+      ],
+      "muscle_sub_region": "extensors"
+    },
+    {
+      "id": "FA0321",
+      "name": "Smith_Machine Hammer Curl Hold",
+      "equipment": "smith_machine",
+      "primary_muscle": "Brachioradialis",
+      "secondary_muscles": [
+        "Biceps",
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "isometric"
+      ],
+      "muscle_sub_region": "brachioradialis"
+    },
+    {
+      "id": "FA0322",
+      "name": "Smith_Machine Farmer Carry",
+      "equipment": "smith_machine",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "carry"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0323",
+      "name": "Smith_Machine Dead Hang",
+      "equipment": "smith_machine",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "isometric"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0324",
+      "name": "Smith_Machine Towel Grip Hang",
+      "equipment": "smith_machine",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "advanced"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0325",
+      "name": "Smith_Machine Plate Pinch Hold",
+      "equipment": "smith_machine",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "pinch"
+      ],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "FA0326",
+      "name": "Smith_Machine Wrist Roller",
+      "equipment": "smith_machine",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "grip",
+        "rotation"
+      ],
+      "muscle_sub_region": "mixed"
+    },
+    {
+      "id": "BW0001",
+      "name": "Push-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "BW0002",
+      "name": "Incline Push-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "upper"
+    },
+    {
+      "id": "BW0003",
+      "name": "Decline Push-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "BW0004",
+      "name": "Archer Push-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "BW0005",
+      "name": "Weighted Push-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "mid"
+    },
+    {
+      "id": "BW0006",
+      "name": "Pull-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Lats",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "lats"
+    },
+    {
+      "id": "BW0007",
+      "name": "Chin-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Lats",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "lats"
+    },
+    {
+      "id": "BW0008",
+      "name": "Wide Grip Pull-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Lats",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "lats"
+    },
+    {
+      "id": "BW0009",
+      "name": "Neutral Grip Pull-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Lats",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "lats"
+    },
+    {
+      "id": "BW0010",
+      "name": "Weighted Pull-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Lats",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "lats"
+    },
+    {
+      "id": "BW0011",
+      "name": "Inverted Row",
+      "equipment": "bodyweight",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "BW0012",
+      "name": "Ring Row",
+      "equipment": "bodyweight",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "upper_back"
+    },
+    {
+      "id": "BW0013",
+      "name": "Dip",
+      "equipment": "bodyweight",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "BW0014",
+      "name": "Weighted Dip",
+      "equipment": "bodyweight",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "lower"
+    },
+    {
+      "id": "BW0015",
+      "name": "Bench Dip",
+      "equipment": "bodyweight",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "medial_head"
+    },
+    {
+      "id": "BW0016",
+      "name": "Pike Push-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "BW0017",
+      "name": "Handstand Push-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "BW0018",
+      "name": "Wall Handstand Push-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Front Delt",
+      "secondary_muscles": [],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "front"
+    },
+    {
+      "id": "BW0019",
+      "name": "Lateral Raise (Bands/Bodyweight Lean)",
+      "equipment": "bodyweight",
+      "primary_muscle": "Side Delt",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "lateral"
+    },
+    {
+      "id": "BW0020",
+      "name": "Rear Delt Raise (Bodyweight)",
+      "equipment": "bodyweight",
+      "primary_muscle": "Rear Delt",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "rear"
+    },
+    {
+      "id": "BW0021",
+      "name": "Bodyweight Squat",
+      "equipment": "bodyweight",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BW0022",
+      "name": "Jump Squat",
+      "equipment": "bodyweight",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BW0023",
+      "name": "Pistol Squat",
+      "equipment": "bodyweight",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BW0024",
+      "name": "Bulgarian Split Squat (BW)",
+      "equipment": "bodyweight",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "lunge",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BW0025",
+      "name": "Walking Lunge (BW)",
+      "equipment": "bodyweight",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [],
+      "movement_pattern": "lunge",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BW0026",
+      "name": "Nordic Curl",
+      "equipment": "bodyweight",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [
+        "Brachioradialis",
+        "Brachialis"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BW0027",
+      "name": "Glute Bridge (BW)",
+      "equipment": "bodyweight",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": [],
+      "movement_pattern": "hinge",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BW0028",
+      "name": "Hip Thrust (BW)",
+      "equipment": "bodyweight",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": [],
+      "movement_pattern": "hinge",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BW0029",
+      "name": "Calf Raise (BW)",
+      "equipment": "bodyweight",
+      "primary_muscle": "Calves",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BW0030",
+      "name": "Single Leg Calf Raise",
+      "equipment": "bodyweight",
+      "primary_muscle": "Calves",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BW0031",
+      "name": "Plank",
+      "equipment": "bodyweight",
+      "primary_muscle": "Transverse/Anti-Rotation",
+      "secondary_muscles": [
+        "Erector Spinae"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BW0032",
+      "name": "Side Plank",
+      "equipment": "bodyweight",
+      "primary_muscle": "Obliques",
+      "secondary_muscles": [
+        "Erector Spinae"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BW0033",
+      "name": "Hanging Knee Raise",
+      "equipment": "bodyweight",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BW0034",
+      "name": "Hanging Leg Raise",
+      "equipment": "bodyweight",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BW0035",
+      "name": "Toes To Bar",
+      "equipment": "bodyweight",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BW0036",
+      "name": "L-Sit",
+      "equipment": "bodyweight",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BW0037",
+      "name": "Dragon Flag",
+      "equipment": "bodyweight",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "BW0038",
+      "name": "Dead Hang",
+      "equipment": "bodyweight",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [],
+      "muscle_sub_region": "grip"
+    },
+    {
+      "id": "AB0319",
+      "name": "Barbell Rollout",
+      "equipment": "barbell",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0320",
+      "name": "Barbell Russian Twist",
+      "equipment": "barbell",
+      "primary_muscle": "Obliques",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0321",
+      "name": "Barbell Sit-Up",
+      "equipment": "barbell",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0322",
+      "name": "Barbell Landmine Twist",
+      "equipment": "barbell",
+      "primary_muscle": "Obliques",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0323",
+      "name": "Dumbbell Russian Twist",
+      "equipment": "dumbbell",
+      "primary_muscle": "Obliques",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0324",
+      "name": "Dumbbell Sit-Up",
+      "equipment": "dumbbell",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0325",
+      "name": "Dumbbell Side Bend",
+      "equipment": "dumbbell",
+      "primary_muscle": "Obliques",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0326",
+      "name": "Dumbbell V-Up",
+      "equipment": "dumbbell",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0327",
+      "name": "Cable Crunch",
+      "equipment": "cable",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0328",
+      "name": "Cable Woodchopper",
+      "equipment": "cable",
+      "primary_muscle": "Obliques",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0329",
+      "name": "Cable Pallof Press",
+      "equipment": "cable",
+      "primary_muscle": "Transverse/Anti-Rotation",
+      "secondary_muscles": [
+        "Triceps",
+        "Erector Spinae",
+        "Front Delt"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0330",
+      "name": "Cable Reverse Crunch",
+      "equipment": "cable",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0331",
+      "name": "Ab Crunch Machine",
+      "equipment": "machine",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0332",
+      "name": "Seated Ab Crunch Machine",
+      "equipment": "machine",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0333",
+      "name": "Torso Rotation Machine",
+      "equipment": "machine",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0334",
+      "name": "Captain Chair Leg Raise",
+      "equipment": "machine",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0335",
+      "name": "Smith Machine Sit-Up",
+      "equipment": "smith_machine",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0336",
+      "name": "Smith Machine Leg Raise Hold",
+      "equipment": "smith_machine",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0337",
+      "name": "Smith Machine Crunch",
+      "equipment": "smith_machine",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0338",
+      "name": "Smith Machine Hanging Knee Raise",
+      "equipment": "smith_machine",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0339",
+      "name": "Crunch",
+      "equipment": "bodyweight",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0340",
+      "name": "Sit-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0341",
+      "name": "Bicycle Crunch",
+      "equipment": "bodyweight",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "AB0342",
+      "name": "Mountain Climber",
+      "equipment": "bodyweight",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "abs"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "LEG_FIX_343",
+      "name": "Leg Press",
+      "equipment": "machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "leg"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "LEG_FIX_344",
+      "name": "Single Leg Press",
+      "equipment": "machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "leg"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "LEG_FIX_345",
+      "name": "Leg Extension",
+      "equipment": "machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "leg"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "LEG_FIX_346",
+      "name": "Seated Leg Curl",
+      "equipment": "machine",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "leg"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "LEG_FIX_347",
+      "name": "Lying Leg Curl",
+      "equipment": "machine",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "leg"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "LEG_FIX_348",
+      "name": "Standing Leg Curl",
+      "equipment": "machine",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "leg"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "LEG_FIX_349",
+      "name": "Seated Calf Raise Machine",
+      "equipment": "machine",
+      "primary_muscle": "Calves",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "leg"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "LEG_FIX_350",
+      "name": "Standing Calf Raise Machine",
+      "equipment": "machine",
+      "primary_muscle": "Calves",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "leg"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "LEG_FIX_351",
+      "name": "Donkey Calf Raise Machine",
+      "equipment": "machine",
+      "primary_muscle": "Calves",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "leg"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "LEG_FIX_352",
+      "name": "Dumbbell Calf Raise",
+      "equipment": "dumbbell",
+      "primary_muscle": "Calves",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "leg"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "LEG_FIX_353",
+      "name": "Single Leg Dumbbell Calf Raise",
+      "equipment": "dumbbell",
+      "primary_muscle": "Calves",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "leg"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "LEG_FIX_354",
+      "name": "Smith Machine Calf Raise",
+      "equipment": "smith_machine",
+      "primary_muscle": "Calves",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "leg"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "LEG_FIX_355",
+      "name": "Smith Machine Squat",
+      "equipment": "smith_machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "leg"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "LEG_FIX_356",
+      "name": "Cable Leg Curl",
+      "equipment": "cable",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "leg"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "LEG_FIX_357",
+      "name": "Cable Leg Extension",
+      "equipment": "cable",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "leg"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00358",
+      "name": "Barbell Glute Bridge",
+      "equipment": "barbell",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": [
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "beginner",
+      "tags": [
+        "glute_focus"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00359",
+      "name": "Barbell Shrug",
+      "equipment": "barbell",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Forearm Flexors"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "beginner",
+      "tags": [
+        "traps"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00360",
+      "name": "Rack Pull",
+      "equipment": "barbell",
+      "primary_muscle": "Erector Spinae",
+      "secondary_muscles": [
+        "Glutes",
+        "Hamstrings",
+        "Upper Back"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "partial_range"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00361",
+      "name": "Deficit Deadlift",
+      "equipment": "barbell",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": [
+        "Hamstrings",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "advanced",
+      "tags": [
+        "extended_rom"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00362",
+      "name": "Dumbbell Step-Up",
+      "equipment": "dumbbell",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Hamstrings"
+      ],
+      "movement_pattern": "lunge",
+      "difficulty": "beginner",
+      "tags": [
+        "unilateral"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00363",
+      "name": "Dumbbell Walking Lunge",
+      "equipment": "dumbbell",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Hamstrings"
+      ],
+      "movement_pattern": "lunge",
+      "difficulty": "beginner",
+      "tags": [
+        "unilateral"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00364",
+      "name": "Dumbbell Pullover",
+      "equipment": "dumbbell",
+      "primary_muscle": "Lats",
+      "secondary_muscles": [
+        "Mid Chest",
+        "Triceps"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "beginner",
+      "tags": [
+        "hybrid"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00365",
+      "name": "Dumbbell Shrug",
+      "equipment": "dumbbell",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Forearm Flexors"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "beginner",
+      "tags": [
+        "traps"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00366",
+      "name": "Incline Dumbbell Curl",
+      "equipment": "dumbbell",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachialis",
+        "Brachioradialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "long_head"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00367",
+      "name": "Single Arm Cable Row",
+      "equipment": "cable",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "beginner",
+      "tags": [
+        "unilateral"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00368",
+      "name": "Cable Face Pull",
+      "equipment": "cable",
+      "primary_muscle": "Rear Delt",
+      "secondary_muscles": [
+        "Upper Back"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "beginner",
+      "tags": [
+        "rear_delt"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00369",
+      "name": "Cable Glute Kickback",
+      "equipment": "cable",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": [
+        "Hamstrings"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "glute_focus"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00370",
+      "name": "Cable Hip Abduction",
+      "equipment": "cable",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": [
+        "Core"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "hip_abduction"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00371",
+      "name": "Cable Hip Adduction",
+      "equipment": "cable",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": [
+        "Core"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "hip_adduction"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00372",
+      "name": "Cable Crunch (High Pulley)",
+      "equipment": "cable",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [
+        "Obliques"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "beginner",
+      "tags": [
+        "flexion"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00373",
+      "name": "Hack Squat Machine",
+      "equipment": "machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "quad_focus"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00374",
+      "name": "Pendulum Squat",
+      "equipment": "machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "intermediate",
+      "tags": [
+        "quad_focus"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00375",
+      "name": "Belt Squat Machine",
+      "equipment": "machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "beginner",
+      "tags": [
+        "spine_sparing"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00376",
+      "name": "Assisted Pull-Up Machine",
+      "equipment": "machine",
+      "primary_muscle": "Lats",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "beginner",
+      "tags": [
+        "assisted"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00377",
+      "name": "Assisted Dip Machine",
+      "equipment": "machine",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "tags": [
+        "assisted"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00378",
+      "name": "Chest Supported Row Machine",
+      "equipment": "machine",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "beginner",
+      "tags": [
+        "supported"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00379",
+      "name": "Lat Pullover Machine",
+      "equipment": "machine",
+      "primary_muscle": "Lats",
+      "secondary_muscles": [
+        "Mid Chest"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "beginner",
+      "tags": [
+        "isolation"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00380",
+      "name": "Smith Machine Split Squat",
+      "equipment": "smith_machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "lunge",
+      "difficulty": "beginner",
+      "tags": [
+        "unilateral",
+        "guided"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00381",
+      "name": "Smith Machine Hip Thrust",
+      "equipment": "smith_machine",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": [
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "beginner",
+      "tags": [
+        "glute_focus",
+        "guided"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00382",
+      "name": "Smith Machine Lunge",
+      "equipment": "smith_machine",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "lunge",
+      "difficulty": "beginner",
+      "tags": [
+        "guided"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00383",
+      "name": "Smith Machine Shrug",
+      "equipment": "smith_machine",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Forearm Flexors"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "beginner",
+      "tags": [
+        "traps",
+        "guided"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00384",
+      "name": "Muscle-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Lats",
+      "secondary_muscles": [
+        "Biceps",
+        "Upper Back"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "advanced",
+      "tags": [
+        "power"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00385",
+      "name": "Archer Pull-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Lats",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "advanced",
+      "tags": [
+        "unilateral"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00386",
+      "name": "Typewriter Pull-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Lats",
+      "secondary_muscles": [
+        "Biceps",
+        "Upper Back"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "advanced",
+      "tags": [
+        "unilateral"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00387",
+      "name": "Ring Dip",
+      "equipment": "bodyweight",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "intermediate",
+      "tags": [
+        "instability"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V13_00388",
+      "name": "Ring Push-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "intermediate",
+      "tags": [
+        "instability"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00389",
+      "name": "Single Arm Cable Fly",
+      "equipment": "cable",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Front Delt",
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "intermediate",
+      "tags": [
+        "unilateral"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00390",
+      "name": "Cable Press (Standing)",
+      "equipment": "cable",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Front Delt",
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "intermediate",
+      "tags": [
+        "functional"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00391",
+      "name": "Behind-the-Back Cable Lateral Raise",
+      "equipment": "cable",
+      "primary_muscle": "Side Delt",
+      "secondary_muscles": [
+        "Front Delt"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00392",
+      "name": "Cable Y Raise",
+      "equipment": "cable",
+      "primary_muscle": "Rear Delt",
+      "secondary_muscles": [
+        "Upper Back"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00393",
+      "name": "Cable Rear Delt Row",
+      "equipment": "cable",
+      "primary_muscle": "Rear Delt",
+      "secondary_muscles": [
+        "Upper Back"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00394",
+      "name": "Single Arm Lat Pulldown",
+      "equipment": "cable",
+      "primary_muscle": "Lats",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [
+        "unilateral"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00395",
+      "name": "Kneeling Cable Lat Pulldown",
+      "equipment": "cable",
+      "primary_muscle": "Lats",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00396",
+      "name": "Cable Pullover",
+      "equipment": "cable",
+      "primary_muscle": "Lats",
+      "secondary_muscles": [
+        "Mid Chest"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00397",
+      "name": "Cable Pull Through",
+      "equipment": "cable",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": [
+        "Hamstrings",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00398",
+      "name": "Cable Frog Kick",
+      "equipment": "cable",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": [
+        "Hamstrings"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00399",
+      "name": "Bayesian Curl",
+      "equipment": "cable",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachialis",
+        "Brachioradialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00400",
+      "name": "High Cable Curl",
+      "equipment": "cable",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00401",
+      "name": "Cross Body Cable Triceps Extension",
+      "equipment": "cable",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [
+        "Long Head"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00402",
+      "name": "Cable Anti-Rotation Hold",
+      "equipment": "cable",
+      "primary_muscle": "Transverse/Anti-Rotation",
+      "secondary_muscles": [
+        "Erector Spinae"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00403",
+      "name": "Cable Lift (Low to High)",
+      "equipment": "cable",
+      "primary_muscle": "Obliques",
+      "secondary_muscles": [
+        "Abdominals"
+      ],
+      "movement_pattern": "rotation",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00404",
+      "name": "Hip Thrust Machine",
+      "equipment": "machine",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": [
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00405",
+      "name": "Glute Drive Machine",
+      "equipment": "machine",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": [
+        "Hamstrings"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00406",
+      "name": "Plate Loaded Chest Press",
+      "equipment": "machine",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00407",
+      "name": "Iso-Lateral Chest Press Machine",
+      "equipment": "machine",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00408",
+      "name": "Iso-Lateral Row Machine",
+      "equipment": "machine",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps",
+        "Rear Delt"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00409",
+      "name": "High Row Machine",
+      "equipment": "machine",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00410",
+      "name": "Low Row Machine",
+      "equipment": "machine",
+      "primary_muscle": "Upper Back",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00411",
+      "name": "Machine Lateral Raise (Plate Loaded)",
+      "equipment": "machine",
+      "primary_muscle": "Side Delt",
+      "secondary_muscles": [
+        "Front Delt"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00412",
+      "name": "Preacher Curl Machine (Plate Loaded)",
+      "equipment": "machine",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": [
+        "Brachialis"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00413",
+      "name": "Rotary Torso Machine",
+      "equipment": "machine",
+      "primary_muscle": "Obliques",
+      "secondary_muscles": [
+        "Abdominals"
+      ],
+      "movement_pattern": "rotation",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V14_00414",
+      "name": "Ab Coaster Machine",
+      "equipment": "machine",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [
+        "Hip Flexors"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00415",
+      "name": "Pause Bench Press",
+      "equipment": "barbell",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "intermediate",
+      "tags": [
+        "pause"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00416",
+      "name": "Spoto Press",
+      "equipment": "barbell",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps",
+        "Front Delt"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "intermediate",
+      "tags": [
+        "control"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00417",
+      "name": "Pin Squat",
+      "equipment": "barbell",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00418",
+      "name": "Box Squat (Barbell)",
+      "equipment": "barbell",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00419",
+      "name": "Snatch Grip Deadlift",
+      "equipment": "barbell",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": [
+        "Hamstrings",
+        "Upper Back",
+        "Erector Spinae"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00420",
+      "name": "Clean Pull",
+      "equipment": "barbell",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": [
+        "Hamstrings",
+        "Upper Back"
+      ],
+      "movement_pattern": "hinge",
+      "difficulty": "intermediate",
+      "tags": [
+        "power"
+      ],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00421",
+      "name": "Barbell Split Squat",
+      "equipment": "barbell",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "lunge",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00422",
+      "name": "Incline Dumbbell Fly",
+      "equipment": "dumbbell",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Front Delt"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00423",
+      "name": "Decline Dumbbell Press",
+      "equipment": "dumbbell",
+      "primary_muscle": "Lower Chest",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00424",
+      "name": "Dumbbell Squeeze Press",
+      "equipment": "dumbbell",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00425",
+      "name": "Dumbbell Rear Delt Row",
+      "equipment": "dumbbell",
+      "primary_muscle": "Rear Delt",
+      "secondary_muscles": [
+        "Upper Back"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00426",
+      "name": "Dumbbell Suitcase Carry",
+      "equipment": "dumbbell",
+      "primary_muscle": "Transverse/Anti-Rotation",
+      "secondary_muscles": [
+        "Core",
+        "Forearm Flexors"
+      ],
+      "movement_pattern": "carry",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00427",
+      "name": "Pseudo Planche Push-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": [
+        "Front Delt",
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "advanced",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00428",
+      "name": "Deficit Push-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Mid Chest",
+      "secondary_muscles": [
+        "Triceps"
+      ],
+      "movement_pattern": "push",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00429",
+      "name": "Commando Pull-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Lats",
+      "secondary_muscles": [
+        "Biceps"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00430",
+      "name": "L-Sit Pull-Up",
+      "equipment": "bodyweight",
+      "primary_muscle": "Lats",
+      "secondary_muscles": [
+        "Biceps",
+        "Abdominals"
+      ],
+      "movement_pattern": "pull",
+      "difficulty": "advanced",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00431",
+      "name": "Sissy Squat",
+      "equipment": "bodyweight",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Core"
+      ],
+      "movement_pattern": "squat",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00432",
+      "name": "Cossack Squat",
+      "equipment": "bodyweight",
+      "primary_muscle": "Quads",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "lunge",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00433",
+      "name": "Hollow Body Hold",
+      "equipment": "bodyweight",
+      "primary_muscle": "Abdominals",
+      "secondary_muscles": [
+        "Transverse/Anti-Rotation"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00434",
+      "name": "Superman Hold",
+      "equipment": "bodyweight",
+      "primary_muscle": "Erector Spinae",
+      "secondary_muscles": [
+        "Glutes"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00435",
+      "name": "Bird Dog",
+      "equipment": "bodyweight",
+      "primary_muscle": "Transverse/Anti-Rotation",
+      "secondary_muscles": [
+        "Erector Spinae"
+      ],
+      "movement_pattern": "isolation",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    },
+    {
+      "id": "V15_00436",
+      "name": "Bear Crawl",
+      "equipment": "bodyweight",
+      "primary_muscle": "Core",
+      "secondary_muscles": [
+        "Shoulders",
+        "Quads"
+      ],
+      "movement_pattern": "carry",
+      "difficulty": "intermediate",
+      "tags": [],
+      "muscle_sub_region": null
+    }
+  ]
+}

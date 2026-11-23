@@ -1,0 +1,5 @@
+{
+  "name": "Dragoriano Workout Tracker",
+  "description": "A serious long-term gym workout tracker, optimized for offline use, cloud sync, and intelligent progression.",
+  "requestFramePermissions": ["camera"]
+}
