@@ -661,7 +661,7 @@ export function GoalsPage() {
                     type="date"
                     value={form.deadline}
                     onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))}
-                    className="mt-2 w-full rounded-2xl bg-page/5 dark:bg-content/5 px-4 py-3 text-content outline-none focus:ring-2 focus:ring-primary-500 transition-all [color-scheme:dark]"
+                    className="mt-2 w-full rounded-2xl bg-page/5 dark:bg-content/5 px-4 py-3 text-content outline-none focus:ring-2 focus:ring-primary-500 transition-all dark:[color-scheme:dark]"
                   />
                 </div>
 

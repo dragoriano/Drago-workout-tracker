@@ -154,7 +154,7 @@ export function AnalyticsPage() {
               </button>
             )}
           </h2>
-          <Card className="p-4 bg-black/20 border border-content/5">
+          <Card className="p-4 bg-card/80 dark:bg-black/20 border border-content/5">
             <WorkoutHeatmap sessions={sessions} unit={unit} selectedDate={selectedDate} onDateClick={handleDateClick} />
           </Card>
           {selectedDate && (

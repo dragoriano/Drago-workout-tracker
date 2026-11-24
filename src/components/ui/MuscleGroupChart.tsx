@@ -27,17 +27,17 @@ export function MuscleGroupChart({ data, unit = 'kg' }: MuscleGroupChartProps) {
         const sharePct = totalVolume > 0 ? (item.volume / totalVolume) * 100 : 0;
         return (
           <div key={item.name} className="flex items-center gap-3">
-            <div className="w-20 text-xs font-bold text-white/80 text-right shrink-0">{item.name}</div>
-            <div className="flex-1 h-6 bg-white/5 rounded-lg overflow-hidden relative">
+            <div className="w-20 text-xs font-bold text-content/80 text-right shrink-0">{item.name}</div>
+            <div className="flex-1 h-6 bg-content/10 rounded-lg overflow-hidden relative">
               <div
                 className="h-full rounded-lg transition-all duration-700 ease-out"
                 style={{ width: `${pct}%`, backgroundColor: item.color }}
               />
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-white/60">
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-content/75">
                 {(item.volume / 1000).toFixed(1)}k {unit}
               </span>
             </div>
-            <div className="w-10 text-right text-[10px] font-bold text-white/40">{sharePct.toFixed(0)}%</div>
+            <div className="w-10 text-right text-[10px] font-bold text-muted">{sharePct.toFixed(0)}%</div>
           </div>
         );
       })}
