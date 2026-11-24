@@ -63,7 +63,7 @@ interface AppState {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'dark',
-  themeColor: 'indigo',
+  themeColor: 'emerald',
   smartSuggestions: true,
   overloadWarnings: true,
   autoDeload: true,
@@ -73,6 +73,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   syncEnabled: false,
   weightUnit: 'kg',
   effortScale: 'rpe',
+  barbellWeight: 20,
 };
 
 export const useAppStore = create<AppState>((set, get) => ({

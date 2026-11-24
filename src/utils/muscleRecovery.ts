@@ -24,7 +24,7 @@ export const MUSCLE_COLORS: Record<string, string> = {
   Chest: '#ef4444',
   Back: '#3b82f6',
   Shoulders: '#f97316',
-  Arms: '#6366f1',
+  Arms: '#14b8a6',
   Legs: '#22c55e',
   Core: '#eab308',
   Glutes: '#ec4899',

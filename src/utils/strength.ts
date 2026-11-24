@@ -45,6 +45,16 @@ export const DEFAULT_BARBELL_WEIGHT: Record<WeightUnit, number> = {
   lbs: 45,
 };
 
+export function resolveBarbellWeight(
+  barbellWeight: number | undefined,
+  unit: WeightUnit,
+): number {
+  if (typeof barbellWeight === 'number' && Number.isFinite(barbellWeight) && barbellWeight > 0) {
+    return barbellWeight;
+  }
+  return DEFAULT_BARBELL_WEIGHT[unit];
+}
+
 export const BARBELL_PRESETS: Record<WeightUnit, number[]> = {
   kg: [20, 15, 10, 7.5],
   lbs: [45, 35, 25, 15],

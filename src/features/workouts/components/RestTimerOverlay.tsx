@@ -1,5 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Play } from 'lucide-react';
+import { FastForward } from 'lucide-react';
+import { Progress } from '../../../components/ui/Progress';
+import { Button } from '../../../components/ui/Button';
 
 interface RestTimerOverlayProps {
   restTimer: number | null;
@@ -18,75 +20,69 @@ export function RestTimerOverlay({
   onAdd15,
   onSkip,
 }: RestTimerOverlayProps) {
+  const total = initialRestTimer || restTimer || 1;
+  const pct = restTimer !== null ? Math.round((restTimer / Math.max(total, 1)) * 100) : 0;
+
   return (
     <AnimatePresence>
       {restTimer !== null && restTimer > 0 && (
         <motion.div
-          initial={{ y: 100, opacity: 0 }}
+          initial={{ y: 80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          className="fixed bottom-[120px] left-4 right-4 z-50 rounded-3xl border border-black/10 dark:border-content/10 bg-card/95 p-4 shadow-2xl backdrop-blur-xl flex items-center justify-between gap-2"
+          exit={{ y: 80, opacity: 0 }}
+          className="liquid-glass-strong fixed bottom-[122px] left-1/2 z-50 w-[calc(100%-2rem)] max-w-[428px] -translate-x-1/2 overflow-hidden rounded-3xl p-3.5"
         >
-          <div className="flex items-center gap-4 min-w-0">
-            <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
-              <svg className="absolute inset-0 w-full h-full -rotate-90">
-                <circle
-                  cx="32"
-                  cy="32"
-                  r="28"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  fill="none"
-                  className="text-page/10 dark:text-content/10"
-                />
-                <circle
-                  cx="32"
-                  cy="32"
-                  r="28"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  fill="none"
-                  className="text-primary-500 transition-all duration-1000 ease-linear"
-                  strokeDasharray={2 * Math.PI * 28}
-                  strokeDashoffset={
-                    2 * Math.PI * 28 * (1 - restTimer / (initialRestTimer || restTimer || 1))
-                  }
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute font-mono font-black text-content text-sm">
-                {Math.floor(restTimer / 60)}:{(restTimer % 60).toString().padStart(2, '0')}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="liquid-glass flex h-12 shrink-0 items-center justify-center rounded-2xl px-3">
+                <span className="font-mono text-lg font-extrabold text-primary-400 tabular-nums">
+                  {Math.floor(restTimer / 60)}:{(restTimer % 60).toString().padStart(2, '0')}
+                </span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted">
+                  Rest Timer
+                </p>
+                <p className="truncate text-sm font-bold text-content">
+                  {subtitle || 'Recovery'}
+                </p>
               </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold text-muted uppercase tracking-wider mb-0.5">
-                Rest Timer
-              </p>
-              <p className="text-sm font-bold text-content leading-tight truncate">
-                {subtitle || 'Recovery'}
-              </p>
+
+            <div className="flex shrink-0 items-center gap-1.5">
+              <Button
+                type="button"
+                variant="secondary"
+                size="xs"
+                onClick={onSubtract15}
+                className="h-10 px-2.5 font-mono"
+              >
+                -15s
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="xs"
+                onClick={onAdd15}
+                className="h-10 px-2.5 font-mono"
+              >
+                +15s
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="xs"
+                onClick={onSkip}
+                className="h-10 px-3"
+                aria-label="Skip rest timer"
+              >
+                <FastForward size={15} />
+                <span>Skip</span>
+              </Button>
             </div>
           </div>
-          <div className="flex gap-2 shrink-0">
-            <button
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-page/5 text-sm font-bold"
-              onClick={onSubtract15}
-            >
-              -15
-            </button>
-            <button
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-page/5 text-sm font-bold"
-              onClick={onAdd15}
-            >
-              +15
-            </button>
-            <button
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-500 text-content"
-              onClick={onSkip}
-            >
-              <Play size={18} />
-            </button>
-          </div>
+
+          <Progress value={pct} className="mt-2.5 h-1.5" />
         </motion.div>
       )}
     </AnimatePresence>

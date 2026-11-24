@@ -123,7 +123,7 @@ export function QuickAddExerciseModal({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md rounded-t-3xl bg-card p-5 sm:rounded-3xl border border-content/10 shadow-2xl space-y-4 max-h-[90dvh] overflow-y-auto"
+              className="liquid-glass-strong w-full max-w-[460px] rounded-t-[28px] p-5 pb-safe space-y-4 max-h-[90dvh] overflow-y-auto"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
@@ -267,7 +267,7 @@ export function QuickAddExerciseModal({
                 type="button"
                 disabled={!trimmedName}
                 onClick={handleConfirmAdd}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-primary-500 py-3.5 text-sm font-black text-content shadow-lg shadow-primary-500/30 hover:bg-primary-400 active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none"
+                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-primary-500 py-3.5 text-sm font-black text-white shadow-lg shadow-primary-500/30 hover:bg-primary-400 active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none"
               >
                 <Plus size={16} /> Add to Workout
               </button>

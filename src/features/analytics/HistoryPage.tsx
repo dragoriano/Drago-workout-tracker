@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, Download } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
 import { WorkoutHeatmap } from '../../components/ui/WorkoutHeatmap';
 import { useAppStore } from '../../store/useAppStore';
 import type { WorkoutSession } from '../../types';
@@ -34,40 +35,47 @@ export function HistoryPage() {
   };
 
   return (
-    <div className="p-4 pt-8 pb-24">
-      <div className="mb-8 flex items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold tracking-tight">History</h1>
-        <button
+    <div className="px-4 pt-5 pb-6">
+      <div className="mb-5 flex items-center justify-between gap-3 pt-safe">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-400">
+            Training Log
+          </p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-content">History</h1>
+        </div>
+        <Button
           type="button"
+          variant="secondary"
+          size="sm"
           onClick={handleExportCSV}
           disabled={sessions.length === 0}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-surface border border-content/10 px-3 py-2 text-xs font-bold text-content hover:bg-content/10 transition-colors disabled:opacity-40 disabled:pointer-events-none shrink-0"
         >
           <Download size={14} />
           <span>Export CSV</span>
-        </button>
+        </Button>
       </div>
 
       {/* Workout Heatmap Calendar */}
       {sessions.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-sm font-bold text-muted uppercase tracking-wider mb-4 flex items-center gap-2">
-            <Calendar size={16}/> Activity Calendar
+        <div className="mb-6">
+          <h2 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted">
+            <Calendar size={14} className="text-primary-400" />
+            Activity Calendar
           </h2>
-          <Card className="p-4 bg-card/80 dark:bg-black/20 border border-content/5">
+          <Card className="p-4">
             <WorkoutHeatmap sessions={sessions} unit={unit} />
           </Card>
         </div>
       )}
 
       {sessions.length === 0 ? (
-        <div className="flex h-64 flex-col items-center justify-center text-center">
-          <div className="mb-4 rounded-full bg-content dark:bg-card p-4">
-            <Calendar size={32}className="text-muted" />
+        <Card className="flex h-60 flex-col items-center justify-center text-center">
+          <div className="mb-3 rounded-2xl bg-elevated p-4 text-muted">
+            <Calendar size={28} />
           </div>
-          <h3 className="text-lg font-medium">No history yet</h3>
-          <p className="mt-2 text-sm text-muted">Complete a workout to see it here.</p>
-        </div>
+          <h3 className="text-base font-bold text-content">No history yet</h3>
+          <p className="mt-1 text-xs text-muted">Complete a workout to see it logged here.</p>
+        </Card>
       ) : (
         <div className="grid gap-4">
           {sortedSessions.map((session, index) => (

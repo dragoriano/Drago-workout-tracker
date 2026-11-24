@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { motion } from 'framer-motion';
 
 interface ProgressRingProps {
   value: number;
@@ -6,60 +7,64 @@ interface ProgressRingProps {
   size?: number;
   strokeWidth?: number;
   color?: string;
-  label: string;
+  label?: string;
   unit?: string;
   icon?: React.ReactNode;
 }
 
-export function ProgressRing({ value, max, size = 90, strokeWidth = 6, color = '#818cf8', label, unit, icon }: ProgressRingProps) {
-  const [animatedValue, setAnimatedValue] = useState(0);
-  
+export function ProgressRing({
+  value,
+  max,
+  size = 90,
+  strokeWidth = 6,
+  color = 'var(--theme-500)',
+  label,
+  unit,
+  icon,
+}: ProgressRingProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const percent = max > 0 ? Math.min(animatedValue / max, 1) : 0;
-  const dashoffset = circumference * (1 - percent);
-
-  useEffect(() => {
-    // Animate from 0 to value
-    const timer = setTimeout(() => setAnimatedValue(value), 100);
-    return () => clearTimeout(timer);
-  }, [value]);
+  const progress = Math.min(value / Math.max(max, 1), 1);
+  const strokeDashoffset = circumference * (1 - progress);
 
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="flex flex-col items-center gap-1.5">
       <div className="relative" style={{ width: size, height: size }}>
-        <svg className="w-full h-full -rotate-90" viewBox={`0 0 ${size} ${size}`}>
-          {/* Background track */}
+        <svg width={size} height={size} className="-rotate-90">
           <circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke="currentColor"
-            strokeWidth={strokeWidth}
             fill="none"
+            stroke="currentColor"
             className="text-content/10"
+            strokeWidth={strokeWidth}
           />
-          {/* Progress arc */}
-          <circle
+          <motion.circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
+            fill="none"
             stroke={color}
             strokeWidth={strokeWidth}
-            fill="none"
-            strokeDasharray={circumference}
-            strokeDashoffset={dashoffset}
             strokeLinecap="round"
-            style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1)' }}
+            strokeDasharray={circumference}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset }}
+            transition={{ duration: 0.9, ease: 'easeOut' }}
           />
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          {icon && <div className="mb-0.5" style={{ color }}>{icon}</div>}
-          <span className="text-lg font-black text-content leading-none">{value}</span>
-          {unit && <span className="text-[8px] font-bold uppercase tracking-widest text-muted">{unit}</span>}
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+          {icon && <div className="mb-0.5">{icon}</div>}
+          <span className="text-sm font-black text-content leading-none tabular-nums">
+            {typeof value === 'number' && value >= 1000
+              ? `${(value / 1000).toFixed(1)}k`
+              : Math.round(value)}
+          </span>
+          {unit && <span className="text-[9px] font-bold text-muted uppercase">{unit}</span>}
         </div>
       </div>
-      <span className="text-[10px] font-bold uppercase tracking-wider text-muted text-center leading-tight">{label}</span>
+      {label && <span className="text-[11px] font-semibold text-muted">{label}</span>}
     </div>
   );
 }

@@ -18,6 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
+import { toast } from 'sonner';
 import { buildProgramFromFreestyle, FREESTYLE_PROGRAM_ID } from '../../utils/customExercises';
 import {
   formatDurationCompact,
@@ -75,7 +76,6 @@ export function WorkoutSummaryPage() {
   const [copied, setCopied] = useState(false);
   const [savedAsProgram, setSavedAsProgram] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -89,10 +89,7 @@ export function WorkoutSummaryPage() {
   const program = session ? programs.find((p) => p.id === session.programId) : null;
 
   const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage((prev) => (prev === msg ? null : prev));
-    }, 3000);
+    toast(msg);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -204,7 +201,7 @@ export function WorkoutSummaryPage() {
         <p className="text-lg font-bold text-red-500">Workout session not found.</p>
         <button
           onClick={() => navigate('/')}
-          className="rounded-xl bg-primary-500 px-6 py-2 font-bold text-content hover:bg-primary-400"
+          className="rounded-xl bg-primary-500 px-6 py-2 font-bold text-white hover:bg-primary-400"
         >
           Go Back Home
         </button>
@@ -237,22 +234,20 @@ export function WorkoutSummaryPage() {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] w-full bg-page text-content overflow-y-auto pb-24">
-      <header className="sticky top-0 z-40 flex items-center justify-between bg-page/90 px-4 py-4 backdrop-blur-md border-b border-content/5">
-        <button onClick={() => navigate('/')} className="p-2 -ml-2 text-content hover:bg-page/10 dark:bg-content/10 rounded-full transition-colors">
-          <ChevronLeft size={24} />
+    <div className="mx-auto flex h-[100dvh] w-full max-w-[460px] flex-col bg-transparent text-content overflow-y-auto overscroll-y-contain pb-24 sm:border-x sm:border-content/10 sm:shadow-2xl">
+      <header className="liquid-glass-strong sticky top-0 z-40 flex items-center justify-between border-x-0 border-t-0 px-4 pb-3.5 pt-safe">
+        <button
+          onClick={() => navigate('/')}
+          aria-label="Back to Home"
+          className="liquid-btn-glass flex h-10 w-10 items-center justify-center rounded-full text-content transition-colors cursor-pointer"
+        >
+          <ChevronLeft size={20} />
         </button>
-        <h1 className="text-lg font-black uppercase tracking-wide text-primary-400">Workout Complete</h1>
-        <div className="w-10"></div>
+        <h1 className="text-base font-extrabold uppercase tracking-wide text-primary-400">Workout Complete</h1>
+        <div className="w-10" />
       </header>
 
       <div className="p-4 flex flex-col items-center gap-5">
-        {toastMessage && (
-          <div className="w-full max-w-sm rounded-xl bg-emerald-500/15 border border-emerald-500/30 px-3.5 py-2 text-center text-xs font-bold text-emerald-400">
-            {toastMessage}
-          </div>
-        )}
-
         {/* Card customization controls */}
         <div className="w-full max-w-sm space-y-2.5">
           <div className="flex justify-center gap-2 flex-wrap">

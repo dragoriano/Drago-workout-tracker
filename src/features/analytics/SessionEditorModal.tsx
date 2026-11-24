@@ -12,6 +12,8 @@ import {
   X,
 } from 'lucide-react';
 import type { EffortScale, Exercise, Set, WorkoutSession } from '../../types';
+import { toast } from 'sonner';
+import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { useAppStore } from '../../store/useAppStore';
 import { cn } from '../../utils/cn';
 import { FREESTYLE_PROGRAM_ID } from '../../utils/customExercises';
@@ -205,6 +207,7 @@ export function SessionEditorModal({
     try {
       const updated = recalculateSessionMetrics(preparedDraft, allSessions);
       await useAppStore.getState().saveSession(updated);
+      toast.success('Workout session updated');
       onClose();
     } catch (err) {
       console.error('Failed to save edited session:', err);
@@ -214,16 +217,16 @@ export function SessionEditorModal({
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm('Delete this workout session? This cannot be undone.')) {
-      return;
-    }
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  const confirmDelete = async () => {
+    setShowDeleteConfirm(false);
     setIsDeleting(true);
     setErrorMessage(null);
     try {
       await useAppStore.getState().deleteSession(session.id);
       await useAppStore.getState().syncAutoGoals();
+      toast.success('Workout session deleted');
       onClose();
     } catch (err) {
       console.error('Failed to delete session:', err);
@@ -234,7 +237,8 @@ export function SessionEditorModal({
   };
 
   return (
-    <AnimatePresence>
+    <>
+      <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[110] flex items-end justify-center bg-page/75 backdrop-blur-sm sm:items-center">
           <motion.div
@@ -242,7 +246,7 @@ export function SessionEditorModal({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: '100%' }}
             transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-            className="w-full max-w-lg rounded-t-3xl bg-card sm:rounded-3xl max-h-[92dvh] flex flex-col border border-content/10 shadow-2xl overflow-hidden"
+            className="liquid-glass-strong w-full max-w-[460px] rounded-t-[28px] max-h-[90dvh] flex flex-col overflow-hidden pb-safe"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 sm:p-5 pb-3 border-b border-content/5 shrink-0">
@@ -621,8 +625,8 @@ export function SessionEditorModal({
                                       'flex h-8 w-8 items-center justify-center rounded-lg border-2 transition-colors',
                                       set.completed
                                         ? warmup
-                                          ? 'border-sky-500 bg-sky-500 text-content'
-                                          : 'border-emerald-500 bg-emerald-500 text-content'
+                                          ? 'border-sky-500 bg-sky-500 text-white'
+                                          : 'border-emerald-500 bg-emerald-500 text-white'
                                         : 'border-content/20 bg-transparent',
                                     )}
                                   >
@@ -662,9 +666,9 @@ export function SessionEditorModal({
             <div className="flex items-center justify-between gap-2 p-4 sm:p-5 border-t border-content/5 bg-card shrink-0">
               <button
                 type="button"
-                onClick={handleDelete}
+                onClick={() => setShowDeleteConfirm(true)}
                 disabled={isBusy}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/25 px-3 py-2.5 text-xs font-bold text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50 shrink-0"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/25 px-3 py-2.5 text-xs font-bold text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50 shrink-0 cursor-pointer"
               >
                 <Trash2 size={14} />
                 <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
@@ -694,5 +698,15 @@ export function SessionEditorModal({
         </div>
       )}
     </AnimatePresence>
+    <ConfirmModal
+      isOpen={showDeleteConfirm}
+      title="Delete Workout Session"
+      message="Delete this workout session permanently? This cannot be undone."
+      confirmText="Delete"
+      isDestructive
+      onCancel={() => setShowDeleteConfirm(false)}
+      onConfirm={confirmDelete}
+    />
+  </>
   );
 }

@@ -11,7 +11,11 @@ import { AppSettings, EffortScale } from '../../types';
 import { db, closeDB } from '../../storage/db';
 import { signInWithGoogle, signOutUser, onAuthChange, pushToSupabase, pullFromSupabase } from '../../storage/supabaseSync';
 import { Button } from '../../components/ui/Button';
-import { applyThemeColor, applyThemeMode } from '../../utils/theme';
+import { Switch as RadixSwitch } from '../../components/ui/Switch';
+import { AppDialog } from '../../components/ui/Dialog';
+import { ConfirmModal } from '../../components/ui/ConfirmModal';
+import { toast } from 'sonner';
+import { applyThemeColor, applyThemeMode, SELECTABLE_THEME_COLORS, THEME_COLORS } from '../../utils/theme';
 import { useAppStore, DEFAULT_SETTINGS } from '../../store/useAppStore';
 import { PullToRefresh } from '../../components/ui/PullToRefresh';
 import { PlateCalculatorModal } from '../../components/ui/PlateCalculatorModal';
@@ -21,7 +25,7 @@ import {
   encodeProgramsShareCode,
   prepareImportedProgram,
 } from '../../utils/programShare';
-import { BARBELL_PRESETS, DEFAULT_BARBELL_WEIGHT, WeightUnit } from '../../utils/strength';
+import { BARBELL_PRESETS, DEFAULT_BARBELL_WEIGHT, resolveBarbellWeight, WeightUnit } from '../../utils/strength';
 import type { User } from '@supabase/supabase-js';
 
 const QRCodeScanner = React.lazy(() =>
@@ -60,7 +64,7 @@ export function SettingsPage() {
     if (settings.weightUnit === nextUnit) return;
     await updateSettings({
       weightUnit: nextUnit,
-      barbellWeight: undefined,
+      barbellWeight: DEFAULT_BARBELL_WEIGHT[nextUnit],
       availablePlates: undefined,
     });
   };
@@ -300,40 +304,30 @@ export function SettingsPage() {
   };
 
   const Switch = ({ checked, onChange }: { checked: boolean; onChange: (c: boolean) => void }) => (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-        checked ? 'bg-primary-500' : 'bg-zinc-700'
-      }`}
-    >
-      <span
-        aria-hidden="true"
-        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-content shadow ring-0 transition duration-200 ease-in-out ${
-          checked ? 'translate-x-5' : 'translate-x-0'
-        }`}
-      />
-    </button>
+    <RadixSwitch checked={checked} onCheckedChange={onChange} />
   );
 
   return (
     <>
-      <PullToRefresh onRefresh={async () => hydrate()} className="flex min-h-[100dvh] flex-col bg-page text-content pb-20 font-sans">
-        {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-center bg-page/90 px-4 py-4 backdrop-blur-md">
-          <button onClick={() => navigate(-1)} className="absolute left-4 text-muted hover:text-content transition-transform active:scale-90">
-            <ArrowLeft size={24}/>
+      <PullToRefresh onRefresh={async () => hydrate()} className="flex min-h-[100dvh] flex-col bg-transparent text-content pb-28 font-sans">
+        {/* Sticky Liquid Glass Header */}
+        <div className="liquid-glass-strong sticky top-0 z-10 flex items-center justify-between border-x-0 border-t-0 px-4 pb-3.5 pt-safe">
+          <button
+            onClick={() => navigate(-1)}
+            aria-label="Back"
+            className="liquid-btn-glass flex h-10 w-10 items-center justify-center rounded-full text-content transition-all active:scale-90 cursor-pointer"
+          >
+            <ArrowLeft size={20} />
           </button>
-          <h1 className="text-xl font-bold text-primary-400">Settings</h1>
+          <h1 className="text-lg font-extrabold tracking-tight text-content">Settings</h1>
+          <div className="w-10" />
         </div>
 
-        <div className="px-4 space-y-6 mt-4">
+        <div className="mt-4 space-y-6 px-4">
           {/* PREFERENCES */}
           <section>
             <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">Preferences</h2>
-            <div className="rounded-2xl bg-card divide-y divide-content/5">
+            <div className="liquid-glass rounded-3xl divide-y divide-content/10">
               <div className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-3">
                   <PremiumIcon icon={ShieldAlert} color="primary" variant="soft" size="sm" />
@@ -381,7 +375,8 @@ export function SettingsPage() {
 
               {(() => {
                 const unit: WeightUnit = settings.weightUnit === 'lbs' ? 'lbs' : 'kg';
-                const currentBar = settings.barbellWeight ?? DEFAULT_BARBELL_WEIGHT[unit];
+                const currentBar = resolveBarbellWeight(settings.barbellWeight, unit);
+                const stdBar = DEFAULT_BARBELL_WEIGHT[unit];
                 return (
                   <>
                     <div className="p-4">
@@ -390,10 +385,10 @@ export function SettingsPage() {
                           <PremiumIcon icon={Calculator} color="primary" variant="soft" size="sm" />
                           <div>
                             <h3 className="font-bold text-content">Barbell Weight</h3>
-                            <p className="text-xs text-muted">Default bar used for plate loading</p>
+                            <p className="text-xs text-muted">Standard Olympic bar is {stdBar} {unit}</p>
                           </div>
                         </div>
-                        <span className="text-sm font-black text-primary-400">
+                        <span className="font-mono text-sm font-black text-primary-400 tabular-nums">
                           {currentBar} {unit}
                         </span>
                       </div>
@@ -402,10 +397,10 @@ export function SettingsPage() {
                           <button
                             key={preset}
                             onClick={() => updateSetting('barbellWeight', preset)}
-                            className={`rounded-xl py-2 text-xs font-bold border transition-all ${
+                            className={`rounded-xl py-2.5 text-xs font-bold transition-all cursor-pointer tabular-nums ${
                               currentBar === preset
-                                ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
-                                : 'bg-surface text-muted border-content/10 hover:text-content'
+                                ? 'liquid-btn-primary text-white'
+                                : 'liquid-btn-glass text-muted hover:text-content'
                             }`}
                           >
                             {preset} {unit}
@@ -416,7 +411,7 @@ export function SettingsPage() {
 
                     <button
                       onClick={() => setShowPlateCalc(true)}
-                      className="w-full flex items-center justify-between p-4 text-left hover:bg-content/5 transition-colors rounded-b-2xl"
+                      className="w-full flex items-center justify-between p-4 text-left hover:bg-elevated/60 transition-colors rounded-b-2xl cursor-pointer"
                     >
                       <div>
                         <h3 className="font-bold text-content text-sm">Configure Plate Calculator</h3>
@@ -433,7 +428,7 @@ export function SettingsPage() {
           {/* ACCOUNT */}
           <section>
             <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">Account</h2>
-            <div className="rounded-2xl bg-card p-4">
+            <div className="liquid-glass rounded-3xl p-4">
               {user ? (
                 <>
                   <div className="flex items-center justify-between mb-4">
@@ -469,9 +464,9 @@ export function SettingsPage() {
                   </div>
                   <h3 className="font-bold text-content mb-1">Cloud Sync</h3>
                   <p className="text-sm text-muted mb-4">Sign in with Supabase to backup and restore your workout data.</p>
-                  <button onClick={handleSignIn} className="w-full rounded-xl bg-primary-500 py-3 text-sm font-bold text-content hover:bg-primary-600 transition-colors">
+                  <Button onClick={handleSignIn} className="w-full">
                     Sign In with Google
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -480,7 +475,7 @@ export function SettingsPage() {
           {/* APPEARANCE */}
           <section>
             <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">Appearance</h2>
-            <div className="rounded-2xl bg-card divide-y divide-content/5">
+            <div className="liquid-glass rounded-3xl divide-y divide-content/10">
               <div className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-3">
                   <PremiumIcon icon={Moon} color="primary" variant="soft" size="sm" />
@@ -502,21 +497,26 @@ export function SettingsPage() {
                     <p className="text-xs text-muted">Choose your accent color</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 pl-8">
-                  {['indigo', 'emerald', 'orange', 'blue', 'pink', 'amber'].map(color => (
-                    <button
-                      key={color}
-                      onClick={() => updateSetting('themeColor', color)}
-                      className={`h-8 w-8 rounded-full border-2 transition-all ${settings.themeColor === color ? 'border-content scale-110' : 'border-transparent hover:scale-105'} ${
-                        color === 'indigo' ? 'bg-indigo-500' :
-                        color === 'emerald' ? 'bg-emerald-500' :
-                        color === 'orange' ? 'bg-orange-500' :
-                        color === 'blue' ? 'bg-blue-500' :
-                        color === 'pink' ? 'bg-pink-500' :
-                        'bg-amber-500'
-                      }`}
-                    />
-                  ))}
+                <div className="flex flex-wrap items-center gap-3 pl-8">
+                  {SELECTABLE_THEME_COLORS.map((color) => {
+                    const hex = THEME_COLORS[color][500];
+                    const active = settings.themeColor === color;
+                    return (
+                      <button
+                        key={color}
+                        type="button"
+                        aria-label={`Select ${color} theme`}
+                        onClick={() => {
+                          updateSetting('themeColor', color);
+                          toast.success(`Theme updated to ${color}`);
+                        }}
+                        style={{ backgroundColor: hex }}
+                        className={`h-8 w-8 rounded-full border-2 transition-all cursor-pointer ${
+                          active ? 'border-content scale-110 ring-2 ring-content/25' : 'border-transparent hover:scale-105'
+                        }`}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -525,7 +525,7 @@ export function SettingsPage() {
           {/* AUDIO & FEEDBACK */}
           <section>
             <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">Audio & Feedback</h2>
-            <div className="rounded-2xl bg-card divide-y divide-content/5">
+            <div className="liquid-glass rounded-3xl divide-y divide-content/10">
               <div className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-3">
                   <PremiumIcon icon={Volume2} color="primary" variant="soft" size="sm" />
@@ -571,7 +571,7 @@ export function SettingsPage() {
           {/* SMART COACH */}
           <section>
             <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">Smart Coach</h2>
-            <div className="rounded-2xl bg-card divide-y divide-content/5">
+            <div className="liquid-glass rounded-3xl divide-y divide-content/10">
               <div className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-3">
                   <PremiumIcon icon={Sparkles} color="amber" variant="soft" size="sm" />
@@ -655,123 +655,114 @@ export function SettingsPage() {
           {/* ABOUT */}
           <section>
             <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">About</h2>
-            <div className="rounded-2xl bg-card p-6 text-center">
+            <div className="liquid-glass rounded-3xl p-6 text-center">
               <h3 className="font-black text-primary-400 tracking-widest uppercase">Dragoriano</h3>
-              <p className="text-sm text-muted mt-1">Workout Tracker v1.8.0</p>
+              <p className="text-sm text-muted mt-1">Workout Tracker v1.9.0</p>
             </div>
           </section>
         </div>
       </PullToRefresh>
 
       {/* Data Transfer Modal */}
-      {showDataModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-page/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-content ">Data Transfer</h3>
-              <button onClick={() => setShowDataModal(false)} className="text-muted hover:text-content ">
-                <X size={20} />
-              </button>
+      <AppDialog
+        open={showDataModal}
+        onOpenChange={setShowDataModal}
+        title="Data Transfer"
+        layout="center"
+        size="sm"
+      >
+        <div className="grid gap-3">
+          <label className="relative block rounded-xl tactile-card tactile-card-interactive cursor-pointer">
+            <input type="file" accept=".json" onChange={handleImport} className="hidden" />
+            <div className="flex w-full items-center gap-3 rounded-xl bg-surface p-4 text-left">
+              <Upload className="text-primary-400" size={20} />
+              <div>
+                <h4 className="font-bold text-content text-sm">Import Backup</h4>
+                <p className="text-xs font-medium text-muted">Restore from JSON file</p>
+              </div>
             </div>
-            <div className="grid gap-3">
-              <label className="relative block rounded-xl glow-card cursor-pointer">
-                <input 
-                  type="file" 
-                  accept=".json" 
-                  onChange={handleImport} 
-                  className="hidden" 
-                />
-                <div className="w-full flex items-center gap-3 rounded-xl bg-surface border border-content/10 p-4 text-left transition-all">
-                  <Upload className="text-muted" size={20}/>
-                  <div>
-                    <h4 className="font-bold text-content">Import Backup</h4>
-                    <p className="text-xs text-muted font-medium">Restore from JSON file</p>
-                  </div>
-                </div>
-              </label>
-              <button onClick={handleShareQR} className="w-full flex items-center gap-3 rounded-xl bg-surface border border-content/10 p-4 text-left transition-all glow-card">
-                <QrCode className="text-muted" size={20}/>
-                <div>
-                  <h4 className="font-bold text-content">Share via QR Code</h4>
-                  <p className="text-xs text-muted font-medium">Share programs with another device</p>
-                </div>
-              </button>
-              <button onClick={() => { setShowDataModal(false); setShowQRScanner(true); }} className="w-full flex items-center gap-3 rounded-xl bg-surface border border-content/10 p-4 text-left transition-all glow-card">
-                <Camera className="text-muted" size={20}/>
-                <div>
-                  <h4 className="font-bold text-content">Scan QR Code</h4>
-                  <p className="text-xs text-muted font-medium">Import programs by scanning a QR code</p>
-                </div>
-              </button>
+          </label>
+          <button
+            onClick={handleShareQR}
+            className="flex w-full items-center gap-3 rounded-xl border border-content/10 bg-surface p-4 text-left transition-all hover:border-primary-500/35 cursor-pointer"
+          >
+            <QrCode className="text-sky-400" size={20} />
+            <div>
+              <h4 className="font-bold text-content text-sm">Share via QR Code</h4>
+              <p className="text-xs font-medium text-muted">Share programs with another device</p>
             </div>
-          </div>
+          </button>
+          <button
+            onClick={() => {
+              setShowDataModal(false);
+              setShowQRScanner(true);
+            }}
+            className="flex w-full items-center gap-3 rounded-xl border border-content/10 bg-surface p-4 text-left transition-all hover:border-primary-500/35 cursor-pointer"
+          >
+            <Camera className="text-emerald-400" size={20} />
+            <div>
+              <h4 className="font-bold text-content text-sm">Scan QR Code</h4>
+              <p className="text-xs font-medium text-muted">Import programs by scanning a QR code</p>
+            </div>
+          </button>
         </div>
-      )}
+      </AppDialog>
 
       {/* QR Code Modal */}
-      {showQR && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-page/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6 text-center">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-content ">Share Programs</h3>
-              <button onClick={() => setShowQR(false)} className="text-muted hover:text-content ">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="mx-auto mb-4 flex aspect-square w-full max-w-[250px] items-center justify-center rounded-xl bg-white border border-black/10 p-4">
-              <QRCodeSVG value={qrData} size={200} />
-            </div>
-            <p className="text-sm text-muted">Scan this code with another device running Dragoriano to import your workout programs.</p>
+      <AppDialog
+        open={showQR}
+        onOpenChange={setShowQR}
+        title="Share Programs"
+        layout="center"
+        size="sm"
+      >
+        <div className="text-center">
+          <div className="mx-auto mb-4 flex aspect-square w-full max-w-[240px] items-center justify-center rounded-2xl border border-black/10 bg-white p-4">
+            <QRCodeSVG value={qrData} size={200} />
           </div>
+          <p className="text-xs text-muted">
+            Scan this code with another device running Dragoriano to import your workout programs.
+          </p>
         </div>
-      )}
-      {/* Reset Confirmation Modal */}
-      {showResetConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-page/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6 text-center">
-            <h3 className="text-lg font-bold text-red-500 mb-2">Reset App Data</h3>
-            <p className="text-muted mb-6">Are you sure you want to delete all data and start fresh? This cannot be undone.</p>
-            <div className="flex gap-3">
-              <Button variant="secondary" className="flex-1" onClick={() => setShowResetConfirm(false)}>
-                Cancel
-              </Button>
-              <Button className="flex-1 bg-red-600 hover:bg-red-700" onClick={confirmResetApp}>
-                Reset
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Restore Confirmation Modal */}
-      {showRestoreConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-page/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6 text-center">
-            <h3 className="text-lg font-bold text-red-500 mb-2">Restore Data</h3>
-            <p className="text-muted mb-6">This will overwrite your current local data. Are you sure?</p>
-            <div className="flex gap-3">
-              <Button variant="secondary" className="flex-1" onClick={() => setShowRestoreConfirm(false)}>
-                Cancel
-              </Button>
-              <Button className="flex-1 bg-red-600 hover:bg-red-700" onClick={confirmRestore}>
-                Restore
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-      
+      </AppDialog>
+
+      <ConfirmModal
+        isOpen={showResetConfirm}
+        title="Reset App Data"
+        message="Are you sure you want to delete all data and start fresh? This cannot be undone."
+        confirmText="Reset"
+        isDestructive
+        onCancel={() => setShowResetConfirm(false)}
+        onConfirm={confirmResetApp}
+      />
+
+      <ConfirmModal
+        isOpen={showRestoreConfirm}
+        title="Restore Data"
+        message="This will overwrite your current local data. Are you sure?"
+        confirmText="Restore"
+        isDestructive
+        onCancel={() => setShowRestoreConfirm(false)}
+        onConfirm={confirmRestore}
+      />
+
       {/* Alert Modal */}
-      {alertMessage && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-page/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6 text-center">
-            <h3 className="text-lg font-bold text-content mb-2">{alertMessage.title}</h3>
-            <p className="text-muted mb-6">{alertMessage.message}</p>
-            <Button variant="primary" className="w-full" onClick={() => setAlertMessage(null)}>
-              OK
-            </Button>
-          </div>
+      <AppDialog
+        open={alertMessage !== null}
+        onOpenChange={(open) => {
+          if (!open) setAlertMessage(null);
+        }}
+        title={alertMessage?.title || 'Notice'}
+        layout="center"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted">{alertMessage?.message}</p>
+          <Button variant="primary" className="w-full" onClick={() => setAlertMessage(null)}>
+            OK
+          </Button>
         </div>
-      )}
+      </AppDialog>
 
       {/* QR Code Scanner */}
       {showQRScanner && (

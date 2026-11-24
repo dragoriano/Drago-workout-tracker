@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Tabs, TabsList, TabsTrigger } from '../../components/ui/Tabs';
 import { format, subDays, startOfDay, formatISO } from 'date-fns';
 import { Flame, TrendingUp, Activity, Trophy, ArrowUp, Zap, Ruler, Calendar, Dumbbell, Gauge, Download } from 'lucide-react';
 import { PremiumIcon, FilledIcon } from '../../components/ui/PremiumIcon';
@@ -116,49 +118,51 @@ export function AnalyticsPage() {
   };
 
   return (
-    <PullToRefresh onRefresh={hydrate} className="p-4 pt-8 pb-24">
-      <h1 className="mb-6 text-3xl font-bold tracking-tight">Stats</h1>
+    <PullToRefresh onRefresh={hydrate} className="px-4 pt-5 pb-6">
+      <div className="mb-5 flex items-center justify-between gap-3 pt-safe">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-400">
+            Performance
+          </p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-content">Stats &amp; History</h1>
+        </div>
+      </div>
 
       {/* Tab Switcher */}
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => { setActiveTab('overview'); setSelectedDate(null); }}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
-            activeTab === 'overview' 
-            ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30' 
-            : 'bg-card border border-content/10 text-muted'
-          }`}
-        >
-          Overview
-        </button>
-        <button
-          onClick={() => setActiveTab('history')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
-            activeTab === 'history' 
-            ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30' 
-            : 'bg-card border border-content/10 text-muted'
-          }`}
-        >
-          History
-        </button>
-      </div>
+      <Tabs
+        value={activeTab}
+        onValueChange={(val) => {
+          const next = val as 'overview' | 'history';
+          setActiveTab(next);
+          if (next === 'overview') setSelectedDate(null);
+        }}
+        className="mb-6"
+      >
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Activity Calendar — always visible */}
       {sessions.length > 0 && (
         <div className="mb-6">
-          <h2 className="text-sm font-bold text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
-            <Calendar size={16}/> Activity Calendar
+          <h2 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted">
+            <Calendar size={14} className="text-primary-400" /> Activity Calendar
             {selectedDate && (
-              <button onClick={() => setSelectedDate(null)} className="ml-auto text-primary-400 text-[10px] font-bold uppercase tracking-widest">
+              <button
+                onClick={() => setSelectedDate(null)}
+                className="ml-auto text-[10px] font-bold uppercase tracking-widest text-primary-400 cursor-pointer"
+              >
                 Clear Filter
               </button>
             )}
           </h2>
-          <Card className="p-4 bg-card/80 dark:bg-black/20 border border-content/5">
+          <Card className="p-4">
             <WorkoutHeatmap sessions={sessions} unit={unit} selectedDate={selectedDate} onDateClick={handleDateClick} />
           </Card>
           {selectedDate && (
-            <p className="text-xs text-primary-400 font-bold mt-2 text-center">
+            <p className="mt-2 text-center text-xs font-bold text-primary-400">
               Showing: {format(new Date(selectedDate), 'EEEE, MMMM d, yyyy')}
             </p>
           )}
@@ -167,61 +171,68 @@ export function AnalyticsPage() {
 
       {activeTab === 'overview' ? (
         <>
-          {/* Stat cards */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <Card className="p-4 bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20">
-              <div className="flex items-center gap-2 text-orange-500 mb-2">
-                <Flame size={18}/>
-                <span className="font-bold text-sm">Streak</span>
+          {/* Stat cards — 2-col Mobile First Grid */}
+          <div className="mb-6 grid grid-cols-2 gap-3">
+            <Card className="p-4">
+              <div className="mb-2 flex items-center gap-2 text-orange-400">
+                <Flame size={16} />
+                <span className="text-xs font-bold uppercase tracking-wider">Streak</span>
               </div>
-              <div className="text-3xl font-black text-content ">
-                {currentStreak} <span className="text-sm font-medium text-orange-500/60">days</span>
-              </div>
-            </Card>
-
-            <Card className="p-4 bg-gradient-to-br from-primary-500/10 to-primary-500/10 border-primary-500/20">
-              <div className="flex items-center gap-2 text-primary-400 mb-2">
-                <Zap size={18}/>
-                <span className="font-bold text-sm">Best Streak</span>
-              </div>
-              <div className="text-3xl font-black text-content ">
-                {longestStreak} <span className="text-sm font-medium text-primary-400/60">days</span>
+              <div className="font-mono text-2xl font-extrabold text-content tabular-nums">
+                {currentStreak} <span className="text-xs font-medium text-muted">days</span>
               </div>
             </Card>
 
-            <Card className="p-4 bg-gradient-to-br from-primary-500/10 to-cyan-500/10 border-primary-500/20">
-              <div className="flex items-center gap-2 text-primary-400 mb-2">
-                <TrendingUp size={18}/>
-                <span className="font-bold text-sm">Workouts</span>
+            <Card className="p-4">
+              <div className="mb-2 flex items-center gap-2 text-primary-400">
+                <Zap size={16} />
+                <span className="text-xs font-bold uppercase tracking-wider">Best Streak</span>
               </div>
-              <div className="text-3xl font-black text-content ">{sessions.length}</div>
+              <div className="font-mono text-2xl font-extrabold text-content tabular-nums">
+                {longestStreak} <span className="text-xs font-medium text-muted">days</span>
+              </div>
             </Card>
 
-            <Card className="p-4 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border-emerald-500/20">
-              <div className="flex items-center gap-2 text-emerald-400 mb-2">
-                <Trophy size={18}/>
-                <span className="font-bold text-sm">Total PRs</span>
+            <Card className="p-4">
+              <div className="mb-2 flex items-center gap-2 text-sky-400">
+                <TrendingUp size={16} />
+                <span className="text-xs font-bold uppercase tracking-wider">Workouts</span>
               </div>
-              <div className="text-3xl font-black text-content ">{sessions.reduce((sum, s) => sum + (s.PRs?.length || 0), 0)}</div>
+              <div className="font-mono text-2xl font-extrabold text-content tabular-nums">{sessions.length}</div>
+            </Card>
+
+            <Card className="p-4">
+              <div className="mb-2 flex items-center gap-2 text-emerald-400">
+                <Trophy size={16} />
+                <span className="text-xs font-bold uppercase tracking-wider">Total PRs</span>
+              </div>
+              <div className="font-mono text-2xl font-extrabold text-content tabular-nums">
+                {sessions.reduce((sum, s) => sum + (s.PRs?.length || 0), 0)}
+              </div>
             </Card>
           </div>
 
           {/* Volume chart */}
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <FilledIcon icon={Activity} size={20} className="text-emerald-400" /> Volume (7 days)
+          <h2 className="mb-3 flex items-center gap-2 text-lg font-bold tracking-tight">
+            <FilledIcon icon={Activity} size={18} className="text-primary-400" /> Volume (7 days)
           </h2>
-          <Card className="p-4 h-56 mb-8">
+          <Card className="mb-6 h-60 p-4">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={volumeData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                <XAxis dataKey="date" stroke="#666" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#666" fontSize={11} tickLine={false} axisLine={false} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+                <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#18181b', border: '1px solid #333', borderRadius: '8px' }}
-                  itemStyle={{ color: '#818cf8' }}
+                  contentStyle={{
+                    backgroundColor: 'var(--bg-elevated)',
+                    border: '1px solid var(--border-default)',
+                    borderRadius: '12px',
+                    color: 'var(--text-primary)',
+                  }}
+                  itemStyle={{ color: 'var(--theme-400)' }}
                   formatter={(v) => [`${Number(v ?? 0).toLocaleString()} ${unit}`, 'Volume']}
                 />
-                <Bar dataKey="volume" fill="#818cf8" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="volume" fill="var(--theme-500)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </Card>
@@ -367,17 +378,22 @@ export function AnalyticsPage() {
                 <div className="h-56">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={measurementTrend.series}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                      <XAxis dataKey="label" stroke="#666" fontSize={11} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#666" fontSize={11} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+                      <XAxis dataKey="label" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
                       <Tooltip
-                        contentStyle={{ backgroundColor: '#18181b', border: '1px solid #333', borderRadius: '8px' }}
+                        contentStyle={{
+                          backgroundColor: 'var(--bg-elevated)',
+                          border: '1px solid var(--border-default)',
+                          borderRadius: '12px',
+                          color: 'var(--text-primary)',
+                        }}
                         formatter={(v, name) => {
                           const unitLabel = measurementTrend.latest?.unit || '';
                           return [`${Number(v ?? 0)} ${unitLabel}`, name === 'movingAvg7d' ? '7d Avg' : 'Value'];
                         }}
                       />
-                      <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#18181b', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                      <Line type="monotone" dataKey="value" stroke="var(--theme-500)" strokeWidth={3} dot={{ r: 4, fill: 'var(--bg-card)', strokeWidth: 2 }} activeDot={{ r: 6 }} />
                       <Line type="monotone" dataKey="movingAvg7d" stroke="#10b981" strokeDasharray="5 5" strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>

@@ -1,8 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Target, Plus, X, Trash2, CheckCircle2, Trophy, Calendar, Edit2, RefreshCw, TrendingUp } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Target, Plus, Trash2, CheckCircle2, Trophy, Calendar, Edit2, RefreshCw, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { AutocompleteInput } from '../../components/ui/AutocompleteInput';
+import { AppDialog } from '../../components/ui/Dialog';
+import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { Input } from '../../components/ui/Input';
+import { Progress } from '../../components/ui/Progress';
+import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { useAppStore } from '../../store/useAppStore';
 import { Goal, GoalDirection, GoalTrackingType } from '../../types';
 import { computeMeasurementTrend } from '../../utils/bodyTrends';
@@ -70,6 +78,7 @@ export function GoalsPage() {
   const measurements = useAppStore(s => s.measurements);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [goalToDelete, setGoalToDelete] = useState<string | null>(null);
 
   const weightUnit = settings?.weightUnit || 'kg';
   const weightTrend = useMemo(
@@ -260,91 +269,82 @@ export function GoalsPage() {
   const completedGoals = goals.filter(g => g.completed);
 
   return (
-    <div className="min-h-screen bg-page pb-24">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-page/80 backdrop-blur-md px-4 pt-12 pb-4">
-        <div className="flex items-center justify-between">
+    <div className="min-h-full bg-transparent">
+      <div className="px-4 pt-5 pb-6">
+        {/* Header */}
+        <div className="mb-5 flex items-center justify-between gap-3 pt-safe">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-content ">Goals</h1>
-            <p className="text-sm text-muted mt-0.5">{activeGoals.length} active</p>
-          </div>
-          <button
-            onClick={openCreateModal}
-            className="flex items-center gap-2 rounded-2xl bg-primary-500 px-4 py-2.5 text-sm font-bold text-content shadow-lg shadow-primary-500/40 transition-all hover:bg-primary-400 active:scale-95"
-          >
-            <Plus size={18}/> New Goal
-          </button>
-        </div>
-      </div>
-
-      <div className="px-4 space-y-4">
-        {weightTrend.latest && (
-          <button
-            type="button"
-            onClick={() => navigate('/stats')}
-            className="w-full rounded-2xl bg-surface border border-content/5 p-4 flex items-center justify-between gap-3 text-left hover:border-blue-500/30 transition-colors"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/15 text-blue-400">
-                <TrendingUp size={18} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted">Body Weight Trend</p>
-                <p className="text-sm font-black text-content tabular-nums mt-0.5">
-                  {weightTrend.latest.value} {weightTrend.latest.unit}
-                  {weightTrend.movingAvg7d !== null && (
-                    <span className="text-xs font-semibold text-emerald-400 ml-2">
-                      · 7d avg {weightTrend.movingAvg7d} {weightTrend.latest.unit}
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
-            {weightTrend.weeklyRate !== null && (
-              <span
-                className={`shrink-0 rounded-lg border px-2.5 py-1 text-[11px] font-bold tabular-nums ${
-                  weightTrend.weeklyRate === 0
-                    ? 'bg-page/20 border-content/10 text-muted'
-                    : 'bg-blue-500/15 border-blue-500/30 text-blue-400'
-                }`}
-              >
-                {weightTrend.weeklyRate > 0 ? '+' : ''}
-                {weightTrend.weeklyRate}/wk
-              </span>
-            )}
-          </button>
-        )}
-
-        {/* Empty state */}
-        {goals.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center py-20 text-center"
-          >
-            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-primary-500/20 to-primary-500/20">
-              <Target size={36}className="text-primary-400" />
-            </div>
-            <h3 className="text-xl font-bold text-content ">No goals yet</h3>
-            <p className="mt-2 text-sm text-muted max-w-xs">
-              Set a fitness goal and track your progress. Every champion was once a beginner.
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-400">
+              Milestones
             </p>
-            <button
-              onClick={openCreateModal}
-              className="mt-6 flex items-center gap-2 rounded-2xl bg-primary-500 px-6 py-3 text-sm font-bold text-content shadow-lg shadow-primary-500/40 transition-all hover:bg-primary-400"
-            >
-              <Plus size={18}/> Set Your First Goal
-            </button>
-          </motion.div>
-        )}
+            <h1 className="text-2xl font-extrabold tracking-tight text-content">Goals</h1>
+            <p className="mt-0.5 text-xs font-medium text-muted">{activeGoals.length} active</p>
+          </div>
+          <Button onClick={openCreateModal} size="sm">
+            <Plus size={16} />
+            New Goal
+          </Button>
+        </div>
 
-        {/* Active goals */}
-        {activeGoals.map((goal, i) => {
-          const pct = computeGoalProgressPercent(goal);
-          const deadline = formatDeadline(goal.deadline);
-          const colorClass = GOAL_COLORS[i % GOAL_COLORS.length];
-          const isAuto = Boolean(goal.trackingType && goal.trackingType !== 'manual');
-          const autoLabel = getAutoLabel(goal);
+        <div className="space-y-4">
+          {weightTrend.latest && (
+            <Card
+              interactive
+              onClick={() => navigate('/stats')}
+              className="flex items-center justify-between gap-3 p-4"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/20 text-blue-400">
+                  <TrendingUp size={18} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted">
+                    Body Weight Trend
+                  </p>
+                  <p className="mt-0.5 font-mono text-sm font-bold text-content tabular-nums">
+                    {weightTrend.latest.value} {weightTrend.latest.unit}
+                    {weightTrend.movingAvg7d !== null && (
+                      <span className="ml-2 text-xs font-semibold text-emerald-400">
+                        · 7d avg {weightTrend.movingAvg7d} {weightTrend.latest.unit}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+              {weightTrend.weeklyRate !== null && (
+                <Badge variant={weightTrend.weeklyRate === 0 ? 'outline' : 'info'} className="font-mono tabular-nums">
+                  {weightTrend.weeklyRate > 0 ? '+' : ''}
+                  {weightTrend.weeklyRate}/wk
+                </Badge>
+              )}
+            </Card>
+          )}
+
+          {/* Empty state */}
+          {goals.length === 0 && (
+            <Card className="flex flex-col items-center justify-center py-14 text-center">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-500/20 text-primary-400">
+                <Target size={30} />
+              </div>
+              <h3 className="text-lg font-bold text-content">No goals yet</h3>
+              <p className="mt-1.5 max-w-xs text-xs text-muted">
+                Set a strength, volume, or body weight goal and track progress automatically.
+              </p>
+              <Button onClick={openCreateModal} className="mt-5">
+                <Plus size={16} />
+                Set Your First Goal
+              </Button>
+            </Card>
+          )}
+
+          {/* Active goals — single column */}
+          <div className="grid grid-cols-1 gap-3.5">
+            {activeGoals.map((goal, i) => {
+              const pct = computeGoalProgressPercent(goal);
+              const deadline = formatDeadline(goal.deadline);
+              const colorClass = GOAL_COLORS[i % GOAL_COLORS.length];
+              const isAuto = Boolean(goal.trackingType && goal.trackingType !== 'manual');
+              const autoLabel = getAutoLabel(goal);
 
           return (
             <motion.div
@@ -352,7 +352,7 @@ export function GoalsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="relative overflow-hidden rounded-3xl bg-surface border border-content/5 p-5"
+              className="liquid-glass relative overflow-hidden rounded-3xl p-5"
             >
               {/* Background gradient blob */}
               <div className={`absolute -top-8 -right-8 h-32 w-32 rounded-full bg-gradient-to-br ${colorClass} opacity-10 blur-2xl pointer-events-none`} />
@@ -435,248 +435,259 @@ export function GoalsPage() {
                 <div className="flex items-center gap-2 mt-4">
                   <button
                     onClick={() => handleUpdateProgress(goal, goal.currentValue - 1)}
-                    className="flex h-8 w-8 items-center justify-center rounded-xl bg-page/5 dark:bg-content/5 text-content font-bold hover:bg-page/10 dark:bg-content/10 transition-colors text-sm"
+                    aria-label="Decrease goal value"
+                    className="liquid-btn-glass flex h-10 w-10 items-center justify-center rounded-xl text-content font-bold text-base cursor-pointer"
                   >
                     −
                   </button>
                   <div className="flex-1 text-center">
-                    <span className="text-sm font-bold text-muted">{goal.currentValue} {goal.unit}</span>
+                    <span className="font-mono text-sm font-bold text-muted tabular-nums">{goal.currentValue} {goal.unit}</span>
                   </div>
                   <button
                     onClick={() => handleUpdateProgress(goal, goal.currentValue + 1)}
-                    className="flex h-8 w-8 items-center justify-center rounded-xl bg-page/5 dark:bg-content/5 text-content font-bold hover:bg-page/10 dark:bg-content/10 transition-colors text-sm"
+                    aria-label="Increase goal value"
+                    className="liquid-btn-glass flex h-10 w-10 items-center justify-center rounded-xl text-content font-bold text-base cursor-pointer"
                   >
                     +
                   </button>
                   <button
                     onClick={() => handleToggleComplete(goal)}
-                    className="flex items-center gap-1.5 rounded-xl bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                    className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/18 px-3.5 py-2 text-xs font-bold text-emerald-400 backdrop-blur-md hover:bg-emerald-500/25 transition-colors cursor-pointer"
                   >
-                    <CheckCircle2 size={14}/> Done
+                    <CheckCircle2 size={14} /> Done
                   </button>
                 </div>
               )}
             </motion.div>
           );
         })}
+          </div>
 
-        {/* Completed goals */}
-        {completedGoals.length > 0 && (
-          <>
-            <div className="flex items-center gap-2 pt-2">
-              <Trophy size={16}className="text-yellow-500" />
-              <h2 className="text-sm font-bold text-muted uppercase tracking-widest">Achieved</h2>
-            </div>
-            {completedGoals.map((goal, i) => (
-              <motion.div
-                key={goal.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.05 }}
-                className="flex items-center gap-3 rounded-2xl bg-surface border border-content/5 p-4 opacity-60"
-              >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
-                  <CheckCircle2 size={18}/>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-content line-through truncate">{goal.title}</p>
-                  <p className="text-xs text-muted">{goal.targetValue} {goal.unit}</p>
-                </div>
-                <button
-                  onClick={() => handleToggleComplete(goal)}
-                  className="text-xs text-muted hover:text-muted transition-colors font-medium"
-                >
-                  Undo
-                </button>
-                <button
-                  onClick={() => handleDelete(goal.id)}
-                  className="text-zinc-700 hover:text-red-500 transition-colors"
-                >
-                  <Trash2 size={15}/>
-                </button>
-              </motion.div>
-            ))}
-          </>
-        )}
+          {/* Completed goals */}
+          {completedGoals.length > 0 && (
+            <>
+              <div className="flex items-center gap-2 pt-2">
+                <Trophy size={16} className="text-yellow-500" />
+                <h2 className="text-xs font-bold uppercase tracking-widest text-muted">Achieved</h2>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                {completedGoals.map((goal, i) => (
+                  <motion.div
+                    key={goal.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: i * 0.04 }}
+                    className="liquid-glass flex items-center gap-3 rounded-2xl p-4 opacity-75"
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+                      <CheckCircle2 size={16} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-content line-through">{goal.title}</p>
+                      <p className="font-mono text-xs text-muted tabular-nums">{goal.targetValue} {goal.unit}</p>
+                    </div>
+                    <button
+                      onClick={() => handleToggleComplete(goal)}
+                      className="text-xs font-semibold text-muted hover:text-content transition-colors cursor-pointer"
+                    >
+                      Undo
+                    </button>
+                    <button
+                      onClick={() => setGoalToDelete(goal.id)}
+                      className="text-muted hover:text-red-400 transition-colors cursor-pointer"
+                      aria-label="Delete achieved goal"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </motion.div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Create/Edit Modal */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 z-[60] flex items-end justify-center bg-page/60 backdrop-blur-sm sm:items-center">
-            <motion.div
-              initial={{ opacity: 0, y: '100%' }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md rounded-t-3xl bg-card p-6 sm:rounded-3xl"
-            >
-              <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-content ">
-                  {editingGoal ? 'Edit Goal' : 'New Goal'}
-                </h2>
+      <AppDialog
+        open={isModalOpen}
+        onOpenChange={(open) => {
+          if (!open) setIsModalOpen(false);
+        }}
+        title={editingGoal ? 'Edit Goal' : 'New Goal'}
+        layout="sheet"
+        size="md"
+      >
+        <div className="space-y-4">
+          {/* Tracking Mode */}
+          <div>
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-wider text-muted">
+              Tracking Mode
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {TRACKING_MODES.map((m) => (
                 <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="rounded-full bg-page/10 dark:bg-content/10 p-2 text-content hover:bg-page/20 dark:bg-content/20"
+                  key={m.id}
+                  type="button"
+                  onClick={() => handleSelectTrackingMode(m.id)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                    form.trackingType === m.id
+                      ? 'border-sky-500/40 bg-sky-500/20 text-sky-400'
+                      : 'border-content/10 bg-surface text-muted hover:text-content'
+                  }`}
                 >
-                  <X size={20} />
+                  {m.label}
                 </button>
-              </div>
-
-              <div className="space-y-4 max-h-[75dvh] overflow-y-auto pr-1">
-                {/* Tracking Mode */}
-                <div>
-                  <label className="text-xs font-bold text-muted uppercase tracking-wider block mb-2">
-                    Tracking Mode
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {TRACKING_MODES.map((m) => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => handleSelectTrackingMode(m.id)}
-                        className={`rounded-full px-3 py-1.5 text-xs font-bold border transition-all ${
-                          form.trackingType === m.id
-                            ? 'bg-sky-500/20 text-sky-400 border-sky-500/40'
-                            : 'bg-surface text-muted border-content/10 hover:text-content'
-                        }`}
-                      >
-                        {m.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Linked Exercise */}
-                {needsExercise && (
-                  <div>
-                    <label className="text-xs font-bold text-muted uppercase tracking-wider block mb-1.5">
-                      Linked Exercise
-                    </label>
-                    <AutocompleteInput
-                      value={form.linkedExerciseName}
-                      onChange={(val) => setForm((f) => ({ ...f, linkedExerciseName: val }))}
-                      onSelect={(ex) =>
-                        setForm((f) => ({
-                          ...f,
-                          linkedExerciseName: ex.name,
-                          title:
-                            f.title.trim() === ''
-                              ? `${ex.name} ${f.trackingType === 'exercise_e1rm' ? '1RM' : 'Max'}`
-                              : f.title,
-                        }))
-                      }
-                      placeholder="Select exercise to auto-track..."
-                    />
-                  </div>
-                )}
-
-                {/* Title */}
-                <div>
-                  <label className="text-xs font-bold text-muted uppercase tracking-wider">Goal Title</label>
-                  <input
-                    type="text"
-                    value={form.title}
-                    onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                    placeholder="e.g. Bench Press 100kg"
-                    className="mt-2 w-full rounded-2xl bg-page/5 dark:bg-content/5 px-4 py-3 text-content placeholder-zinc-600 outline-none focus:ring-2 focus:ring-primary-500 transition-all"
-                  />
-                </div>
-
-                {/* Target + Unit */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-bold text-muted uppercase tracking-wider">Target</label>
-                    <input
-                      type="number"
-                      value={form.targetValue}
-                      onChange={e => setForm(f => ({ ...f, targetValue: e.target.value }))}
-                      placeholder="100"
-                      className="mt-2 w-full rounded-2xl bg-page/5 dark:bg-content/5 px-4 py-3 text-content placeholder-zinc-600 outline-none focus:ring-2 focus:ring-primary-500 transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-muted uppercase tracking-wider">Unit</label>
-                    <select
-                      value={form.unit}
-                      disabled={form.trackingType !== 'manual'}
-                      onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}
-                      className="mt-2 w-full rounded-2xl bg-page/5 dark:bg-content/5 px-4 py-3 text-content outline-none focus:ring-2 focus:ring-primary-500 transition-all appearance-none disabled:opacity-60"
-                    >
-                      {UNITS.map(u => (
-                        <option key={u} value={u} className="bg-content dark:bg-card">{u}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Body weight starting weight */}
-                {form.trackingType === 'body_weight' && (
-                  <div>
-                    <label className="text-xs font-bold text-muted uppercase tracking-wider">
-                      Starting Weight ({weightUnit})
-                    </label>
-                    <input
-                      type="number"
-                      value={form.startValue}
-                      onChange={(e) => setForm((f) => ({ ...f, startValue: e.target.value }))}
-                      placeholder={weightTrend.latest ? String(weightTrend.latest.value) : '75'}
-                      className="mt-2 w-full rounded-2xl bg-page/5 dark:bg-content/5 px-4 py-3 text-content placeholder-zinc-600 outline-none focus:ring-2 focus:ring-primary-500 transition-all"
-                    />
-                    {form.startValue && form.targetValue && (
-                      <p className="mt-1 text-[11px] font-semibold text-sky-400">
-                        Direction: {Number(form.targetValue) < Number(form.startValue) ? 'Weight Loss ↓' : 'Weight Gain ↑'}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* Current Value (manual) or Live Metric Preview (auto) */}
-                {form.trackingType === 'manual' ? (
-                  <div>
-                    <label className="text-xs font-bold text-muted uppercase tracking-wider">Current Progress</label>
-                    <input
-                      type="number"
-                      value={form.currentValue}
-                      onChange={e => setForm(f => ({ ...f, currentValue: e.target.value }))}
-                      placeholder="0"
-                      className="mt-2 w-full rounded-2xl bg-page/5 dark:bg-content/5 px-4 py-3 text-content placeholder-zinc-600 outline-none focus:ring-2 focus:ring-primary-500 transition-all"
-                    />
-                  </div>
-                ) : (
-                  <div className="rounded-2xl bg-sky-500/10 border border-sky-500/20 px-4 py-3 flex items-center justify-between">
-                    <span className="text-xs font-bold text-sky-400 flex items-center gap-1.5">
-                      <RefreshCw size={13} /> Current Synced Value
-                    </span>
-                    <span className="text-sm font-black text-content tabular-nums">
-                      {previewMetric !== null ? `${Math.round(previewMetric * 10) / 10} ${form.unit}` : 'No data yet'}
-                    </span>
-                  </div>
-                )}
-
-                {/* Deadline */}
-                <div>
-                  <label className="text-xs font-bold text-muted uppercase tracking-wider">Deadline (optional)</label>
-                  <input
-                    type="date"
-                    value={form.deadline}
-                    onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))}
-                    className="mt-2 w-full rounded-2xl bg-page/5 dark:bg-content/5 px-4 py-3 text-content outline-none focus:ring-2 focus:ring-primary-500 transition-all dark:[color-scheme:dark]"
-                  />
-                </div>
-
-                <button
-                  onClick={handleSave}
-                  disabled={!canSave}
-                  className="w-full rounded-2xl bg-primary-500 py-4 text-base font-black text-content shadow-lg shadow-primary-500/40 transition-all hover:bg-primary-400 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
-                >
-                  {editingGoal ? 'Save Changes' : 'Create Goal'}
-                </button>
-              </div>
-            </motion.div>
+              ))}
+            </div>
           </div>
-        )}
-      </AnimatePresence>
+
+          {/* Linked Exercise */}
+          {needsExercise && (
+            <div>
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted">
+                Linked Exercise
+              </label>
+              <AutocompleteInput
+                value={form.linkedExerciseName}
+                onChange={(val) => setForm((f) => ({ ...f, linkedExerciseName: val }))}
+                onSelect={(ex) =>
+                  setForm((f) => ({
+                    ...f,
+                    linkedExerciseName: ex.name,
+                    title:
+                      f.title.trim() === ''
+                        ? `${ex.name} ${f.trackingType === 'exercise_e1rm' ? '1RM' : 'Max'}`
+                        : f.title,
+                  }))
+                }
+                placeholder="Select exercise to auto-track..."
+              />
+            </div>
+          )}
+
+          {/* Title */}
+          <div>
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted">
+              Goal Title
+            </label>
+            <Input
+              type="text"
+              value={form.title}
+              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+              placeholder="e.g. Bench Press 100kg"
+            />
+          </div>
+
+          {/* Target + Unit */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted">
+                Target
+              </label>
+              <Input
+                type="number"
+                value={form.targetValue}
+                onChange={(e) => setForm((f) => ({ ...f, targetValue: e.target.value }))}
+                placeholder="100"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted">
+                Unit
+              </label>
+              <select
+                value={form.unit}
+                disabled={form.trackingType !== 'manual'}
+                onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))}
+                className="liquid-input flex h-11 w-full rounded-2xl px-3.5 text-sm font-medium text-content outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/25 disabled:opacity-60"
+              >
+                {UNITS.map((u) => (
+                  <option key={u} value={u} className="bg-card text-content">
+                    {u}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Body weight starting weight */}
+          {form.trackingType === 'body_weight' && (
+            <div>
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted">
+                Starting Weight ({weightUnit})
+              </label>
+              <Input
+                type="number"
+                value={form.startValue}
+                onChange={(e) => setForm((f) => ({ ...f, startValue: e.target.value }))}
+                placeholder={weightTrend.latest ? String(weightTrend.latest.value) : '75'}
+              />
+              {form.startValue && form.targetValue && (
+                <p className="mt-1 text-[11px] font-semibold text-sky-400">
+                  Direction: {Number(form.targetValue) < Number(form.startValue) ? 'Weight Loss ↓' : 'Weight Gain ↑'}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Current Value (manual) or Live Metric Preview (auto) */}
+          {form.trackingType === 'manual' ? (
+            <div>
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted">
+                Current Progress
+              </label>
+              <Input
+                type="number"
+                value={form.currentValue}
+                onChange={(e) => setForm((f) => ({ ...f, currentValue: e.target.value }))}
+                placeholder="0"
+              />
+            </div>
+          ) : (
+            <div className="flex items-center justify-between rounded-xl border border-sky-500/20 bg-sky-500/10 px-4 py-3">
+              <span className="flex items-center gap-1.5 text-xs font-bold text-sky-400">
+                <RefreshCw size={13} /> Current Synced Value
+              </span>
+              <span className="font-mono text-sm font-black text-content tabular-nums">
+                {previewMetric !== null ? `${Math.round(previewMetric * 10) / 10} ${form.unit}` : 'No data yet'}
+              </span>
+            </div>
+          )}
+
+          {/* Deadline */}
+          <div>
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted">
+              Deadline (optional)
+            </label>
+            <Input
+              type="date"
+              value={form.deadline}
+              onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
+              className="dark:[color-scheme:dark]"
+            />
+          </div>
+
+          <Button onClick={handleSave} disabled={!canSave} size="lg" className="w-full">
+            {editingGoal ? 'Save Changes' : 'Create Goal'}
+          </Button>
+        </div>
+      </AppDialog>
+
+      <ConfirmModal
+        isOpen={goalToDelete !== null}
+        title="Delete Goal"
+        message="Remove this goal from your list?"
+        confirmText="Delete"
+        isDestructive
+        onCancel={() => setGoalToDelete(null)}
+        onConfirm={() => {
+          if (goalToDelete) {
+            handleDelete(goalToDelete);
+            toast.success('Goal deleted');
+          }
+          setGoalToDelete(null);
+        }}
+      />
     </div>
   );
 }

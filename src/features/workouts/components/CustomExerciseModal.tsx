@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { BookOpen, Clock, Dumbbell, Edit2, Plus, Search, Trash2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { toast } from 'sonner';
+import { ConfirmModal } from '../../../components/ui/ConfirmModal';
 import { CustomExercise, ExerciseEquipment, ExerciseTrackingMode } from '../../../types';
 import { useAppStore } from '../../../store/useAppStore';
 import {
@@ -44,6 +46,7 @@ export function CustomExerciseModal({
   const [defaultRestTimer, setDefaultRestTimer] = useState('90');
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [exerciseToDelete, setExerciseToDelete] = useState<{ id: string; name: string } | null>(null);
 
   const resetForm = (seedName = '') => {
     setEditingId(null);
@@ -141,7 +144,8 @@ export function CustomExerciseModal({
   });
 
   return (
-    <AnimatePresence>
+    <>
+      <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[110] flex items-end justify-center bg-page/75 backdrop-blur-sm sm:items-center">
           <motion.div
@@ -149,7 +153,7 @@ export function CustomExerciseModal({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: '100%' }}
             transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-            className="w-full max-w-md rounded-t-3xl bg-card sm:rounded-3xl max-h-[92dvh] flex flex-col border border-content/10 shadow-2xl"
+            className="liquid-glass-strong w-full max-w-[460px] rounded-t-[28px] max-h-[90dvh] flex flex-col pb-safe"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-5 pb-3 border-b border-content/5 shrink-0">
@@ -285,12 +289,8 @@ export function CustomExerciseModal({
                           </button>
                           <button
                             type="button"
-                            onClick={() => {
-                              if (window.confirm(`Delete "${ce.name}" from your custom library?`)) {
-                                deleteCustomExercise(ce.id);
-                              }
-                            }}
-                            className="p-2 text-muted hover:text-red-500 rounded-lg hover:bg-red-500/10 transition-colors"
+                            onClick={() => setExerciseToDelete({ id: ce.id, name: ce.name })}
+                            className="p-2 text-muted hover:text-red-500 rounded-lg hover:bg-red-500/10 transition-colors cursor-pointer"
                             title="Delete Exercise"
                           >
                             <Trash2 size={14} />
@@ -383,7 +383,7 @@ export function CustomExerciseModal({
                           className={cn(
                             'px-2.5 py-1 rounded-full text-xs font-semibold transition-all border',
                             isPrimary &&
-                              'bg-primary-500 text-content border-primary-500 shadow-sm',
+                              'bg-primary-500 text-white border-primary-500 shadow-sm',
                             isSecondary &&
                               'bg-amber-500/20 text-amber-400 border-amber-500/40',
                             !isPrimary &&
@@ -450,7 +450,7 @@ export function CustomExerciseModal({
                     type="button"
                     disabled={!canSave || isSaving}
                     onClick={handleSave}
-                    className="flex-1 rounded-2xl bg-primary-500 py-3 text-sm font-black text-content shadow-md shadow-primary-500/30 hover:bg-primary-400 active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none"
+                    className="flex-1 rounded-2xl bg-primary-500 py-3 text-sm font-black text-white shadow-md shadow-primary-500/30 hover:bg-primary-400 active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
                   >
                     {editingId
                       ? 'Save Changes'
@@ -465,5 +465,21 @@ export function CustomExerciseModal({
         </div>
       )}
     </AnimatePresence>
+    <ConfirmModal
+      isOpen={exerciseToDelete !== null}
+      title="Delete Custom Exercise"
+      message={`Delete "${exerciseToDelete?.name ?? ''}" from your custom library?`}
+      confirmText="Delete"
+      isDestructive
+      onCancel={() => setExerciseToDelete(null)}
+      onConfirm={() => {
+        if (exerciseToDelete) {
+          deleteCustomExercise(exerciseToDelete.id);
+          toast.success(`Deleted "${exerciseToDelete.name}"`);
+        }
+        setExerciseToDelete(null);
+      }}
+    />
+  </>
   );
 }

@@ -109,7 +109,7 @@ export function PullToRefresh({ onRefresh, children, className }: PullToRefreshP
                 type: isRefreshing ? 'spring' : 'tween',
                 duration: isRefreshing ? 0.3 : 0
               }}
-              className="bg-surface shadow-lg shadow-black/20 rounded-full p-2 border border-content/5 mt-2 flex items-center justify-center text-primary-500"
+              className="liquid-glass-strong rounded-full p-2 mt-2 flex items-center justify-center text-primary-400"
             >
               <Loader2 
                 size={24}className={cn(isRefreshing ? "animate-spin" : "")} 

@@ -321,7 +321,7 @@ export function ExerciseManagerModal({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="w-full max-w-md rounded-t-3xl bg-card sm:rounded-3xl h-[98dvh] sm:h-[90vh] flex flex-col"
+            className="liquid-glass-strong w-full max-w-[460px] rounded-t-[28px] h-[94dvh] flex flex-col pb-safe"
           >
             <div className="flex items-center justify-between p-5 pb-3 border-b border-content/5 shrink-0">
               <div>
@@ -460,7 +460,7 @@ export function ExerciseManagerModal({
                           }}
                           className={cn(
                             'px-3 py-1.5 rounded-full text-xs font-semibold transition-all border relative overflow-hidden',
-                            isPrimary && 'bg-primary-500 text-content border-primary-500 shadow-sm shadow-primary-500/40',
+                            isPrimary && 'bg-primary-500 text-white border-primary-500 shadow-sm shadow-primary-500/40',
                             isSecondary && 'bg-amber-500/20 text-amber-400 border-amber-500/50',
                             !isSelected &&
                               'bg-page/5 dark:bg-content/5 text-muted border-transparent hover:bg-page/10 dark:bg-content/10',
@@ -547,7 +547,7 @@ export function ExerciseManagerModal({
                 <button
                   onClick={onSaveExercise}
                   disabled={!exerciseForm.name.trim()}
-                  className="flex-1 rounded-2xl bg-primary-500 py-3 text-sm font-black text-content shadow-md shadow-primary-500/40 transition-all hover:bg-primary-400 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+                  className="flex-1 rounded-2xl bg-primary-500 py-3 text-sm font-black text-white shadow-md shadow-primary-500/40 transition-all hover:bg-primary-400 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
                 >
                   {editingExercise ? 'Save Changes' : '+ Add'}
                 </button>

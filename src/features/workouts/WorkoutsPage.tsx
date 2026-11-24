@@ -2,13 +2,22 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, BookOpen, Dumbbell, Calendar, Clock, ChevronRight, Edit2, Plus,
-  Flame, Weight, Copy, Zap, Download, Share2,
+  Flame, Weight, Copy, Zap, Download, Share2, MoreHorizontal,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../../components/ui/DropdownMenu';
 import { WorkoutProgram } from '../../types';
 import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { generateWorkoutDays } from '../../utils/workoutGenerator';
 import { PullToRefresh } from '../../components/ui/PullToRefresh';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/Badge';
+import { Switch } from '../../components/ui/Switch';
 import { useAppStore } from '../../store/useAppStore';
 import { generateId } from '../../utils/uuid';
 import {
@@ -201,51 +210,56 @@ export function WorkoutsPage() {
 
   // ── Main render ────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-page">
+    <div className="min-h-full bg-transparent">
       <PullToRefresh onRefresh={hydrate} className="pb-24">
-        <div className="sticky top-0 z-10 flex items-center justify-between bg-page/80 p-4 pt-12 backdrop-blur-md">
-          <button onClick={() => navigate(-1)} className="rounded-full p-2 text-content hover:bg-content/10">
-            <ArrowLeft size={24}/>
-          </button>
-          <h1 className="text-xl font-semibold text-content">Programs</h1>
+        <div className="liquid-glass-strong sticky top-0 z-10 flex items-center justify-between border-x-0 border-t-0 px-4 pb-3.5 pt-safe">
           <button
+            onClick={() => navigate(-1)}
+            aria-label="Back"
+            className="liquid-btn-glass flex h-10 w-10 items-center justify-center rounded-full text-content transition-colors cursor-pointer"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <h1 className="text-lg font-extrabold tracking-tight text-content">Programs</h1>
+          <Button
             type="button"
+            variant="secondary"
+            size="xs"
             onClick={() => setIsImportOpen(true)}
-            className="flex items-center gap-1 rounded-full bg-content/5 border border-content/10 px-3 py-1.5 text-xs font-bold text-sky-400 hover:bg-sky-500/15 transition-colors"
             title="Import Shared Program"
           >
-            <Download size={14} />
+            <Download size={14} className="text-sky-400" />
             <span>Import</span>
-          </button>
+          </Button>
         </div>
 
         <div className="p-4">
-          <div className="grid grid-cols-2 gap-3 mb-5">
+          <div className="mb-5 grid grid-cols-2 gap-2.5">
             <button
               type="button"
               onClick={() => navigate('/quick-workout')}
-              className="flex items-center gap-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 p-3.5 text-left hover:bg-emerald-500/15 active:scale-[0.98] transition-all"
+              className="liquid-glass liquid-glass-interactive flex min-h-[64px] items-center gap-2.5 rounded-2xl p-3 text-left active:scale-[0.98] cursor-pointer"
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
                 <Zap size={18} />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-bold text-content truncate">Quick Workout</p>
-                <p className="text-[11px] text-emerald-400/80 font-medium truncate">Freestyle session</p>
+                <p className="truncate text-xs font-bold text-content">Quick Workout</p>
+                <p className="truncate text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Freestyle</p>
               </div>
             </button>
 
             <button
               type="button"
               onClick={() => setIsCustomLibOpen(true)}
-              className="flex items-center gap-3 rounded-2xl bg-sky-500/10 border border-sky-500/25 p-3.5 text-left hover:bg-sky-500/15 active:scale-[0.98] transition-all"
+              className="liquid-glass liquid-glass-interactive flex min-h-[64px] items-center gap-2.5 rounded-2xl p-3 text-left active:scale-[0.98] cursor-pointer"
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-500/20 text-sky-400">
                 <BookOpen size={18} />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-bold text-content truncate">Custom Exercises</p>
-                <p className="text-[11px] text-sky-400/80 font-medium truncate">
+                <p className="truncate text-xs font-bold text-content">Custom Bank</p>
+                <p className="truncate text-[11px] font-semibold text-sky-600 dark:text-sky-400">
                   {customExercises.length} {customExercises.length === 1 ? 'exercise' : 'exercises'}
                 </p>
               </div>
@@ -253,56 +267,57 @@ export function WorkoutsPage() {
           </div>
 
           {programs.length === 0 ? (
-            <div className="flex h-64 flex-col items-center justify-center text-center">
-              <div className="mb-4 rounded-full bg-card p-4 shadow-lg">
-                <Dumbbell size={32}className="text-muted" />
+            <div className="liquid-glass flex h-60 flex-col items-center justify-center rounded-3xl p-6 text-center">
+              <div className="mb-4 rounded-2xl bg-content/10 p-4">
+                <Dumbbell size={32} className="text-muted" />
               </div>
-              <h3 className="text-lg font-medium text-content">No programs yet</h3>
-              <p className="mt-2 text-sm text-muted max-w-[240px]">Create your first workout program to get started.</p>
+              <h3 className="text-lg font-bold text-content">No programs yet</h3>
+              <p className="mt-1.5 max-w-[240px] text-xs text-muted">
+                Create your first workout program to get started.
+              </p>
             </div>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid grid-cols-1 gap-3">
               {programs.map((program) => (
                 <motion.div
                   key={program.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   onClick={() => navigate(`/workout/${program.id}`)}
-                  className="relative overflow-hidden rounded-3xl bg-surface border border-content/5 p-4 cursor-pointer glow-card"
+                  className="liquid-glass liquid-glass-interactive relative cursor-pointer overflow-hidden rounded-3xl p-4"
                 >
-                  <div className="flex items-start gap-3 sm:gap-4">
-                    <div className="shrink-0 flex flex-col items-center gap-3">
-                      <div className={cn(
-                        'flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl',
-                        program.goal === 'Muscle Building' && 'bg-orange-500/20 text-orange-400',
-                        program.goal === 'Fat Loss' && 'bg-red-500/20 text-red-400',
-                        program.goal === 'Strength' && 'bg-blue-500/20 text-blue-400',
-                        !program.goal && 'bg-primary-500/20 text-primary-400',
-                      )}>
+                  <div className="flex items-start gap-3">
+                    <div className="flex shrink-0 flex-col items-center gap-3">
+                      <div
+                        className={cn(
+                          'flex h-12 w-12 items-center justify-center rounded-2xl',
+                          program.goal === 'Muscle Building' && 'bg-orange-500/20 text-orange-400',
+                          program.goal === 'Fat Loss' && 'bg-red-500/20 text-red-400',
+                          program.goal === 'Strength' && 'bg-blue-500/20 text-blue-400',
+                          !program.goal && 'bg-primary-500/20 text-primary-400',
+                        )}
+                      >
                         {program.goal === 'Fat Loss' ? (
-                          <Flame size={24}className="sm:w-7 sm:h-7" />
+                          <Flame size={22} />
                         ) : program.goal === 'Strength' ? (
-                          <Weight size={24}className="sm:w-7 sm:h-7" />
+                          <Weight size={22} />
                         ) : (
-                          <Dumbbell size={24}className="sm:w-7 sm:h-7" />
+                          <Dumbbell size={22} />
                         )}
                       </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); toggleProgramStatus(program); }}
-                        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-                          program.status === 'active' ? 'bg-primary-500' : 'bg-zinc-600'
-                        }`}
-                      >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          program.status === 'active' ? 'translate-x-6' : 'translate-x-1'
-                        }`} />
-                      </button>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <Switch
+                          checked={program.status === 'active'}
+                          onCheckedChange={() => toggleProgramStatus(program)}
+                          aria-label={`Toggle ${program.name} active status`}
+                        />
+                      </div>
                     </div>
 
-                    <div className="flex flex-1 flex-col min-w-0">
-                      <div className="flex flex-col gap-1">
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <div className="flex flex-col gap-1.5">
                         {renamingId === program.id ? (
-                          <div className="flex items-center gap-2 w-full">
+                          <div className="flex w-full items-center gap-2">
                             <input
                               type="text"
                               autoFocus
@@ -313,65 +328,67 @@ export function WorkoutsPage() {
                                 if (e.key === 'Escape') setRenamingId(null);
                               }}
                               onBlur={() => submitRename(program)}
-                              className="text-base sm:text-lg font-bold text-content bg-content/10 rounded px-2 py-1 outline-none w-full border border-primary-500/50"
+                              className="liquid-input w-full rounded-xl px-2.5 py-1.5 text-base font-bold text-content outline-none"
                               onClick={(e) => e.stopPropagation()}
                               aria-label="Rename workout program"
                             />
                           </div>
                         ) : (
-                          <div className="flex items-start gap-2 group/title">
-                            <h3 className="text-base sm:text-lg font-bold text-content leading-tight break-words flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="flex-1 break-words text-base font-bold leading-tight text-content">
                               {program.name}
                             </h3>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setShareProgram(program); }}
-                              className="text-muted/40 hover:text-sky-400 shrink-0 p-1 -mt-1 transition-colors"
-                              title="Share Program"
-                            >
-                              <Share2 size={15}/>
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleDuplicateProgram(program); }}
-                              className="text-muted/40 hover:text-content shrink-0 p-1 -mt-1 transition-colors"
-                              title="Duplicate Program"
-                            >
-                              <Copy size={15}/>
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); startRename(program); }}
-                              className="text-muted/40 hover:text-content shrink-0 p-1 -mt-1 transition-colors"
-                              title="Rename Program"
-                            >
-                              <Edit2 size={15}/>
-                            </button>
+                            <div className="flex shrink-0 items-center" onClick={(e) => e.stopPropagation()}>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button
+                                    type="button"
+                                    aria-label={`Actions for ${program.name}`}
+                                    className="liquid-btn-glass -mr-1 -mt-1 flex h-10 w-10 items-center justify-center rounded-xl text-muted hover:text-content transition-colors cursor-pointer"
+                                  >
+                                    <MoreHorizontal size={18} />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => setShareProgram(program)}>
+                                    <Share2 size={14} className="text-sky-400" />
+                                    <span>Share Program</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDuplicateProgram(program)}>
+                                    <Copy size={14} className="text-muted" />
+                                    <span>Duplicate</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => startRename(program)}>
+                                    <Edit2 size={14} className="text-muted" />
+                                    <span>Rename</span>
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </div>
                         )}
 
                         <div className="flex items-center gap-2">
-                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                            program.status === 'active'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                              : 'bg-zinc-500/10 text-muted border border-zinc-500/20'
-                          }`}>
+                          <Badge variant={program.status === 'active' ? 'success' : 'outline'}>
                             {program.status === 'active' ? 'Active' : 'Paused'}
-                          </span>
+                          </Badge>
                         </div>
                       </div>
 
                       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
-                        <div className="flex items-center text-[10px] sm:text-xs text-muted/60 uppercase font-bold tracking-widest">
-                          <Calendar size={12}className="mr-1.5 shrink-0 text-primary-500/50" />
+                        <div className="flex items-center text-[11px] font-bold uppercase tracking-wider text-muted tabular-nums">
+                          <Calendar size={12} className="mr-1.5 shrink-0 text-primary-400" />
                           <span>{program.days.length} Days</span>
                         </div>
-                        <div className="flex items-center text-[10px] sm:text-xs text-muted/60 uppercase font-bold tracking-widest">
-                          <Clock size={12}className="mr-1.5 shrink-0 text-primary-500/50" />
-                          <span>Updated: {formatDate(program.updatedAt)}</span>
+                        <div className="flex items-center text-[11px] font-bold uppercase tracking-wider text-muted tabular-nums">
+                          <Clock size={12} className="mr-1.5 shrink-0 text-primary-400" />
+                          <span>Updated {formatDate(program.updatedAt)}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="shrink-0 flex h-full items-center justify-center self-stretch pl-1 sm:pl-2">
-                      <ChevronRight size={20}className="text-muted sm:w-6 sm:h-6" />
+                    <div className="flex h-full shrink-0 items-center justify-center self-stretch pl-0.5">
+                      <ChevronRight size={18} className="text-muted" />
                     </div>
                   </div>
                 </motion.div>
@@ -381,13 +398,16 @@ export function WorkoutsPage() {
         </div>
       </PullToRefresh>
 
-      {/* Floating Action Button */}
-      <button
-        onClick={() => setIsAddModalOpen(true)}
-        className="fixed bottom-32 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary-500 text-white shadow-lg shadow-primary-500/40 transition-transform active:scale-95 touch-manipulation"
-      >
-        <Plus size={28}/>
-      </button>
+      {/* Mobile-Framed Floating Action Button above Persistent Bottom Nav */}
+      <div className="pointer-events-none fixed bottom-[92px] left-1/2 z-40 flex w-full max-w-[460px] -translate-x-1/2 justify-end px-4 pb-safe">
+        <button
+          onClick={() => setIsAddModalOpen(true)}
+          aria-label="Add Program"
+          className="pointer-events-auto liquid-btn-primary flex h-14 w-14 items-center justify-center rounded-2xl text-white transition-transform active:scale-95 touch-manipulation cursor-pointer"
+        >
+          <Plus size={26} />
+        </button>
+      </div>
 
       <AddProgramModal
         isOpen={isAddModalOpen}

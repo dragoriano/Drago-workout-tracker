@@ -4,7 +4,11 @@ import { Calculator, ChevronLeft, RotateCcw, Dumbbell, CheckCircle2, Trophy, X, 
 import type { Exercise, ExerciseTrackingMode, Set, WorkoutSession } from '../../types';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import { toast } from 'sonner';
 import { PromptModal } from '../../components/ui/PromptModal';
+import { ConfirmModal } from '../../components/ui/ConfirmModal';
+import { Button } from '../../components/ui/Button';
+import { Progress } from '../../components/ui/Progress';
 import { SwapModal } from '../../components/ui/SwapModal';
 import { PlateCalculatorModal } from '../../components/ui/PlateCalculatorModal';
 import { getExerciseMuscleGroups } from '../../data/exercises';
@@ -38,9 +42,9 @@ import {
   resolveExerciseBroadMuscles,
 } from '../../utils/muscleRecovery';
 import {
-  DEFAULT_BARBELL_WEIGHT,
   DEFAULT_PLATES,
   isWarmupSet,
+  resolveBarbellWeight,
   type WeightUnit,
 } from '../../utils/strength';
 import { applyWarmupSets, generateWarmupSets } from '../../utils/warmupGenerator';
@@ -111,6 +115,7 @@ export function WorkoutSessionPage() {
   const lastSpokenSecondRef = useRef<number | null>(null);
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -328,7 +333,7 @@ export function WorkoutSessionPage() {
 
   const handleGenerateWarmup = (exerciseId: string) => {
     const unit: WeightUnit = settings?.weightUnit === 'lbs' ? 'lbs' : 'kg';
-    const barbellWeight = settings?.barbellWeight ?? DEFAULT_BARBELL_WEIGHT[unit];
+    const barbellWeight = resolveBarbellWeight(settings?.barbellWeight, unit);
     const availablePlates =
       settings?.availablePlates && settings.availablePlates.length > 0
         ? settings.availablePlates
@@ -819,7 +824,7 @@ export function WorkoutSessionPage() {
         <p className="text-lg font-bold text-red-500">Workout day or program not found.</p>
         <button
           onClick={() => navigate('/')}
-          className="rounded-xl bg-primary-500 px-6 py-2 font-bold text-content hover:bg-primary-400"
+          className="rounded-xl bg-primary-500 px-6 py-2 font-bold text-white hover:bg-primary-400"
         >
           Go Back Home
         </button>
@@ -839,108 +844,83 @@ export function WorkoutSessionPage() {
   const progressPercent = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col bg-transparent font-sans text-content overflow-x-hidden">
-      <header className="sticky top-0 z-40 flex items-center justify-between bg-page px-4 py-4 backdrop-blur-md border-b border-content/5">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-content hover:bg-page/10 rounded-full transition-colors">
-          <ChevronLeft size={24}/>
-        </button>
-        <div className="text-center flex-1 min-w-0 px-2">
-          {isFreestyle ? (
-            isEditingTitle ? (
-              <input
-                type="text"
-                autoFocus
-                value={freestyleName}
-                onChange={(e) => setFreestyleName(e.target.value)}
-                onBlur={() => setIsEditingTitle(false)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === 'Escape') setIsEditingTitle(false);
-                }}
-                className="w-full max-w-[200px] mx-auto bg-card border border-primary-500/40 rounded-lg px-2 py-0.5 text-center text-base font-black uppercase tracking-wide outline-none"
-                aria-label="Workout name"
-              />
-            ) : (
+    <div className="flex h-[100dvh] w-full justify-center bg-transparent font-sans text-content overflow-x-hidden">
+      <div className="relative flex h-full w-full max-w-[460px] flex-col bg-transparent sm:border-x sm:border-content/10 sm:shadow-2xl">
+        <header className="liquid-glass-strong sticky top-0 z-40 border-x-0 border-t-0">
+          <div className="flex w-full items-center justify-between px-4 pb-3.5 pt-safe">
+            <button
+              onClick={() => navigate(-1)}
+              aria-label="Back"
+              className="liquid-btn-glass flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-content transition-colors cursor-pointer"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className="min-w-0 flex-1 px-2 text-center">
+              {isFreestyle ? (
+                isEditingTitle ? (
+                  <input
+                    type="text"
+                    autoFocus
+                    value={freestyleName}
+                    onChange={(e) => setFreestyleName(e.target.value)}
+                    onBlur={() => setIsEditingTitle(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === 'Escape') setIsEditingTitle(false);
+                    }}
+                    className="liquid-input mx-auto w-full max-w-[190px] rounded-xl px-2 py-0.5 text-center text-base font-extrabold tracking-tight outline-none"
+                    aria-label="Workout name"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingTitle(true)}
+                    className="inline-flex max-w-full items-center justify-center gap-1.5 text-base font-extrabold tracking-tight hover:text-primary-400 transition-colors cursor-pointer"
+                  >
+                    <span className="truncate">{freestyleName || 'Quick Workout'}</span>
+                    <Edit2 size={13} className="shrink-0 text-muted" />
+                  </button>
+                )
+              ) : (
+                <h1 className="truncate text-base font-extrabold tracking-tight">{day!.name}</h1>
+              )}
+              <p className="font-mono text-[11px] font-semibold text-muted tabular-nums">
+                {exercises.length} exercises · {completedSets}/{totalSets} sets
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center justify-end gap-1.5">
               <button
-                type="button"
-                onClick={() => setIsEditingTitle(true)}
-                className="inline-flex items-center justify-center gap-1.5 text-lg font-black uppercase tracking-wide hover:text-primary-400 transition-colors max-w-full"
+                onClick={() => setPlateCalcConfig({ isOpen: true, weight: 0 })}
+                className="liquid-btn-glass flex h-10 w-10 items-center justify-center rounded-xl text-muted hover:text-primary-400 transition-colors cursor-pointer"
+                title="Plate Calculator"
+                aria-label="Plate Calculator"
               >
-                <span className="truncate">{freestyleName || 'Quick Workout'}</span>
-                <Edit2 size={13} className="text-muted shrink-0" />
+                <Calculator size={17} />
               </button>
-            )
-          ) : (
-            <h1 className="text-lg font-black uppercase tracking-wide truncate">{day!.name}</h1>
-          )}
-          <p className="text-xs text-muted font-medium">{exercises.length} exercises • {completedSets}/{totalSets} sets</p>
-        </div>
-        <div className="flex items-center justify-end gap-1.5 shrink-0">
-          <button
-            onClick={() => setPlateCalcConfig({ isOpen: true, weight: 0 })}
-            className="p-1.5 text-muted hover:text-primary-400 transition-colors"
-            title="Plate Calculator"
-          >
-            <Calculator size={16} />
-          </button>
-          <button 
-            onClick={() => {
-              if (window.confirm("Restart this workout and clear all unsaved progress?")) {
-                const cacheKey = isFreestyle
-                  ? 'dragoriano_session_freestyle'
-                  : `dragoriano_session_${programId}_${dayId}`;
-                localStorage.removeItem(cacheKey);
-                setStartTime(Date.now());
-                if (isFreestyle || !day) {
-                  setExercises(prev =>
-                    prev.map(ex => ({
-                      ...ex,
-                      sets: ex.sets.map(s => ({ ...s, completed: false, rpe: undefined })),
-                    })),
-                  );
-                  return;
-                }
-                const isDeload = !!day.isDeloadDay;
-                setIsDeloadDay(isDeload);
-                const processedExercises = day.exercises.map(ex => {
-                  const globalHistory = sessions
-                    .filter(s => s.exercisesSnapshot?.some(e => e.name.toLowerCase().trim() === ex.name.toLowerCase().trim()))
-                    .map(s => {
-                      const matchingEx = s.exercisesSnapshot.find(e => e.name.toLowerCase().trim() === ex.name.toLowerCase().trim());
-                      return {
-                        sessionId: s.id,
-                        date: s.date,
-                        sets: matchingEx?.sets || []
-                      };
-                    })
-                    .sort((a, b) => a.date - b.date);
-                  const exWithHistory = { ...ex, history: globalHistory };
-                  return { ...exWithHistory, sets: computeSmartSets(exWithHistory, isDeload, settings) };
-                });
-                setExercises(processedExercises);
-                if (processedExercises.length > 0) {
-                  setExpandedExercises({ [processedExercises[0].id]: true });
-                }
-              }
-            }}
-            className="p-1.5 text-red-500/60 hover:text-red-500 transition-colors"
-            title="Restart Workout"
-          >
-            <RotateCcw size={16}/>
-          </button>
-          <div className="text-primary-400 font-bold font-mono text-[15px] tabular-nums mt-[1px]">
-            {formatTime(elapsedTime)}
+              <button
+                onClick={() => setShowRestartConfirm(true)}
+                className="liquid-btn-danger flex h-10 w-10 items-center justify-center rounded-xl transition-colors cursor-pointer"
+                title="Restart Workout"
+                aria-label="Restart Workout"
+              >
+                <RotateCcw size={16} />
+              </button>
+              <div className="liquid-glass rounded-xl px-2.5 py-2 font-mono text-xs font-bold text-primary-400 tabular-nums">
+                {formatTime(elapsedTime)}
+              </div>
+            </div>
           </div>
-        </div>
-      </header>
+          <Progress value={progressPercent} className="h-[3px] rounded-none border-0 bg-content/10" />
+        </header>
 
-      {isDeloadDay && (
-        <div className="bg-sky-500/10 border-b border-sky-500/20 px-4 py-2.5 flex items-center gap-2">
-          <span className="text-sky-400 text-sm">❄️</span>
-          <p className="text-sm font-bold text-sky-300">Deload Day <span className="font-normal text-sky-400/70">— Light weights, focus on form &amp; recovery</span></p>
-        </div>
-      )}
+        {isDeloadDay && (
+          <div className="border-b border-sky-500/20 bg-sky-500/12 px-4 py-2 text-center backdrop-blur-md">
+            <p className="text-xs font-bold text-sky-400">
+              Deload Day — Lighter targets focused on form &amp; recovery
+            </p>
+          </div>
+        )}
 
-      <main className="flex-1 overflow-y-auto overflow-x-hidden w-full p-4 pb-40">
+        <main className="w-full flex-1 overflow-y-auto overscroll-y-contain overflow-x-hidden p-4 pb-44">
         {isFreestyle && exercises.length === 0 ? (
           <div className="rounded-3xl bg-card border border-content/10 p-6 text-center space-y-4 mt-4">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400">
@@ -971,7 +951,7 @@ export function WorkoutSessionPage() {
             <button
               type="button"
               onClick={() => setIsAddExerciseOpen(true)}
-              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-primary-500 py-3.5 text-sm font-black text-content shadow-lg shadow-primary-500/30 hover:bg-primary-400 active:scale-95 transition-all"
+              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-primary-500 py-3.5 text-sm font-black text-white shadow-lg shadow-primary-500/30 hover:bg-primary-400 active:scale-95 transition-all cursor-pointer"
             >
               <Plus size={18} /> Add First Exercise
             </button>
@@ -1026,21 +1006,33 @@ export function WorkoutSessionPage() {
         )}
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-page border-t border-content/5 p-4 pb-safe backdrop-blur-xl">
-        <div className="flex items-center justify-between mb-4 px-2">
-          <div className="flex items-center gap-4 text-sm font-bold text-muted">
-            <div className="flex items-center gap-1.5"><Dumbbell size={16}className="text-primary-500" /><span>{totalVolume.toLocaleString()} {settings?.weightUnit || 'kg'}</span></div>
-            <div className="flex items-center gap-1.5"><CheckCircle2 size={16}className="text-emerald-500" /><span>{completedSets}/{totalSets} sets</span></div>
+      <div className="liquid-glass-strong fixed bottom-0 left-1/2 z-40 w-full max-w-[460px] -translate-x-1/2 border-x-0 border-b-0 pb-safe">
+        <div className="p-4">
+          <div className="mb-3 flex items-center justify-between px-1">
+            <div className="flex items-center gap-4 text-xs font-bold text-muted tabular-nums">
+              <div className="flex items-center gap-1.5">
+                <Dumbbell size={15} className="text-primary-400" />
+                <span>{totalVolume.toLocaleString()} {settings?.weightUnit || 'kg'}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 size={15} className="text-emerald-400" />
+                <span>{completedSets}/{totalSets} sets</span>
+              </div>
+            </div>
+            <div className="font-mono text-xs font-bold text-primary-400 tabular-nums">
+              {progressPercent}%
+            </div>
           </div>
-          <div className="text-sm font-bold text-primary-400">{progressPercent}%</div>
+          <Button
+            size="lg"
+            disabled={exercises.length === 0}
+            onClick={() => setShowFinishConfirm(true)}
+            className="w-full font-extrabold"
+          >
+            <CheckCircle2 size={18} />
+            Finish Workout
+          </Button>
         </div>
-        <button
-          disabled={exercises.length === 0}
-          onClick={() => setShowFinishConfirm(true)}
-          className="w-full rounded-2xl bg-primary-500 py-4 text-base font-black text-content shadow-lg shadow-primary-500/40 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-40 disabled:pointer-events-none"
-        >
-          <CheckCircle2 size={20}/> FINISH WORKOUT
-        </button>
       </div>
 
       <AnimatePresence>
@@ -1056,7 +1048,7 @@ export function WorkoutSessionPage() {
                 ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
               setSupersetBanner(null);
             }}
-            className="fixed bottom-[126px] left-4 right-4 z-50 rounded-2xl border border-amber-500/40 bg-card/95 px-4 py-3 text-left shadow-2xl backdrop-blur-xl flex items-center justify-between gap-3"
+            className="liquid-glass-strong fixed bottom-[126px] left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-[428px] -translate-x-1/2 items-center justify-between gap-3 rounded-2xl border-amber-500/40 px-4 py-3 text-left"
           >
             <div className="min-w-0">
               <p className="text-[10px] font-black uppercase tracking-wider text-amber-400">
@@ -1104,13 +1096,13 @@ export function WorkoutSessionPage() {
 
       <AnimatePresence>
         {prNotification && (
-          <motion.div 
-            initial={{ y: -100, opacity: 0 }} 
-            animate={{ y: 0, opacity: 1 }} 
-            exit={{ y: -100, opacity: 0 }} 
-            className="fixed top-20 left-4 right-4 z-[70] rounded-2xl bg-gradient-to-br from-yellow-500 to-orange-500 p-[2px] shadow-2xl shadow-yellow-500/30"
+          <motion.div
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -100, opacity: 0 }}
+            className="fixed top-20 left-1/2 z-[70] w-[calc(100%-2rem)] max-w-[428px] -translate-x-1/2 rounded-2xl bg-gradient-to-br from-yellow-500 to-orange-500 p-[2px] shadow-2xl shadow-yellow-500/30"
           >
-            <div className="rounded-[14px] bg-card/95 backdrop-blur-xl p-4 flex items-center gap-4">
+            <div className="liquid-glass-strong rounded-[14px] p-4 flex items-center gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-yellow-500/20 text-yellow-500">
                 <Trophy size={24} />
               </div>
@@ -1195,27 +1187,87 @@ export function WorkoutSessionPage() {
                 )}
                 
                 <div className="flex gap-3">
-                  <button 
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="lg"
                     onClick={() => setShowFinishConfirm(false)}
-                    className="flex-1 rounded-2xl bg-page/5 py-3.5 text-sm font-bold text-content hover:bg-page/10 active:scale-95 transition-all"
+                    className="flex-1"
                   >
                     Keep Going
-                  </button>
-                  <button 
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="lg"
                     onClick={() => {
                       setShowFinishConfirm(false);
                       handleFinishWorkout();
                     }}
-                    className="flex-1 rounded-2xl bg-primary-500 py-3.5 text-sm font-black text-content shadow-lg shadow-primary-500/30 active:scale-95 transition-all"
+                    className="flex-1"
                   >
                     Finish
-                  </button>
+                  </Button>
                 </div>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+      <ConfirmModal
+        isOpen={showRestartConfirm}
+        title="Restart Workout"
+        message="Clear all logged sets and timers for this session?"
+        confirmText="Restart"
+        isDestructive
+        onCancel={() => setShowRestartConfirm(false)}
+        onConfirm={() => {
+          setShowRestartConfirm(false);
+          const cacheKey = isFreestyle
+            ? 'dragoriano_session_freestyle'
+            : `dragoriano_session_${programId}_${dayId}`;
+          localStorage.removeItem(cacheKey);
+          setStartTime(Date.now());
+          if (isFreestyle || !day) {
+            setExercises((prev) =>
+              prev.map((ex) => ({
+                ...ex,
+                sets: ex.sets.map((s) => ({ ...s, completed: false, rpe: undefined })),
+              })),
+            );
+            toast.success('Workout restarted');
+            return;
+          }
+          const isDeload = !!day.isDeloadDay;
+          setIsDeloadDay(isDeload);
+          const processedExercises = day.exercises.map((ex) => {
+            const globalHistory = sessions
+              .filter((s) =>
+                s.exercisesSnapshot?.some(
+                  (e) => e.name.toLowerCase().trim() === ex.name.toLowerCase().trim(),
+                ),
+              )
+              .map((s) => {
+                const matchingEx = s.exercisesSnapshot.find(
+                  (e) => e.name.toLowerCase().trim() === ex.name.toLowerCase().trim(),
+                );
+                return {
+                  sessionId: s.id,
+                  date: s.date,
+                  sets: matchingEx?.sets || [],
+                };
+              })
+              .sort((a, b) => a.date - b.date);
+            const exWithHistory = { ...ex, history: globalHistory };
+            return { ...exWithHistory, sets: computeSmartSets(exWithHistory, isDeload, settings) };
+          });
+          setExercises(processedExercises);
+          if (processedExercises.length > 0) {
+            setExpandedExercises({ [processedExercises[0].id]: true });
+          }
+          toast.success('Workout restarted');
+        }}
+      />
       {noteConfig && <PromptModal isOpen={noteConfig.isOpen} title="Exercise Notes" initialValue={noteConfig.initialValue} onConfirm={handleSaveNotes} onCancel={() => setNoteConfig(null)} placeholder="Enter any notes for this exercise..." />}
       <QuickAddExerciseModal
         isOpen={isAddExerciseOpen}
@@ -1223,15 +1275,16 @@ export function WorkoutSessionPage() {
         readyMuscles={muscleRecovery}
         onAddExercise={handleAddSessionExercise}
       />
-      {showOverloadWarning && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-page/80 p-4 backdrop-blur-sm">
-        <div className="w-full max-w-sm rounded-3xl bg-card p-6 text-center border border-amber-500/20">
+      {showOverloadWarning && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4 backdrop-blur-md">
+        <div className="liquid-glass-strong w-full max-w-sm rounded-3xl p-6 text-center border-amber-500/30">
           <div className="text-4xl mb-3">⚠️</div>
           <h3 className="text-xl font-bold mb-2">Volume Spike Detected</h3>
           <p className="text-muted mb-2">Your volume is <span className="text-amber-400 font-bold">{overloadPercent}% higher</span> than your recent average for this day.</p>
           <p className="text-sm text-muted mb-6">Consider if this is intentional — high spikes can increase injury risk and impair recovery.</p>
-          <button className="w-full rounded-xl bg-primary-500 py-3 font-bold active:scale-95 transition-transform" onClick={() => { setShowOverloadWarning(false); finishAndNavigate(pendingSessionId.current || undefined); }}>Understood, Finish</button>
+          <button className="liquid-btn-primary w-full rounded-2xl py-3.5 font-bold active:scale-95 transition-transform cursor-pointer" onClick={() => { setShowOverloadWarning(false); finishAndNavigate(pendingSessionId.current || undefined); }}>Understood, Finish</button>
         </div>
       </div>}
+      </div>
     </div>
   );
 }

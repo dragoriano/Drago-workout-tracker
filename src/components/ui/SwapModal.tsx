@@ -84,7 +84,7 @@ export function SwapModal({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="w-full max-w-sm overflow-hidden rounded-3xl bg-card shadow-2xl ring-1 ring-content/10 flex flex-col max-h-[80vh]"
+            className="liquid-glass-strong w-full max-w-[460px] overflow-hidden rounded-3xl flex flex-col max-h-[82dvh]"
           >
             <div className="flex items-center justify-between border-b border-content/5 px-6 py-4 shrink-0">
               <h3 className="font-bold text-content text-lg">Swap Exercise</h3>

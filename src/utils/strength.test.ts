@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   calculateBarbellPlates,
   calculateEstimated1RM,
+  DEFAULT_BARBELL_WEIGHT,
   DEFAULT_PLATES,
   formatEffortLabel,
   getBestSet1RM,
@@ -11,6 +12,7 @@ import {
   getTrainingPercentages,
   isWarmupSet,
   isWorkingSet,
+  resolveBarbellWeight,
   rirToRpe,
   rpeToRir,
 } from './strength.ts';
@@ -137,6 +139,20 @@ describe('calculateBarbellPlates', () => {
     assert.deepEqual(exactBar.platesPerSide, []);
     assert.equal(belowBar.isExact, false);
     assert.equal(belowBar.achievableWeight, 20);
+  });
+
+  it('defaults barbell weight to 20 kg (45 lbs) and computes 60 kg / 100 kg symmetrically', () => {
+    assert.equal(DEFAULT_BARBELL_WEIGHT.kg, 20);
+    assert.equal(DEFAULT_BARBELL_WEIGHT.lbs, 45);
+    assert.equal(resolveBarbellWeight(undefined, 'kg'), 20);
+    assert.equal(resolveBarbellWeight(0, 'kg'), 20);
+    assert.equal(resolveBarbellWeight(undefined, 'lbs'), 45);
+
+    const res60 = calculateBarbellPlates(60, DEFAULT_BARBELL_WEIGHT.kg, DEFAULT_PLATES.kg);
+    assert.equal(res60.barbellWeight, 20);
+    assert.equal(res60.perSideWeight, 20);
+    assert.equal(res60.achievableWeight, 60);
+    assert.deepEqual(res60.platesPerSide, [{ weight: 20, count: 1 }]);
   });
 
   it('adapts when custom gym inventory excludes heavy plates', () => {

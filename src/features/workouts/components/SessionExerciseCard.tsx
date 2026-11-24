@@ -9,6 +9,7 @@ import {
   Flame,
   GripVertical,
   Link,
+  MoreHorizontal,
   Play,
   Plus,
   RotateCcw,
@@ -21,6 +22,13 @@ import {
   Youtube,
 } from 'lucide-react';
 import { AnimatePresence, motion, Reorder, useDragControls } from 'framer-motion';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../../../components/ui/DropdownMenu';
 import type {
   AppSettings,
   EffortScale,
@@ -298,10 +306,10 @@ export function DraggableExerciseItem({
       )}
       <div
         className={cn(
-          'rounded-2xl border overflow-hidden transition-all duration-300 relative z-[6] w-full',
+          'liquid-glass rounded-3xl overflow-hidden transition-all duration-200 relative z-[6] w-full',
           supersetMeta
-            ? 'bg-amber-500/5 border-amber-500/30'
-            : 'bg-surface border-content/5',
+            ? 'border-amber-500/35 bg-amber-500/8'
+            : '',
           isSupersetNextUp && 'ring-2 ring-amber-400/75 border-amber-500/60 bg-amber-500/10',
           isPressing && 'scale-[0.98] opacity-80',
         )}
@@ -419,76 +427,93 @@ export function DraggableExerciseItem({
                 )}
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                 {showPlateAndWarmup && (
                   <button
-                    className="text-muted hover:text-primary-400 p-1.5 transition-colors"
+                    type="button"
+                    className="rounded-lg p-1.5 text-muted hover:bg-elevated hover:text-primary-400 transition-colors cursor-pointer"
                     onClick={(e) => onOpenPlateCalc(e, exercise)}
                     title="Plate Calculator"
+                    aria-label="Plate Calculator"
                   >
                     <Calculator size={16} />
                   </button>
                 )}
 
                 <button
-                  className="text-red-500/60 hover:text-red-500 p-1.5 transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.open(
-                      `https://www.youtube.com/results?search_query=how+to+do+${encodeURIComponent(exercise.name)}+exercise`,
-                      '_blank',
-                    );
-                  }}
-                  title="Watch Tutorial"
-                >
-                  <Youtube size={18} />
-                </button>
-
-                <button
-                  className="text-muted hover:text-content p-1.5 transition-colors"
-                  onClick={(e) => onOpenSwap(e, exercise)}
-                  title="Swap Exercise"
-                >
-                  <ArrowRightLeft size={16} />
-                </button>
-
-                <button
-                  className={cn('p-1.5 transition-colors', exercise.notes ? 'text-primary-400' : 'text-muted')}
+                  type="button"
+                  className={cn(
+                    'rounded-lg p-1.5 transition-colors cursor-pointer',
+                    exercise.notes ? 'text-primary-400 hover:bg-elevated' : 'text-muted hover:bg-elevated hover:text-content',
+                  )}
                   onClick={(e) => onOpenNotes(e, exercise)}
-                  title="Notes"
+                  title="Exercise Notes"
+                  aria-label="Exercise Notes"
                 >
-                  <AlignLeft size={18} />
+                  <AlignLeft size={16} />
                 </button>
 
-                {index > 0 && (
-                  <button
-                    className={cn(
-                      'p-1.5 transition-colors',
-                      supersetMeta ? 'text-amber-500' : 'text-muted',
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="rounded-lg p-1.5 text-muted hover:bg-elevated hover:text-content transition-colors cursor-pointer"
+                      aria-label="More exercise actions"
+                    >
+                      <MoreHorizontal size={17} />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={(e) => onOpenSwap(e as unknown as React.MouseEvent, exercise)}>
+                      <ArrowRightLeft size={14} className="text-muted" />
+                      <span>Swap Exercise</span>
+                    </DropdownMenuItem>
+                    {exercise.history && exercise.history.length > 0 && (
+                      <DropdownMenuItem onClick={(e) => onOpenChart(e as unknown as React.MouseEvent, exercise)}>
+                        <TrendingUp size={14} className="text-primary-400" />
+                        <span>Progress Chart</span>
+                      </DropdownMenuItem>
                     )}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleSuperset(index);
-                    }}
-                    title={supersetMeta ? 'Unlink from Superset' : 'Link Superset with Previous'}
-                  >
-                    {supersetMeta ? <Unlink size={16} /> : <Link size={16} />}
-                  </button>
-                )}
-
-                {onRemoveExercise && (
-                  <button
-                    type="button"
-                    className="p-1.5 text-muted/60 hover:text-red-500 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRemoveExercise(exercise.id);
-                    }}
-                    title="Remove Exercise"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                )}
+                    <DropdownMenuItem
+                      onClick={() =>
+                        window.open(
+                          `https://www.youtube.com/results?search_query=how+to+do+${encodeURIComponent(exercise.name)}+exercise`,
+                          '_blank',
+                        )
+                      }
+                    >
+                      <Youtube size={14} className="text-red-400" />
+                      <span>Watch Tutorial</span>
+                    </DropdownMenuItem>
+                    {index > 0 && (
+                      <DropdownMenuItem onClick={() => onToggleSuperset(index)}>
+                        {supersetMeta ? (
+                          <>
+                            <Unlink size={14} className="text-amber-400" />
+                            <span>Unlink Superset</span>
+                          </>
+                        ) : (
+                          <>
+                            <Link size={14} className="text-muted" />
+                            <span>Link Superset Above</span>
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                    )}
+                    {onRemoveExercise && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          destructive
+                          onClick={() => onRemoveExercise(exercise.id)}
+                        >
+                          <Trash2 size={14} />
+                          <span>Remove Exercise</span>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
@@ -1018,9 +1043,9 @@ export function DraggableExerciseItem({
                           value={set.weight || ''}
                           onChange={(e) => onSetUpdate(exercise.id, set.id, 'weight', Number(e.target.value))}
                           className={cn(
-                            'h-11 w-full min-w-0 rounded-xl bg-page text-center text-base font-bold outline-none',
+                            'h-11 w-full min-w-0 rounded-xl bg-page/70 text-center text-base font-bold text-content placeholder:text-muted/60 outline-none',
                             warmup && 'opacity-75',
-                            set.completed && (warmup ? 'text-sky-400' : 'text-emerald-400'),
+                            set.completed && (warmup ? 'text-sky-700 dark:text-sky-300' : 'text-emerald-700 dark:text-emerald-300'),
                           )}
                           placeholder={mode === 'bodyweight_reps' || mode === 'timed' ? 'BW' : '0'}
                         />
@@ -1037,9 +1062,9 @@ export function DraggableExerciseItem({
                               )
                             }
                             className={cn(
-                              'h-11 w-full min-w-0 rounded-xl bg-page text-center text-base font-bold outline-none',
+                              'h-11 w-full min-w-0 rounded-xl bg-page/70 text-center text-base font-bold text-content placeholder:text-muted/60 outline-none',
                               warmup && 'opacity-75',
-                              set.completed && (warmup ? 'text-sky-400' : 'text-emerald-400'),
+                              set.completed && (warmup ? 'text-sky-700 dark:text-sky-300' : 'text-emerald-700 dark:text-emerald-300'),
                             )}
                             placeholder="45"
                           />
@@ -1049,9 +1074,9 @@ export function DraggableExerciseItem({
                             value={set.reps || ''}
                             onChange={(e) => onSetUpdate(exercise.id, set.id, 'reps', Number(e.target.value))}
                             className={cn(
-                              'h-11 w-full min-w-0 rounded-xl bg-page text-center text-base font-bold outline-none',
+                              'h-11 w-full min-w-0 rounded-xl bg-page/70 text-center text-base font-bold text-content placeholder:text-muted/60 outline-none',
                               warmup && 'opacity-75',
-                              set.completed && (warmup ? 'text-sky-400' : 'text-emerald-400'),
+                              set.completed && (warmup ? 'text-sky-700 dark:text-sky-300' : 'text-emerald-700 dark:text-emerald-300'),
                             )}
                             placeholder="0"
                           />
@@ -1109,8 +1134,8 @@ export function DraggableExerciseItem({
                               'flex h-8 w-8 items-center justify-center rounded-lg border-2',
                               set.completed
                                 ? warmup
-                                  ? 'border-sky-500 bg-sky-500 text-content'
-                                  : 'border-emerald-500 bg-emerald-500 text-content'
+                                  ? 'border-sky-500 bg-sky-500 text-white'
+                                  : 'border-emerald-500 bg-emerald-500 text-white'
                                 : 'border-content/20 bg-transparent',
                             )}
                             onClick={() => onSetToggle(exercise.id, set.id)}

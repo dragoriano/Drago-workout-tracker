@@ -39,7 +39,7 @@ export function AddProgramModal({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="w-full max-w-md rounded-3xl bg-card p-6 shadow-2xl"
+            className="liquid-glass-strong w-full max-w-[460px] rounded-t-[28px] p-6 pb-safe"
           >
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-content">Add New Program</h2>
@@ -132,7 +132,7 @@ export function ChooseGoalModal({ isOpen, onClose, onSelectGoal }: ChooseGoalMod
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="w-full max-w-md rounded-t-3xl bg-card p-6 sm:rounded-3xl"
+            className="liquid-glass-strong w-full max-w-[460px] rounded-t-[28px] p-6 pb-safe"
           >
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-content">Choose a Workout Goal</h2>
@@ -218,12 +218,12 @@ export function ChooseSplitModal({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="w-full max-w-md rounded-t-3xl bg-card p-6 sm:rounded-3xl max-h-[80vh] overflow-y-auto"
+            className="liquid-glass-strong w-full max-w-[460px] rounded-t-[28px] p-6 pb-safe max-h-[84dvh] overflow-y-auto"
           >
-            <div className="mb-6 flex items-center justify-between sticky top-0 bg-card z-10 pb-4">
+            <div className="mb-6 flex items-center justify-between sticky top-0 z-10 pb-3">
               <button
                 onClick={onBack}
-                className="rounded-full bg-content/10 p-2 text-content hover:bg-content/20"
+                className="liquid-btn-glass flex h-10 w-10 items-center justify-center rounded-full text-content"
               >
                 <ArrowLeft size={20} />
               </button>

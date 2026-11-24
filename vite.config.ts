@@ -18,14 +18,14 @@ export default defineConfig(({mode}) => {
               injectRegister: 'auto',
               includeAssets: ['favicon.ico', 'icon-192x192.png', 'icon-512x512.png'],
               workbox: {
-                cacheId: 'dragotracker-v1.8.0',
+                cacheId: 'dragotracker-v1.9.0',
               },
               manifest: {
                 name: 'Dragoriano Workout Tracker',
                 short_name: 'GymTracker',
                 description: 'Premium Workout Tracking App',
-                theme_color: '#09090b',
-                background_color: '#000000',
+                theme_color: '#0B0E13',
+                background_color: '#0B0E13',
                 display: 'standalone',
                 orientation: 'portrait',
                 icons: [
@@ -61,7 +61,7 @@ export default defineConfig(({mode}) => {
             const normalizedId = id.replace(/\\/g, '/');
             if (normalizedId.includes('src/data/exercises.ts')) return 'exercise-data';
             if (!normalizedId.includes('/node_modules/')) return undefined;
-            if (/\/node_modules\/(react|react-dom|react-router|react-router-dom|scheduler|clsx|tailwind-merge|zustand|idb)\//.test(normalizedId)) return 'react-vendor';
+            if (/\/node_modules\/(react|react-dom|react-router|react-router-dom|scheduler|clsx|tailwind-merge|zustand|idb|radix-ui|class-variance-authority|sonner)\//.test(normalizedId)) return 'react-vendor';
             if (/\/node_modules\/(framer-motion|motion-dom|motion-utils)\//.test(normalizedId)) return 'motion';
             if (/\/node_modules\/(recharts|d3-|victory-vendor|decimal\.js-light|internmap|robust-predicates)\//.test(normalizedId)) return 'charts';
             if (/\/node_modules\/@supabase\//.test(normalizedId)) return 'supabase';
@@ -79,10 +79,17 @@ export default defineConfig(({mode}) => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    optimizeDeps: {
+      entries: ['index.html'],
+    },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
+      watch: {
+        ignored: ['**/android/**', '**/dist/**'],
+        awaitWriteFinish: { stabilityThreshold: 80, pollInterval: 20 },
+      },
     },
   };
 });
