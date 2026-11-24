@@ -1,17 +1,44 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Toaster } from 'sonner';
 import { AppRouter } from './app/router';
 import { applyThemeColor, applyThemeMode } from './utils/theme';
 import { useAppStore } from './store/useAppStore';
 
+const ThreeSplashScreen = lazy(() =>
+  import('./components/ui/ThreeSplashScreen').then((m) => ({ default: m.ThreeSplashScreen })),
+);
+
+const THEME_CACHE_KEY = 'dragoriano_theme_cache';
+
+function readCachedTheme(): { themeColor: string; theme: 'dark' | 'light' | 'system' } {
+  try {
+    const raw = localStorage.getItem(THEME_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        themeColor: typeof parsed.themeColor === 'string' ? parsed.themeColor : 'emerald',
+        theme:
+          parsed.theme === 'light' || parsed.theme === 'dark' || parsed.theme === 'system'
+            ? parsed.theme
+            : 'dark',
+      };
+    }
+  } catch {
+    // ignore storage failures
+  }
+  return { themeColor: 'emerald', theme: 'dark' };
+}
+
 export default function App() {
-  const [minHoldDone, setMinHoldDone] = useState(false);
+  const [cachedTheme] = useState(readCachedTheme);
+  const [splashFinished, setSplashFinished] = useState(false);
   const [forceDismissSplash, setForceDismissSplash] = useState(false);
   const hydrate = useAppStore((s) => s.hydrate);
-  const isHydrated = useAppStore((s) => s.isHydrated);
   const settings = useAppStore((s) => s.settings);
 
-  const showSplash = !forceDismissSplash && !(isHydrated && minHoldDone);
+  const showSplash = !forceDismissSplash && !splashFinished;
+  const effectiveThemeColor = settings?.themeColor ?? cachedTheme.themeColor;
+  const effectiveMode = settings?.theme ?? cachedTheme.theme;
 
   useEffect(() => {
     console.log('App Initialized. Base URL:', import.meta.env.BASE_URL);
@@ -78,15 +105,25 @@ export default function App() {
     return () => window.removeEventListener('online', handleOnline);
   }, []);
 
-  // Reactively apply theme settings whenever they change
+  // Reactively apply theme settings and cache for instant splash sync on next launch
   useEffect(() => {
-    const mode = settings?.theme ?? 'dark';
-    applyThemeColor(settings?.themeColor ?? 'emerald');
-    applyThemeMode(mode);
+    applyThemeColor(effectiveThemeColor);
+    applyThemeMode(effectiveMode);
+
+    if (settings) {
+      try {
+        localStorage.setItem(
+          THEME_CACHE_KEY,
+          JSON.stringify({ themeColor: settings.themeColor, theme: settings.theme }),
+        );
+      } catch {
+        // ignore storage quota errors
+      }
+    }
 
     const isDark =
-      mode === 'dark' ||
-      (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      effectiveMode === 'dark' ||
+      (effectiveMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
@@ -102,7 +139,7 @@ export default function App() {
         })
         .catch(() => {});
     }
-  }, [settings]);
+  }, [effectiveThemeColor, effectiveMode, settings]);
 
   // Capacitor Native Back Button Integration
   useEffect(() => {
@@ -133,20 +170,18 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const minTimer = setTimeout(() => setMinHoldDone(true), 250);
     const maxTimer = setTimeout(() => {
-      console.log('[App] Fallback timer triggered - forcing splash end');
+      console.log('[App] Safety fallback timer triggered - forcing splash end');
       setForceDismissSplash(true);
-    }, 3000);
+    }, 12000);
     return () => {
-      clearTimeout(minTimer);
       clearTimeout(maxTimer);
     };
   }, []);
 
   const isLightMode =
-    settings?.theme === 'light' ||
-    (settings?.theme === 'system' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
+    effectiveMode === 'light' ||
+    (effectiveMode === 'system' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-page">
@@ -175,25 +210,32 @@ export default function App() {
         }}
       />
 
-      {/* Main Content Area */}
+      {/* Main Content Area (mounted behind splash so dismissal is instantaneous) */}
       <div className="relative z-10 h-full w-full">
-        {showSplash ? (
-          <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-page/75 backdrop-blur-2xl px-6 text-center">
-            <div className="relative flex h-24 w-24 items-center justify-center">
-              <div className="absolute inset-0 rounded-full bg-primary-500/25 blur-xl animate-pulse" />
-              <div className="h-20 w-20 animate-spin rounded-full border-4 border-primary-500/30 border-t-primary-500" />
-            </div>
-            <h1 className="mt-6 text-2xl font-black uppercase tracking-[0.28em] text-primary-400">
-              DRAGORIANO
-            </h1>
-            <p className="mt-1.5 text-[11px] font-bold uppercase tracking-[0.35em] text-muted">
-              Workout Tracker
-            </p>
-          </div>
-        ) : (
-          <div className="h-full w-full">
-            <AppRouter />
-          </div>
+        <div className="h-full w-full">
+          <AppRouter />
+        </div>
+
+        {showSplash && (
+          <Suspense
+            fallback={
+              <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-page/80 px-6 text-center backdrop-blur-2xl">
+                <h1 className="text-3xl font-black uppercase tracking-[0.26em] text-primary-400">
+                  DRAGORIANO
+                </h1>
+                <p className="mt-2 text-xs font-bold uppercase tracking-[0.38em] text-muted">
+                  Workout Tracker
+                </p>
+              </div>
+            }
+          >
+            <ThreeSplashScreen
+              themeColor={effectiveThemeColor}
+              isLightMode={isLightMode}
+              durationMs={5000}
+              onComplete={() => setSplashFinished(true)}
+            />
+          </Suspense>
         )}
       </div>
     </div>

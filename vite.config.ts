@@ -62,6 +62,7 @@ export default defineConfig(({mode}) => {
             if (normalizedId.includes('src/data/exercises.ts')) return 'exercise-data';
             if (!normalizedId.includes('/node_modules/')) return undefined;
             if (/\/node_modules\/(react|react-dom|react-router|react-router-dom|scheduler|clsx|tailwind-merge|zustand|idb|radix-ui|class-variance-authority|sonner)\//.test(normalizedId)) return 'react-vendor';
+            if (/\/node_modules\/three\//.test(normalizedId)) return 'three-vendor';
             if (/\/node_modules\/(framer-motion|motion-dom|motion-utils)\//.test(normalizedId)) return 'motion';
             if (/\/node_modules\/(recharts|d3-|victory-vendor|decimal\.js-light|internmap|robust-predicates)\//.test(normalizedId)) return 'charts';
             if (/\/node_modules\/@supabase\//.test(normalizedId)) return 'supabase';
