@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   Brain,
   ChevronRight,
+  Download,
   Dumbbell,
   Flame,
   LayoutGrid,
@@ -18,6 +19,7 @@ interface AddProgramModalProps {
   onSelectPreset: () => void;
   onSelectWizard: () => void;
   onSelectBlank: () => void;
+  onSelectImport: () => void;
 }
 
 export function AddProgramModal({
@@ -26,6 +28,7 @@ export function AddProgramModal({
   onSelectPreset,
   onSelectWizard,
   onSelectBlank,
+  onSelectImport,
 }: AddProgramModalProps) {
   return (
     <AnimatePresence>
@@ -90,6 +93,19 @@ export function AddProgramModal({
                 <div>
                   <h3 className="font-bold text-content">Blank Program</h3>
                   <p className="text-xs text-muted">Start from scratch, add your own days & exercises</p>
+                </div>
+              </button>
+
+              <button
+                onClick={onSelectImport}
+                className="w-full flex items-center gap-4 rounded-2xl bg-sky-500/10 border border-sky-500/20 p-4 text-left transition-all hover:bg-sky-500/15 group"
+              >
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sky-500/20 text-sky-400 group-hover:scale-110 transition-transform">
+                  <Download size={24} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-content">Import Program</h3>
+                  <p className="text-xs text-muted">Scan QR, paste share code, or upload JSON</p>
                 </div>
               </button>
             </div>

@@ -17,6 +17,12 @@ export type WorkoutDay = {
  isDeloadDay?: boolean;
 };
 
+export type ExerciseTrackingMode =
+ | 'weight_reps'
+ | 'bodyweight_reps'
+ | 'assisted_reps'
+ | 'timed';
+
 export type Exercise = {
  id: string;
  name: string;
@@ -30,6 +36,7 @@ export type Exercise = {
  lastUpdated: number;
  supersetId?: string; // Groups exercises into a superset
  supersetOrder?: number; // Order within the superset
+ trackingMode?: ExerciseTrackingMode;
 };
 
 export type SetType = 'working' | 'warmup' | 'drop' | 'failure';
@@ -40,6 +47,7 @@ export type Set = {
  id: string;
  weight: number;
  reps: number;
+ duration?: number; // in seconds for timed exercises
  completed: boolean;
  setType?: SetType;
  rpe?: number;
@@ -67,6 +75,7 @@ export type CustomExercise = {
  secondaryMuscles: string[];
  muscleGroups: string[];
  equipment?: ExerciseEquipment;
+ trackingMode?: ExerciseTrackingMode;
  defaultRestTimer?: number;
  notes?: string;
  createdAt: number;
@@ -87,7 +96,7 @@ export type WorkoutSession = {
 export type PR = {
  exerciseId: string;
  exerciseName: string;
- type: 'weight' | 'reps' | 'volume' | '1rm';
+ type: 'weight' | 'reps' | 'volume' | '1rm' | 'duration';
  value: number;
  previousValue: number;
 };

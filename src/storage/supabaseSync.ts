@@ -3,6 +3,7 @@ import { db } from './db';
 
 // ── Auth helpers ───────────────────────────────────────────────────
 export async function signInWithGoogle() {
+  if (!supabase) throw new Error('Cloud sync is not configured for this build.');
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
@@ -14,11 +15,16 @@ export async function signInWithGoogle() {
 }
 
 export async function signOutUser() {
+  if (!supabase) throw new Error('Cloud sync is not configured for this build.');
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
 
 export function onAuthChange(cb: (user: any) => void) {
+  if (!supabase) {
+    cb(null);
+    return () => {};
+  }
   const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
     cb(session?.user ?? null);
   });
@@ -27,6 +33,7 @@ export function onAuthChange(cb: (user: any) => void) {
 
 // ── Push: local → Supabase ────────────────────────────────────────
 export async function pushToSupabase(uid: string): Promise<void> {
+  if (!supabase) throw new Error('Cloud sync is not configured for this build.');
   const programs = await db.getPrograms();
   const sessions = await db.getSessions();
   const goals = await db.getGoals();
@@ -59,6 +66,7 @@ export async function pushToSupabase(uid: string): Promise<void> {
 
 // ── Pull: Supabase → local ────────────────────────────────────────
 export async function pullFromSupabase(uid: string): Promise<void> {
+  if (!supabase) throw new Error('Cloud sync is not configured for this build.');
   const { data, error } = await supabase
     .from('user_backups')
     .select('data')

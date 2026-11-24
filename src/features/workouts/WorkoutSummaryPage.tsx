@@ -2,31 +2,98 @@ import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { format } from 'date-fns';
-import { ChevronLeft, Share2, Image as ImageIcon, Camera, Trophy, Clock, Dumbbell, Copy, Download, BookmarkPlus, Check, GitCompareArrows } from 'lucide-react';
+import {
+  ChevronLeft,
+  Share2,
+  Image as ImageIcon,
+  Camera,
+  Trophy,
+  Clock,
+  Dumbbell,
+  Copy,
+  Download,
+  BookmarkPlus,
+  Check,
+  GitCompareArrows,
+  X,
+} from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { buildProgramFromFreestyle, FREESTYLE_PROGRAM_ID } from '../../utils/customExercises';
+import {
+  formatDurationCompact,
+  formatSetSummary,
+  getExerciseTrackingMode,
+} from '../../utils/exerciseModes';
 import { compareSessions, findPreviousComparableSession } from '../../utils/sessionComparison';
 import { isWarmupSet } from '../../utils/strength';
+import { computeSupersetMap } from '../../utils/supersets';
+import { cn } from '../../utils/cn';
 import { SessionCompareModal } from '../analytics/SessionCompareModal';
+
+type CardRatio = 'story' | 'post' | 'square';
+type CardThemeId = 'obsidian' | 'ember' | 'emerald' | 'steel';
+
+const CARD_RATIOS: ReadonlyArray<{ id: CardRatio; label: string; aspectClass: string; maxExWithPR: number; maxExNoPR: number }> = [
+  { id: 'story', label: '9:16', aspectClass: 'aspect-[9/16]', maxExWithPR: 5, maxExNoPR: 7 },
+  { id: 'post', label: '4:5', aspectClass: 'aspect-[4/5]', maxExWithPR: 4, maxExNoPR: 5 },
+  { id: 'square', label: '1:1', aspectClass: 'aspect-square', maxExWithPR: 3, maxExNoPR: 4 },
+];
+
+const CARD_THEMES: ReadonlyArray<{ id: CardThemeId; label: string; gradientClass: string; swatchClass: string }> = [
+  {
+    id: 'obsidian',
+    label: 'Obsidian',
+    gradientClass: 'bg-gradient-to-br from-zinc-900 via-zinc-800 to-black',
+    swatchClass: 'bg-zinc-800',
+  },
+  {
+    id: 'ember',
+    label: 'Ember',
+    gradientClass: 'bg-gradient-to-br from-orange-950 via-zinc-900 to-black',
+    swatchClass: 'bg-orange-700',
+  },
+  {
+    id: 'emerald',
+    label: 'Emerald',
+    gradientClass: 'bg-gradient-to-br from-emerald-950 via-zinc-900 to-black',
+    swatchClass: 'bg-emerald-700',
+  },
+  {
+    id: 'steel',
+    label: 'Steel',
+    gradientClass: 'bg-gradient-to-br from-slate-900 via-sky-950 to-black',
+    swatchClass: 'bg-sky-800',
+  },
+];
 
 export function WorkoutSummaryPage() {
   const { sessionId } = useParams();
   const navigate = useNavigate();
   const [bgImage, setBgImage] = useState<string | null>(null);
+  const [cardRatio, setCardRatio] = useState<CardRatio>('story');
+  const [cardTheme, setCardTheme] = useState<CardThemeId>('obsidian');
   const [copied, setCopied] = useState(false);
   const [savedAsProgram, setSavedAsProgram] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const sessions = useAppStore(s => s.sessions);
-  const programs = useAppStore(s => s.programs);
-  const settings = useAppStore(s => s.settings);
-  const isHydrated = useAppStore(s => s.isHydrated);
+  const sessions = useAppStore((s) => s.sessions);
+  const programs = useAppStore((s) => s.programs);
+  const settings = useAppStore((s) => s.settings);
+  const isHydrated = useAppStore((s) => s.isHydrated);
 
-  const session = sessions.find(s => s.id === sessionId);
-  const program = session ? programs.find(p => p.id === session.programId) : null;
+  const session = sessions.find((s) => s.id === sessionId);
+  const program = session ? programs.find((p) => p.id === session.programId) : null;
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((prev) => (prev === msg ? null : prev));
+    }, 3000);
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -45,7 +112,7 @@ export function WorkoutSummaryPage() {
     if (!cardRef.current) return;
     try {
       const dataUrl = await toPng(cardRef.current, { cacheBust: true, pixelRatio: 2 });
-      
+
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], 'workout-summary.png', { type: 'image/png' });
 
@@ -53,14 +120,14 @@ export function WorkoutSummaryPage() {
         await navigator.share({
           title: 'My Workout Summary',
           text: `Just crushed a workout on Dragoriano!`,
-          files: [file]
+          files: [file],
         });
       } else {
-        // Fallback to download
         handleDownloadOnly();
       }
     } catch (err) {
       console.error('Failed to generate image', err);
+      showToast('Could not share card image.');
     }
   };
 
@@ -70,23 +137,23 @@ export function WorkoutSummaryPage() {
       const dataUrl = await toPng(cardRef.current, { cacheBust: true, pixelRatio: 2 });
       const response = await fetch(dataUrl);
       const blob = await response.blob();
-      
+
       await navigator.clipboard.write([
         new ClipboardItem({
-          [blob.type]: blob
-        })
+          [blob.type]: blob,
+        }),
       ]);
       setCopied(true);
+      showToast('Workout card copied to clipboard!');
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy image to clipboard', err);
-      // Fallback: Copy share text
       try {
         const text = getShareText();
         await navigator.clipboard.writeText(text);
-        alert('Workout stats text copied to clipboard! (Unable to copy image directly on this browser)');
-      } catch (e) {
-        alert('Could not copy automatically. Please take a screenshot or download the card.');
+        showToast('Stats text copied to clipboard!');
+      } catch {
+        showToast('Could not copy automatically. Try Save Image instead.');
       }
     }
   };
@@ -99,9 +166,10 @@ export function WorkoutSummaryPage() {
       link.download = `workout-summary-${session?.id || 'stats'}.png`;
       link.href = dataUrl;
       link.click();
+      showToast('Saved workout card PNG!');
     } catch (err) {
       console.error('Failed to download image', err);
-      alert('Could not download image.');
+      showToast('Could not download image.');
     }
   };
 
@@ -110,7 +178,7 @@ export function WorkoutSummaryPage() {
     const unit = settings?.weightUnit || 'kg';
     const prCount = session?.PRs?.length || 0;
     const durationMins = Math.floor((session?.duration || 0) / 60);
-    return `Just crushed a workout on Dragoriano Workout Tracker! 💪\n\n🔥 Duration: ${durationMins} mins\n⚡ Volume: ${vol}k ${unit}\n🏆 PRs: ${prCount}\n\nCheck out the app at: https://lbw-motion.com/dragotracker`;
+    return `Just crushed a workout on Dragoriano Workout Tracker! 💪\n\n🔥 Duration: ${durationMins} mins\n⚡ Volume: ${vol}k ${unit}\n🏆 PRs: ${prCount}`;
   };
 
   const shareToWhatsApp = () => {
@@ -125,7 +193,6 @@ export function WorkoutSummaryPage() {
 
   const shareToInstagram = () => {
     handleCopyToClipboard();
-    alert('Workout card copied to clipboard! Open Instagram to paste it in your Story or feed.');
     window.open('https://www.instagram.com/', '_blank');
   };
 
@@ -145,13 +212,17 @@ export function WorkoutSummaryPage() {
     );
   }
 
-  const day = program ? program.days.find(d => d.id === session.dayId) : null;
+  const day = program ? program.days.find((d) => d.id === session.dayId) : null;
   const isFreestyle = !program || session.programId === FREESTYLE_PROGRAM_ID;
   const workoutTitle = day?.name || session.workoutName || 'Quick Workout';
   const programLabel = program?.name || 'Freestyle Session';
   const unit = settings?.weightUnit || 'kg';
   const previousSession = findPreviousComparableSession(session, sessions);
   const comparison = compareSessions(session, previousSession);
+  const ratioSpec = CARD_RATIOS.find((r) => r.id === cardRatio) || CARD_RATIOS[0];
+  const themeSpec = CARD_THEMES.find((t) => t.id === cardTheme) || CARD_THEMES[0];
+  const maxVisibleExercises = session.PRs.length > 0 ? ratioSpec.maxExWithPR : ratioSpec.maxExNoPR;
+  const supersetMap = computeSupersetMap(session.exercisesSnapshot || []);
 
   const handleSaveAsProgram = async () => {
     if (savedAsProgram || !session.exercisesSnapshot?.length) return;
@@ -164,66 +235,128 @@ export function WorkoutSummaryPage() {
     await useAppStore.getState().saveProgram(newProgram);
     setSavedAsProgram(true);
   };
-  
+
   return (
     <div className="flex flex-col h-[100dvh] w-full bg-page text-content overflow-y-auto pb-24">
       <header className="sticky top-0 z-40 flex items-center justify-between bg-page/90 px-4 py-4 backdrop-blur-md border-b border-content/5">
         <button onClick={() => navigate('/')} className="p-2 -ml-2 text-content hover:bg-page/10 dark:bg-content/10 rounded-full transition-colors">
-          <ChevronLeft size={24}/>
+          <ChevronLeft size={24} />
         </button>
         <h1 className="text-lg font-black uppercase tracking-wide text-primary-400">Workout Complete</h1>
         <div className="w-10"></div>
       </header>
-      
-      <div className="p-4 flex flex-col items-center gap-6">
-        
-        {/* Actions for Background */}
-        <div className="w-full flex justify-center gap-3">
-          <button 
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 bg-card border border-content/10 px-4 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-page/5 transition-colors"
-          >
-            <ImageIcon size={18}className="text-primary-400" />
-            Background
-          </button>
-          <button 
-            onClick={() => cameraInputRef.current?.click()}
-            className="flex items-center gap-2 bg-card border border-content/10 px-4 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-page/5 transition-colors"
-          >
-            <Camera size={18}className="text-primary-400" />
-            Take Photo
-          </button>
-          <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handleImageUpload} aria-label="Upload background image" />
-          <input type="file" ref={cameraInputRef} accept="image/*" capture="environment" className="hidden" onChange={handleImageUpload} aria-label="Take background photo" />
+
+      <div className="p-4 flex flex-col items-center gap-5">
+        {toastMessage && (
+          <div className="w-full max-w-sm rounded-xl bg-emerald-500/15 border border-emerald-500/30 px-3.5 py-2 text-center text-xs font-bold text-emerald-400">
+            {toastMessage}
+          </div>
+        )}
+
+        {/* Card customization controls */}
+        <div className="w-full max-w-sm space-y-2.5">
+          <div className="flex justify-center gap-2 flex-wrap">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1.5 bg-card border border-content/10 px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm hover:bg-page/5 transition-colors"
+            >
+              <ImageIcon size={16} className="text-primary-400" />
+              Background
+            </button>
+            <button
+              onClick={() => cameraInputRef.current?.click()}
+              className="flex items-center gap-1.5 bg-card border border-content/10 px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm hover:bg-page/5 transition-colors"
+            >
+              <Camera size={16} className="text-primary-400" />
+              Take Photo
+            </button>
+            {bgImage && (
+              <button
+                type="button"
+                onClick={() => setBgImage(null)}
+                className="flex items-center gap-1 bg-card border border-content/10 px-3 py-2 rounded-xl text-xs font-bold text-muted hover:text-content transition-colors"
+              >
+                <X size={14} /> Clear
+              </button>
+            )}
+            <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handleImageUpload} aria-label="Upload background image" />
+            <input type="file" ref={cameraInputRef} accept="image/*" capture="environment" className="hidden" onChange={handleImageUpload} aria-label="Take background photo" />
+          </div>
+
+          <div className="flex items-center justify-between gap-2 rounded-2xl bg-card border border-content/10 px-3 py-2">
+            <div className="flex items-center gap-1">
+              {CARD_RATIOS.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => setCardRatio(r.id)}
+                  className={cn(
+                    'rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all',
+                    cardRatio === r.id
+                      ? 'bg-primary-500 text-white shadow-sm'
+                      : 'text-muted hover:text-content',
+                  )}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+
+            {!bgImage && (
+              <div className="flex items-center gap-1.5">
+                {CARD_THEMES.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setCardTheme(t.id)}
+                    title={t.label}
+                    aria-label={`${t.label} card theme`}
+                    className={cn(
+                      'h-6 w-6 rounded-full border-2 transition-transform',
+                      t.swatchClass,
+                      cardTheme === t.id
+                        ? 'border-white scale-110 ring-2 ring-primary-500/60'
+                        : 'border-content/20 opacity-75 hover:opacity-100',
+                    )}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Shareable Card — sharp rectangle for clean social media export */}
-        <div className="w-full max-w-sm aspect-[9/16] overflow-hidden shadow-2xl relative flex flex-col bg-black" ref={cardRef}>
+        <div
+          className={cn(
+            'w-full max-w-sm overflow-hidden shadow-2xl relative flex flex-col bg-black transition-all',
+            ratioSpec.aspectClass,
+          )}
+          ref={cardRef}
+        >
           {bgImage ? (
             <img src={bgImage} alt="Background" className="absolute inset-0 w-full h-full object-cover z-0 blur-[3px] brightness-[0.3]" crossOrigin="anonymous" />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-800 to-black z-0" />
+            <div className={cn('absolute inset-0 z-0', themeSpec.gradientClass)} />
           )}
-          
+
           {/* Content overlay */}
           <div className="relative z-10 flex flex-col h-full p-4 sm:p-5">
-            
             {/* Top: Workout Title */}
-            <div className="text-center pt-2 pb-3 shrink-0">
+            <div className="text-center pt-1 pb-2 shrink-0">
               <p className="text-primary-400 font-bold text-[9px] tracking-[0.3em] uppercase mb-1">{format(session.date, 'EEEE • MMMM d, yyyy')}</p>
-              <h2 className="text-3xl font-black text-white uppercase tracking-wider leading-none mb-1 line-clamp-2">{workoutTitle}</h2>
+              <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-wider leading-none mb-1 line-clamp-2">{workoutTitle}</h2>
               <p className="text-primary-300 font-bold text-[10px] tracking-widest uppercase line-clamp-1">{programLabel}</p>
             </div>
-            
+
             {/* Stats Row */}
             <div className="grid grid-cols-3 gap-2 my-2 shrink-0">
-              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-2.5 flex flex-col items-center border border-white/5">
-                <Clock size={14}className="text-primary-400 mb-1" />
+              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-2 flex flex-col items-center border border-white/5">
+                <Clock size={14} className="text-primary-400 mb-1" />
                 <span className="text-sm font-bold text-white">{Math.floor(session.duration / 60)}m {session.duration % 60}s</span>
                 <span className="text-[8px] text-white/40 uppercase tracking-widest font-bold">Duration</span>
               </div>
-              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-2.5 flex flex-col items-center border border-white/5">
-                <Dumbbell size={14}className="text-primary-400 mb-1" />
+              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-2 flex flex-col items-center border border-white/5">
+                <Dumbbell size={14} className="text-primary-400 mb-1" />
                 <span className="text-sm font-bold text-white">{(session.totalVolume / 1000).toFixed(1)}k</span>
                 <span className="text-[8px] text-white/40 uppercase tracking-widest font-bold">Vol ({unit})</span>
                 {comparison && comparison.volumeDeltaPct !== null && (
@@ -237,45 +370,63 @@ export function WorkoutSummaryPage() {
                   </span>
                 )}
               </div>
-              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-2.5 flex flex-col items-center border border-white/5">
-                <Trophy size={14}className="text-yellow-400 mb-1" />
+              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-2 flex flex-col items-center border border-white/5">
+                <Trophy size={14} className="text-yellow-400 mb-1" />
                 <span className="text-sm font-bold text-white">{session.PRs.length}</span>
                 <span className="text-[8px] text-white/40 uppercase tracking-widest font-bold">PRs</span>
               </div>
             </div>
 
             {/* Content box that takes remaining space and prevents overflow */}
-            <div className="flex-1 min-h-0 flex flex-col justify-center gap-3 mb-2">
-              {/* Exercise Breakdown */}
+            <div className="flex-1 min-h-0 flex flex-col justify-center gap-2.5 mb-2">
               {session.exercisesSnapshot && session.exercisesSnapshot.length > 0 && (
                 <div className="flex-1 flex flex-col min-h-0 shrink">
                   <p className="text-[9px] text-white/30 uppercase tracking-widest font-bold mb-1.5 px-1 shrink-0">Exercises</p>
                   <div className="space-y-1 flex-1 overflow-hidden">
-                    {session.exercisesSnapshot.slice(0, session.PRs.length > 0 ? 5 : 7).map((ex, i) => {
-                      const completedSets = ex.sets.filter(s => s.completed);
-                      const completedWorking = completedSets.filter(s => !isWarmupSet(s));
+                    {session.exercisesSnapshot.slice(0, maxVisibleExercises).map((ex, i) => {
+                      const mode = getExerciseTrackingMode(ex);
+                      const ssMeta = supersetMap.get(ex.id);
+                      const completedSets = ex.sets.filter((s) => s.completed);
+                      const completedWorking = completedSets.filter((s) => !isWarmupSet(s));
                       const displaySets = completedWorking.length > 0 ? completedWorking : completedSets;
-                      const maxWeight = displaySets.length > 0 ? Math.max(...displaySets.map(s => s.weight)) : 0;
-                      const bestSet = displaySets.find(s => s.weight === maxWeight);
+                      let bestSet = displaySets[0];
+                      for (const s of displaySets) {
+                        if (!bestSet) {
+                          bestSet = s;
+                          continue;
+                        }
+                        if (mode === 'timed') {
+                          if ((s.duration ?? 0) > (bestSet.duration ?? 0)) bestSet = s;
+                        } else if (mode === 'assisted_reps') {
+                          if (s.reps > bestSet.reps) bestSet = s;
+                        } else if (s.weight > bestSet.weight || (s.weight === bestSet.weight && s.reps > bestSet.reps)) {
+                          bestSet = s;
+                        }
+                      }
+
                       return (
-                        <div key={i} className="flex items-center justify-between bg-white/5 backdrop-blur-sm rounded-xl px-3 py-1.5 border border-white/10 shrink-0">
+                        <div key={ex.id || i} className="flex items-center justify-between bg-white/5 backdrop-blur-sm rounded-xl px-3 py-1.5 border border-white/10 shrink-0">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <span className="text-[10px] text-primary-400 font-black w-3 shrink-0 opacity-70">{i + 1}</span>
+                            <span className={cn('text-[10px] font-black w-4 shrink-0', ssMeta ? 'text-amber-400' : 'text-primary-400 opacity-70')}>
+                              {ssMeta ? ssMeta.label : i + 1}
+                            </span>
                             <span className="text-[11px] text-white/90 font-bold truncate pr-2">{ex.name}</span>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
                             <span className="text-[9px] text-white/50 font-bold">{displaySets.length} sets</span>
                             {bestSet && (
                               <span className="text-[10px] text-primary-300 font-bold tabular-nums">
-                                {bestSet.weight}×{bestSet.reps}
+                                {formatSetSummary(bestSet, mode, unit)}
                               </span>
                             )}
                           </div>
                         </div>
                       );
                     })}
-                    {session.exercisesSnapshot.length > (session.PRs.length > 0 ? 5 : 7) && (
-                      <p className="text-[9px] text-white/40 text-center mt-1.5 italic shrink-0">+{session.exercisesSnapshot.length - (session.PRs.length > 0 ? 5 : 7)} more exercises</p>
+                    {session.exercisesSnapshot.length > maxVisibleExercises && (
+                      <p className="text-[9px] text-white/40 text-center mt-1 italic shrink-0">
+                        +{session.exercisesSnapshot.length - maxVisibleExercises} more exercises
+                      </p>
                     )}
                   </div>
                 </div>
@@ -283,37 +434,49 @@ export function WorkoutSummaryPage() {
 
               {/* PRs section */}
               {session.PRs.length > 0 && (
-                <div className="shrink-0 bg-yellow-500/10 backdrop-blur-sm rounded-2xl p-3 border border-yellow-500/20 shadow-lg shadow-black/20">
-                  <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <Trophy size={12}className="text-yellow-400" />
+                <div className="shrink-0 bg-yellow-500/10 backdrop-blur-sm rounded-2xl p-2.5 border border-yellow-500/20 shadow-lg shadow-black/20">
+                  <div className="flex items-center justify-center gap-1.5 mb-1.5">
+                    <Trophy size={12} className="text-yellow-400" />
                     <span className="font-bold text-[9px] uppercase tracking-widest text-yellow-500">New Records</span>
                   </div>
                   <div className="space-y-1">
-                    {session.PRs.slice(0, 3).map((pr, i) => (
+                    {session.PRs.slice(0, cardRatio === 'square' ? 2 : 3).map((pr, i) => (
                       <div key={i} className="flex justify-between items-center text-[11px] bg-black/10 px-2 py-1 rounded">
                         <span className="text-white/80 truncate max-w-[150px] font-medium">{pr.exerciseName}</span>
-                        <span className="text-yellow-400 font-bold tabular-nums">{pr.value} {pr.type === '1rm' ? `${settings?.weightUnit || 'kg'} e1RM` : pr.type === 'weight' ? (settings?.weightUnit || 'kg') : pr.type === 'reps' ? 'reps' : 'vol'}</span>
+                        <span className="text-yellow-400 font-bold tabular-nums">
+                          {pr.type === 'duration'
+                            ? formatDurationCompact(pr.value)
+                            : pr.type === '1rm'
+                              ? `${pr.value} ${unit} e1RM`
+                              : pr.type === 'weight'
+                                ? `${pr.value} ${unit}`
+                                : pr.type === 'reps'
+                                  ? `${pr.value} reps`
+                                  : `${pr.value} vol`}
+                        </span>
                       </div>
                     ))}
-                    {session.PRs.length > 3 && (
-                      <p className="text-[9px] text-yellow-500/60 text-center mt-1 italic">+{session.PRs.length - 3} more records</p>
+                    {session.PRs.length > (cardRatio === 'square' ? 2 : 3) && (
+                      <p className="text-[9px] text-yellow-500/60 text-center mt-1 italic">
+                        +{session.PRs.length - (cardRatio === 'square' ? 2 : 3)} more records
+                      </p>
                     )}
                   </div>
                 </div>
               )}
             </div>
-            
+
             {/* Footer branding */}
-            <div className="shrink-0 pt-2 flex items-center justify-center">
-              <div className="bg-primary-500/20 text-primary-300 px-4 py-1.5 rounded-full text-[8px] font-black tracking-widest uppercase border border-primary-500/30">
+            <div className="shrink-0 pt-1 flex items-center justify-center">
+              <div className="bg-primary-500/20 text-primary-300 px-4 py-1 rounded-full text-[8px] font-black tracking-widest uppercase border border-primary-500/30">
                 Dragoriano Workout Tracker
               </div>
             </div>
           </div>
         </div>
-        
+
         {/* Share Section */}
-        <div className="w-full max-w-sm flex flex-col gap-4 mt-2">
+        <div className="w-full max-w-sm flex flex-col gap-4 mt-1">
           {comparison && (
             <div className="rounded-2xl bg-card border border-content/10 p-4 flex items-center justify-between gap-3">
               <div className="min-w-0">
@@ -355,9 +518,10 @@ export function WorkoutSummaryPage() {
               {savedAsProgram ? 'Saved to Programs' : 'Save Workout as Program'}
             </button>
           )}
+
           {/* Main Action Group */}
           <div className="grid grid-cols-3 gap-2">
-            <button 
+            <button
               onClick={handleShare}
               className="flex flex-col items-center justify-center bg-card border border-content/5 hover:border-primary-500/30 rounded-2xl py-3 px-2 text-center transition-all hover:bg-page/5 active:scale-95 group"
             >
@@ -367,7 +531,7 @@ export function WorkoutSummaryPage() {
               <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Share OS</span>
             </button>
 
-            <button 
+            <button
               onClick={handleCopyToClipboard}
               className="flex flex-col items-center justify-center bg-card border border-content/5 hover:border-primary-500/30 rounded-2xl py-3 px-2 text-center transition-all hover:bg-page/5 active:scale-95 group"
             >
@@ -377,7 +541,7 @@ export function WorkoutSummaryPage() {
               <span className="text-[10px] font-bold text-muted uppercase tracking-wider">{copied ? 'Copied!' : 'Copy Card'}</span>
             </button>
 
-            <button 
+            <button
               onClick={handleDownloadOnly}
               className="flex flex-col items-center justify-center bg-card border border-content/5 hover:border-primary-500/30 rounded-2xl py-3 px-2 text-center transition-all hover:bg-page/5 active:scale-95 group"
             >
@@ -390,10 +554,9 @@ export function WorkoutSummaryPage() {
 
           {/* Social Share Group */}
           <div className="bg-card/40 border border-content/5 rounded-3xl p-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-3 text-center">Quick Share Link & Text</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-3 text-center">Quick Share Link &amp; Text</p>
             <div className="flex justify-center gap-4">
-              {/* WhatsApp */}
-              <button 
+              <button
                 onClick={shareToWhatsApp}
                 className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-all active:scale-95 hover:scale-105"
                 title="Share to WhatsApp"
@@ -403,10 +566,9 @@ export function WorkoutSummaryPage() {
                 </svg>
               </button>
 
-              {/* X / Twitter */}
-              <button 
+              <button
                 onClick={shareToX}
-                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-white hover:bg-white/20 transition-all active:scale-95 hover:scale-105"
+                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-content/10 text-content hover:bg-content/20 transition-all active:scale-95 hover:scale-105"
                 title="Share on X"
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
@@ -414,8 +576,7 @@ export function WorkoutSummaryPage() {
                 </svg>
               </button>
 
-              {/* Instagram */}
-              <button 
+              <button
                 onClick={shareToInstagram}
                 className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E1306C]/10 text-[#E1306C] hover:bg-[#E1306C]/20 transition-all active:scale-95 hover:scale-105"
                 title="Share to Instagram"
@@ -427,7 +588,6 @@ export function WorkoutSummaryPage() {
             </div>
           </div>
         </div>
-
       </div>
 
       <SessionCompareModal

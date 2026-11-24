@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.8.0] - 2026-11-24
+
+### Added
+- **Supersets & Giant Sets Workflow (`A1` / `A2` / `A3`)**: Group header bar showing round progress (`Round X/Y`) and shared round rest timer (`45s–180s`), clean split-on-unlink for 3+ giant sets, automatic round advance (`A1 -> A2 -> ... -> shared rest`) with jump banner, and superset-aware duration estimation.
+- **Timed, Bodyweight & Assisted Tracking Modes**: Support for Timed Holds (`duration` seconds, inline hold stopwatch with `Start Hold` / `Stop & Log`, `-5s/+5s` steppers, `+5s` coach progression, and `duration` PRs), Bodyweight reps (weighted/unweighted with `+1 rep` overload), and Assisted lifts (`-weight` display and `-2.5` reduced assistance overload), across Active Workout, Program Editor, Quick Add, Custom Exercises, History, Session Editor, CSV export (`Tracking Mode`, `Duration (s)`), and Summary cards.
+- **Program Sharing & Upgraded Summary Cards**: Individual program sharing via lazy-loaded `ProgramShareModal` (QR code, copyable `DRG2:` share code, JSON export, plain-text summary) and `ImportProgramModal` (QR camera scan, code/JSON paste with live preview, JSON file import, safe UUID remapping); upgraded `WorkoutSummaryPage` with `9:16` / `4:5` / `1:1` aspect ratio switcher, 4 card studio gradients (`Obsidian`, `Ember`, `Emerald`, `Steel`), mode/superset formatting, and inline feedback toasts.
+- **GitHub Actions CI & Android Debug APK Release**: Added `.github/workflows/ci.yml` (`lint`, `test`, `build`, `build:android` asset check) and `.github/workflows/android-release.yml` (automated Java 21 + Android SDK debug APK build + GitHub Release attachment on `v*` tags), plus optional Supabase env guards so zero-secret CI builds boot cleanly offline.
+
+### Changed
+- **Release Metadata**: Bumped `package.json`, `package-lock.json`, Workbox `cacheId` (`dragotracker-v1.8.0`), `SettingsPage`, and Android (`versionCode 4`, `versionName "1.8.0"`).
+
 ## [1.7.0] - 2026-11-24
 
 ### Added

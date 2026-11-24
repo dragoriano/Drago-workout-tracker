@@ -4,6 +4,7 @@ import { Clock, Dumbbell, Edit2, GitCompareArrows, Trophy } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import type { EffortScale, WorkoutSession } from '../../types';
 import { cn } from '../../utils/cn';
+import { formatDurationCompact, getExerciseTrackingMode } from '../../utils/exerciseModes';
 import { formatEffortLabel, getSetType, isWarmupSet } from '../../utils/strength';
 import { FREESTYLE_PROGRAM_ID } from '../../utils/customExercises';
 import { compareSessions } from '../../utils/sessionComparison';
@@ -121,6 +122,7 @@ export function SessionHistoryCard({
           {session.exercisesSnapshot?.map((ex) => {
             const completedSets = ex.sets.filter((s) => s.completed);
             if (completedSets.length === 0) return null;
+            const mode = getExerciseTrackingMode(ex);
             const workingCount = completedSets.filter((s) => !isWarmupSet(s)).length;
             const warmupCount = completedSets.length - workingCount;
             let workingOrdinal = 0;
@@ -128,8 +130,19 @@ export function SessionHistoryCard({
             return (
               <div key={ex.id} className="rounded-xl bg-page/5 p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-bold text-content">{ex.name.replace(/_/g, ' ')}</span>
-                  <span className="text-[10px] font-black tracking-widest text-muted uppercase">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-sm font-bold text-content truncate">{ex.name.replace(/_/g, ' ')}</span>
+                    {mode !== 'weight_reps' && (
+                      <span className="rounded bg-content/10 px-1.5 py-0.5 text-[9px] font-black uppercase text-muted shrink-0">
+                        {mode === 'bodyweight_reps'
+                          ? 'BW'
+                          : mode === 'assisted_reps'
+                            ? 'Assist'
+                            : 'Timed'}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] font-black tracking-widest text-muted uppercase shrink-0">
                     {workingCount > 0 ? workingCount : completedSets.length} Sets
                     {warmupCount > 0 ? ` · ${warmupCount}W` : ''}
                   </span>
@@ -187,11 +200,44 @@ export function SessionHistoryCard({
                           {badgeText}
                         </span>
                         <div className="flex flex-col items-center leading-tight">
-                          <span className={cn('text-xs font-black', warmup ? 'text-sky-400' : 'text-primary-400')}>
-                            {set.weight}
-                            <span className="text-[10px] text-muted font-normal ml-0.5">{unit}</span>
-                          </span>
-                          <span className="text-[10px] font-bold text-content mt-0.5">{set.reps} reps</span>
+                          {mode === 'timed' ? (
+                            <>
+                              <span className={cn('text-xs font-black', warmup ? 'text-sky-400' : 'text-primary-400')}>
+                                {formatDurationCompact(set.duration ?? 0)}
+                              </span>
+                              <span className="text-[10px] font-bold text-muted mt-0.5">
+                                {set.weight > 0 ? `+${set.weight}${unit}` : 'Hold'}
+                              </span>
+                            </>
+                          ) : mode === 'bodyweight_reps' ? (
+                            <>
+                              <span className={cn('text-xs font-black', warmup ? 'text-sky-400' : 'text-primary-400')}>
+                                {set.weight > 0 ? `+${set.weight}` : 'BW'}
+                                {set.weight > 0 && (
+                                  <span className="text-[10px] text-muted font-normal ml-0.5">{unit}</span>
+                                )}
+                              </span>
+                              <span className="text-[10px] font-bold text-content mt-0.5">{set.reps} reps</span>
+                            </>
+                          ) : mode === 'assisted_reps' ? (
+                            <>
+                              <span className={cn('text-xs font-black', warmup ? 'text-sky-400' : 'text-sky-400')}>
+                                {set.weight > 0 ? `-${set.weight}` : 'BW'}
+                                {set.weight > 0 && (
+                                  <span className="text-[10px] text-muted font-normal ml-0.5">{unit}</span>
+                                )}
+                              </span>
+                              <span className="text-[10px] font-bold text-content mt-0.5">{set.reps} reps</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className={cn('text-xs font-black', warmup ? 'text-sky-400' : 'text-primary-400')}>
+                                {set.weight}
+                                <span className="text-[10px] text-muted font-normal ml-0.5">{unit}</span>
+                              </span>
+                              <span className="text-[10px] font-bold text-content mt-0.5">{set.reps} reps</span>
+                            </>
+                          )}
                           {effortLabel && (
                             <span className={cn('text-[9px] font-bold mt-0.5 tabular-nums', effortColor)}>
                               {effortLabel}

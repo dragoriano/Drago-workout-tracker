@@ -15,6 +15,7 @@ import type { EffortScale, Exercise, Set, WorkoutSession } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
 import { cn } from '../../utils/cn';
 import { FREESTYLE_PROGRAM_ID } from '../../utils/customExercises';
+import { getExerciseTrackingMode } from '../../utils/exerciseModes';
 import { recalculateSessionMetrics } from '../../utils/sessionExport';
 import {
   getNextSetType,
@@ -128,13 +129,16 @@ export function SessionEditorModal({
   };
 
   const handleAddSet = (exerciseId: string) => {
+    const targetEx = (draft?.exercisesSnapshot || []).find((ex) => ex.id === exerciseId);
+    const mode = getExerciseTrackingMode(targetEx);
     updateExerciseSets(exerciseId, (sets) => {
       const lastWorking = [...sets].reverse().find((s) => getSetType(s) !== 'warmup');
       const fallback = lastWorking ?? sets[sets.length - 1];
       const newSet: Set = {
         id: generateId(),
         weight: fallback?.weight ?? 0,
-        reps: fallback?.reps ?? 8,
+        reps: mode === 'timed' ? 1 : (fallback?.reps ?? 8),
+        ...(mode === 'timed' ? { duration: fallback?.duration ?? 45 } : {}),
         completed: true,
         setType: 'working',
       };
@@ -354,6 +358,15 @@ export function SessionEditorModal({
                 <div className="space-y-3">
                   {(draft.exercisesSnapshot || []).map((ex) => {
                     let workingOrdinal = 0;
+                    const mode = getExerciseTrackingMode(ex);
+                    const weightLabel =
+                      mode === 'assisted_reps'
+                        ? `-${unit}`
+                        : mode === 'bodyweight_reps'
+                          ? `+${unit}`
+                          : mode === 'timed'
+                            ? 'Load'
+                            : unit;
 
                     return (
                       <div
@@ -378,8 +391,8 @@ export function SessionEditorModal({
 
                         <div className="grid grid-cols-[34px_1fr_1fr_52px_34px_26px] items-center gap-1.5 px-1 text-[10px] font-bold uppercase tracking-wider text-muted">
                           <span className="text-center">Set</span>
-                          <span className="text-center">{unit}</span>
-                          <span className="text-center">Reps</span>
+                          <span className="text-center">{weightLabel}</span>
+                          <span className="text-center">{mode === 'timed' ? 'Sec' : 'Reps'}</span>
                           <span className="text-center">{effortScale.toUpperCase()}</span>
                           <span className="text-center">✓</span>
                           <span />
@@ -487,31 +500,59 @@ export function SessionEditorModal({
                                   )}
                                 />
 
-                                <input
-                                  type="number"
-                                  min={0}
-                                  inputMode="numeric"
-                                  aria-label="Reps"
-                                  value={set.reps === 0 ? '' : set.reps}
-                                  onChange={(e) => {
-                                    const raw = e.target.value;
-                                    const parsed = raw === '' ? 0 : Math.round(Number(raw));
-                                    if (Number.isFinite(parsed)) {
-                                      handleSetFieldChange(
-                                        ex.id,
-                                        set.id,
-                                        'reps',
-                                        Math.max(0, parsed),
-                                      );
-                                    }
-                                  }}
-                                  placeholder="0"
-                                  className={cn(
-                                    'h-10 w-full min-w-0 rounded-xl bg-page text-center text-sm font-bold outline-none tabular-nums',
-                                    warmup && 'opacity-75',
-                                    set.completed && (warmup ? 'text-sky-400' : 'text-emerald-400'),
-                                  )}
-                                />
+                                {mode === 'timed' ? (
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    inputMode="numeric"
+                                    aria-label="Duration (s)"
+                                    value={(set.duration ?? 0) === 0 ? '' : set.duration}
+                                    onChange={(e) => {
+                                      const raw = e.target.value;
+                                      const parsed = raw === '' ? 0 : Math.round(Number(raw));
+                                      if (Number.isFinite(parsed)) {
+                                        handleSetFieldChange(
+                                          ex.id,
+                                          set.id,
+                                          'duration',
+                                          Math.max(0, parsed),
+                                        );
+                                      }
+                                    }}
+                                    placeholder="45"
+                                    className={cn(
+                                      'h-10 w-full min-w-0 rounded-xl bg-page text-center text-sm font-bold outline-none tabular-nums',
+                                      warmup && 'opacity-75',
+                                      set.completed && (warmup ? 'text-sky-400' : 'text-emerald-400'),
+                                    )}
+                                  />
+                                ) : (
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    inputMode="numeric"
+                                    aria-label="Reps"
+                                    value={set.reps === 0 ? '' : set.reps}
+                                    onChange={(e) => {
+                                      const raw = e.target.value;
+                                      const parsed = raw === '' ? 0 : Math.round(Number(raw));
+                                      if (Number.isFinite(parsed)) {
+                                        handleSetFieldChange(
+                                          ex.id,
+                                          set.id,
+                                          'reps',
+                                          Math.max(0, parsed),
+                                        );
+                                      }
+                                    }}
+                                    placeholder="0"
+                                    className={cn(
+                                      'h-10 w-full min-w-0 rounded-xl bg-page text-center text-sm font-bold outline-none tabular-nums',
+                                      warmup && 'opacity-75',
+                                      set.completed && (warmup ? 'text-sky-400' : 'text-emerald-400'),
+                                    )}
+                                  />
+                                )}
 
                                 {warmup ? (
                                   <div className="text-center text-xs font-bold text-muted/40">—</div>

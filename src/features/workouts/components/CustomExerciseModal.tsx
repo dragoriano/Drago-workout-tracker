@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { BookOpen, Clock, Dumbbell, Edit2, Plus, Search, Trash2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CustomExercise, ExerciseEquipment } from '../../../types';
+import { CustomExercise, ExerciseEquipment, ExerciseTrackingMode } from '../../../types';
 import { useAppStore } from '../../../store/useAppStore';
 import {
   EXERCISE_EQUIPMENT_OPTIONS,
   normalizeCustomExerciseInput,
 } from '../../../utils/customExercises';
+import {
+  EXERCISE_TRACKING_MODES,
+  inferTrackingModeFromName,
+} from '../../../utils/exerciseModes';
 import { cn } from '../../../utils/cn';
 import { MUSCLE_GROUP_OPTIONS } from './ExerciseManagerModal';
 
@@ -34,6 +38,7 @@ export function CustomExerciseModal({
 
   const [name, setName] = useState('');
   const [equipment, setEquipment] = useState<ExerciseEquipment>('Barbell');
+  const [trackingMode, setTrackingMode] = useState<ExerciseTrackingMode>('weight_reps');
   const [primaryMuscle, setPrimaryMuscle] = useState('');
   const [secondaryMuscles, setSecondaryMuscles] = useState<string[]>([]);
   const [defaultRestTimer, setDefaultRestTimer] = useState('90');
@@ -45,6 +50,7 @@ export function CustomExerciseModal({
     setEditingCreatedAt(undefined);
     setName(seedName);
     setEquipment('Barbell');
+    setTrackingMode(inferTrackingModeFromName(seedName, 'Barbell'));
     setPrimaryMuscle('');
     setSecondaryMuscles([]);
     setDefaultRestTimer('90');
@@ -68,6 +74,7 @@ export function CustomExerciseModal({
     setEditingCreatedAt(ce.createdAt);
     setName(ce.name);
     setEquipment(ce.equipment || 'Barbell');
+    setTrackingMode(ce.trackingMode ?? inferTrackingModeFromName(ce.name, ce.equipment));
     setPrimaryMuscle(ce.primaryMuscle);
     setSecondaryMuscles(ce.secondaryMuscles || []);
     setDefaultRestTimer(String(ce.defaultRestTimer || 90));
@@ -105,6 +112,7 @@ export function CustomExerciseModal({
         primaryMuscle,
         secondaryMuscles,
         equipment,
+        trackingMode,
         defaultRestTimer: Number(defaultRestTimer) || 90,
         notes,
         createdAt: editingCreatedAt,
@@ -248,6 +256,11 @@ export function CustomExerciseModal({
                                 {ce.equipment}
                               </span>
                             )}
+                            {ce.trackingMode && ce.trackingMode !== 'weight_reps' && (
+                              <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-black uppercase text-emerald-400">
+                                {EXERCISE_TRACKING_MODES.find((m) => m.value === ce.trackingMode)?.shortLabel}
+                              </span>
+                            )}
                           </div>
                           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted">
                             <span className="text-primary-400 font-semibold">{ce.primaryMuscle}</span>
@@ -312,7 +325,12 @@ export function CustomExerciseModal({
                       <button
                         key={eq}
                         type="button"
-                        onClick={() => setEquipment(eq)}
+                        onClick={() => {
+                          setEquipment(eq);
+                          if (eq === 'Bodyweight' && trackingMode === 'weight_reps') {
+                            setTrackingMode('bodyweight_reps');
+                          }
+                        }}
                         className={cn(
                           'rounded-full px-3 py-1 text-xs font-bold border transition-all',
                           equipment === eq
@@ -321,6 +339,29 @@ export function CustomExerciseModal({
                         )}
                       >
                         {eq}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted block mb-1.5">
+                    Tracking Mode
+                  </label>
+                  <div className="flex items-center gap-1 rounded-xl bg-surface border border-content/10 p-1">
+                    {EXERCISE_TRACKING_MODES.map((m) => (
+                      <button
+                        key={m.value}
+                        type="button"
+                        onClick={() => setTrackingMode(m.value)}
+                        className={cn(
+                          'flex-1 rounded-lg py-1.5 text-[11px] font-bold transition-all',
+                          trackingMode === m.value
+                            ? 'bg-primary-500 text-white shadow-sm'
+                            : 'text-muted hover:text-content',
+                        )}
+                      >
+                        {m.shortLabel}
                       </button>
                     ))}
                   </div>

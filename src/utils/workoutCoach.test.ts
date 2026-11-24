@@ -243,7 +243,51 @@ describe('computeSmartSets', () => {
 
     assert.equal(evalRes.status, 'rpe_hold');
     assert.equal(evalRes.avgRecentRpe, 9.5);
-    assert.deepEqual(resultSets.map((s) => s.weight), [100, 100]);
+  assert.deepEqual(resultSets.map((s) => s.weight), [100, 100]);
+  });
+
+  it('progresses timed holds +5s, reduces assisted load -2.5, and adds +1 rep for pure bodyweight', () => {
+    const timedEx = makeExercise({
+      name: 'Plank',
+      trackingMode: 'timed',
+      sets: [{ id: 't1', weight: 0, reps: 1, duration: 45, completed: false }],
+      history: [
+        { sessionId: 's1', date: 1000, sets: [{ id: 'a', weight: 0, reps: 1, duration: 45, completed: true }] },
+        { sessionId: 's2', date: 2000, sets: [{ id: 'b', weight: 0, reps: 1, duration: 45, completed: true }] },
+      ],
+    });
+    const assistedEx = makeExercise({
+      name: 'Assisted Pull-Up',
+      trackingMode: 'assisted_reps',
+      sets: makeSets(30, 8, false, 2),
+      history: [
+        { sessionId: 's1', date: 1000, sets: makeSets(30, 8, true, 2) },
+        { sessionId: 's2', date: 2000, sets: makeSets(30, 8, true, 2) },
+      ],
+    });
+    const assistedFail = makeExercise({
+      name: 'Assisted Pull-Up',
+      trackingMode: 'assisted_reps',
+      sets: makeSets(30, 8, false, 2),
+      history: [
+        { sessionId: 's1', date: 1000, sets: makeSets(30, 8, false, 2) },
+        { sessionId: 's2', date: 2000, sets: makeSets(30, 8, false, 2) },
+      ],
+    });
+    const bwEx = makeExercise({
+      name: 'Push-Up',
+      trackingMode: 'bodyweight_reps',
+      sets: makeSets(0, 12, false, 2),
+      history: [
+        { sessionId: 's1', date: 1000, sets: makeSets(0, 12, true, 2) },
+        { sessionId: 's2', date: 2000, sets: makeSets(0, 12, true, 2) },
+      ],
+    });
+
+    assert.equal(computeSmartSets(timedEx, false, BASE_SETTINGS)[0].duration, 50);
+    assert.deepEqual(computeSmartSets(assistedEx, false, BASE_SETTINGS).map((s) => s.weight), [27.5, 27.5]);
+    assert.deepEqual(computeSmartSets(assistedFail, false, BASE_SETTINGS).map((s) => s.weight), [33, 33]);
+    assert.deepEqual(computeSmartSets(bwEx, false, BASE_SETTINGS).map((s) => s.reps), [13, 13]);
   });
 });
 
@@ -281,6 +325,34 @@ describe('estimateWorkoutDurationMinutes', () => {
     assert.equal(shortEst.max % 5, 0);
     assert.ok(shortEst.min >= 10 && shortEst.max >= shortEst.min + 5);
     assert.ok(longEst.min > shortEst.max);
+  });
+
+  it('reduces estimated duration when exercises share rest as a superset', () => {
+    const exA = makeExercise({ id: 'a', sets: makeSets(60, 10, false, 4), restTimerConfig: 120 });
+    const exB = makeExercise({ id: 'b', sets: makeSets(40, 10, false, 4), restTimerConfig: 120 });
+    const exC = makeExercise({ id: 'c', sets: makeSets(20, 12, false, 4), restTimerConfig: 120 });
+    const exD = makeExercise({ id: 'd', sets: makeSets(15, 12, false, 4), restTimerConfig: 120 });
+
+    const ungrouped = estimateWorkoutDurationMinutes({
+      id: 'u',
+      name: 'Ungrouped',
+      order: 0,
+      exercises: [exA, exB, exC, exD],
+    });
+    const grouped = estimateWorkoutDurationMinutes({
+      id: 'g',
+      name: 'Grouped',
+      order: 0,
+      exercises: [
+        { ...exA, supersetId: 's1' },
+        { ...exB, supersetId: 's1' },
+        { ...exC, supersetId: 's2' },
+        { ...exD, supersetId: 's2' },
+      ],
+    });
+
+    assert.ok(ungrouped && grouped);
+    assert.ok(grouped.min < ungrouped.min);
   });
 });
 
@@ -372,6 +444,56 @@ describe('detectSessionPRs', () => {
         type: '1rm',
         value: 175,
         previousValue: 163.3,
+      },
+    ]);
+  });
+
+  it('excludes timed and assisted exercises from volume and detects duration PRs', () => {
+    const exercises: Exercise[] = [
+      makeExercise({
+        id: 'plank',
+        name: 'Plank',
+        trackingMode: 'timed',
+        sets: [{ id: 'p1', weight: 20, reps: 1, duration: 60, completed: true }],
+        history: [
+          {
+            sessionId: 'prev',
+            date: 1000,
+            sets: [{ id: 'hp1', weight: 20, reps: 1, duration: 45, completed: true }],
+          },
+        ],
+      }),
+      makeExercise({
+        id: 'assist',
+        name: 'Assisted Dip',
+        trackingMode: 'assisted_reps',
+        sets: [{ id: 'a1', weight: 25, reps: 12, completed: true }],
+        history: [
+          {
+            sessionId: 'prev',
+            date: 1000,
+            sets: [{ id: 'ha1', weight: 30, reps: 10, completed: true }],
+          },
+        ],
+      }),
+    ];
+
+    const { totalVolume, detectedPRs } = detectSessionPRs(exercises);
+    assert.equal(totalVolume, 0);
+    assert.deepEqual(detectedPRs, [
+      {
+        exerciseId: 'plank',
+        exerciseName: 'Plank',
+        type: 'duration',
+        value: 60,
+        previousValue: 45,
+      },
+      {
+        exerciseId: 'assist',
+        exerciseName: 'Assisted Dip',
+        type: 'reps',
+        value: 12,
+        previousValue: 10,
       },
     ]);
   });

@@ -3,9 +3,11 @@ import type {
   CustomExercise,
   Exercise,
   ExerciseEquipment,
+  ExerciseTrackingMode,
   WorkoutProgram,
   WorkoutSession,
 } from '../types';
+import { inferTrackingModeFromName } from './exerciseModes';
 import { computeSmartSets } from './workoutCoach';
 import { generateId } from './uuid';
 
@@ -29,6 +31,7 @@ export interface CatalogExerciseItem {
   isCustom?: boolean;
   customId?: string;
   equipment?: ExerciseEquipment;
+  trackingMode?: ExerciseTrackingMode;
   defaultRestTimer?: number;
   notes?: string;
 }
@@ -39,6 +42,7 @@ export function normalizeCustomExerciseInput(input: {
   primaryMuscle: string;
   secondaryMuscles?: string[];
   equipment?: ExerciseEquipment;
+  trackingMode?: ExerciseTrackingMode;
   defaultRestTimer?: number;
   notes?: string;
   createdAt?: number;
@@ -68,6 +72,7 @@ export function normalizeCustomExerciseInput(input: {
     secondaryMuscles: cleanSecondary,
     muscleGroups,
     equipment: input.equipment || 'Other',
+    trackingMode: input.trackingMode ?? inferTrackingModeFromName(cleanName, input.equipment),
     defaultRestTimer,
     notes: input.notes?.trim() || undefined,
     createdAt: input.createdAt ?? Date.now(),
@@ -96,6 +101,7 @@ export function mergeExerciseCatalog(
       isCustom: true,
       customId: ce.id,
       equipment: ce.equipment,
+      trackingMode: ce.trackingMode,
       defaultRestTimer: ce.defaultRestTimer,
       notes: ce.notes,
     });
@@ -115,10 +121,24 @@ export function buildFreestyleExercise(
   meta: CatalogExerciseItem,
   sessions: WorkoutSession[],
   settings: AppSettings | null,
-  options: { setsCount?: number; defaultReps?: number; isDeload?: boolean } = {},
+  options: {
+    setsCount?: number;
+    defaultReps?: number;
+    defaultDuration?: number;
+    trackingMode?: ExerciseTrackingMode;
+    isDeload?: boolean;
+  } = {},
 ): Exercise {
   const setsCount = Math.max(1, Math.min(12, Math.round(options.setsCount ?? 3)));
   const defaultReps = Math.max(1, Math.min(100, Math.round(options.defaultReps ?? 10)));
+  const trackingMode =
+    options.trackingMode ??
+    meta.trackingMode ??
+    inferTrackingModeFromName(meta.name, meta.equipment);
+  const defaultDuration = Math.max(
+    5,
+    Math.min(1800, Math.round(options.defaultDuration ?? 45)),
+  );
   const normalizedTarget = meta.name.toLowerCase().trim();
 
   const globalHistory = sessions
@@ -140,7 +160,8 @@ export function buildFreestyleExercise(
   const templateSets = Array.from({ length: setsCount }, () => ({
     id: generateId(),
     weight: 0,
-    reps: defaultReps,
+    reps: trackingMode === 'timed' ? 1 : defaultReps,
+    ...(trackingMode === 'timed' ? { duration: defaultDuration } : {}),
     completed: false,
     setType: 'working' as const,
   }));
@@ -159,6 +180,7 @@ export function buildFreestyleExercise(
     history: globalHistory,
     restTimerConfig: meta.defaultRestTimer || 90,
     lastUpdated: Date.now(),
+    trackingMode,
   };
 
   return {
@@ -197,6 +219,7 @@ export function buildProgramFromFreestyle(
             id: generateId(),
             weight: s.weight,
             reps: s.reps,
+            ...(typeof s.duration === 'number' ? { duration: s.duration } : {}),
             completed: false,
             ...(s.setType && s.setType !== 'working' ? { setType: s.setType } : {}),
           })),

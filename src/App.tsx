@@ -21,24 +21,26 @@ export default function App() {
       if (navigator.onLine) {
         try {
           const { supabase } = await import('./supabase/supabaseClient');
-          const { data } = await supabase.auth.getSession();
-          if (data.session?.user) {
-            // Check if we have local data in the Zustand store
-            const store = useAppStore.getState();
-            const hasLocalData = store.programs.length > 0 || store.sessions.length > 0;
+          if (supabase) {
+            const { data } = await supabase.auth.getSession();
+            if (data.session?.user) {
+              // Check if we have local data in the Zustand store
+              const store = useAppStore.getState();
+              const hasLocalData = store.programs.length > 0 || store.sessions.length > 0;
 
-            if (!hasLocalData) {
-              console.log('[App] Local database is empty. Attempting recovery pull from Supabase...');
-              const { pullFromSupabase } = await import('./storage/supabaseSync');
-              await pullFromSupabase(data.session.user.id);
-              // Re-hydrate the store with the newly restored data
-              await hydrate();
-              console.log('[App] Recovery pull and hydration complete.');
-            } else {
-              console.log('[App] Local database contains data. Syncing backup to Supabase...');
-              const { pushToSupabase } = await import('./storage/supabaseSync');
-              await pushToSupabase(data.session.user.id);
-              console.log('[App] Auto-sync backup push complete.');
+              if (!hasLocalData) {
+                console.log('[App] Local database is empty. Attempting recovery pull from Supabase...');
+                const { pullFromSupabase } = await import('./storage/supabaseSync');
+                await pullFromSupabase(data.session.user.id);
+                // Re-hydrate the store with the newly restored data
+                await hydrate();
+                console.log('[App] Recovery pull and hydration complete.');
+              } else {
+                console.log('[App] Local database contains data. Syncing backup to Supabase...');
+                const { pushToSupabase } = await import('./storage/supabaseSync');
+                await pushToSupabase(data.session.user.id);
+                console.log('[App] Auto-sync backup push complete.');
+              }
             }
           }
         } catch (err) {
@@ -54,6 +56,7 @@ export default function App() {
       console.log('[App] Device went online. Triggering auto-sync...');
       try {
         const { supabase } = await import('./supabase/supabaseClient');
+        if (!supabase) return;
         const { data } = await supabase.auth.getSession();
         if (data.session?.user) {
           // Only push online updates if we actually have local data to backup

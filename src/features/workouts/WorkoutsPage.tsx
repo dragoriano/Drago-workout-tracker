@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, BookOpen, Dumbbell, Calendar, Clock, ChevronRight, Edit2, Plus,
-  Flame, Weight, Copy, Zap,
+  Flame, Weight, Copy, Zap, Download, Share2,
 } from 'lucide-react';
 import { WorkoutProgram } from '../../types';
 import { motion } from 'framer-motion';
@@ -25,10 +25,18 @@ import {
 } from './components/PresetProgramModals';
 import { CustomExerciseModal } from './components/CustomExerciseModal';
 
+const ProgramShareModal = React.lazy(() =>
+  import('./components/ProgramShareModal').then((m) => ({ default: m.ProgramShareModal })),
+);
+const ImportProgramModal = React.lazy(() =>
+  import('./components/ImportProgramModal').then((m) => ({ default: m.ImportProgramModal })),
+);
+
 // ─── Component ─────────────────────────────────────────────────────────────────
 export function WorkoutsPage() {
   // ── Zustand store ──────────────────────────────────────────────
   const programs = useAppStore((s) => s.programs);
+  const settings = useAppStore((s) => s.settings);
   const customExercises = useAppStore((s) => s.customExercises);
   const storeSaveProgram = useAppStore((s) => s.saveProgram);
   const hydrate = useAppStore((s) => s.hydrate);
@@ -38,6 +46,8 @@ export function WorkoutsPage() {
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [isCustomLibOpen, setIsCustomLibOpen] = useState(false);
+  const [shareProgram, setShareProgram] = useState<WorkoutProgram | null>(null);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameInput, setRenameInput] = useState('');
@@ -181,6 +191,14 @@ export function WorkoutsPage() {
     return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
   };
 
+  const handleImportPrograms = async (importedList: WorkoutProgram[]) => {
+    const hasActive = programs.some((p) => p.status === 'active');
+    for (let i = 0; i < importedList.length; i++) {
+      const nextStatus = !hasActive && i === 0 ? 'active' : 'paused';
+      await storeSaveProgram({ ...importedList[i], status: nextStatus });
+    }
+  };
+
   // ── Main render ────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-page">
@@ -190,7 +208,15 @@ export function WorkoutsPage() {
             <ArrowLeft size={24}/>
           </button>
           <h1 className="text-xl font-semibold text-content">Programs</h1>
-          <div className="w-10" />
+          <button
+            type="button"
+            onClick={() => setIsImportOpen(true)}
+            className="flex items-center gap-1 rounded-full bg-content/5 border border-content/10 px-3 py-1.5 text-xs font-bold text-sky-400 hover:bg-sky-500/15 transition-colors"
+            title="Import Shared Program"
+          >
+            <Download size={14} />
+            <span>Import</span>
+          </button>
         </div>
 
         <div className="p-4">
@@ -298,6 +324,13 @@ export function WorkoutsPage() {
                               {program.name}
                             </h3>
                             <button
+                              onClick={(e) => { e.stopPropagation(); setShareProgram(program); }}
+                              className="text-muted/40 hover:text-sky-400 shrink-0 p-1 -mt-1 transition-colors"
+                              title="Share Program"
+                            >
+                              <Share2 size={15}/>
+                            </button>
+                            <button
                               onClick={(e) => { e.stopPropagation(); handleDuplicateProgram(program); }}
                               className="text-muted/40 hover:text-content shrink-0 p-1 -mt-1 transition-colors"
                               title="Duplicate Program"
@@ -365,6 +398,10 @@ export function WorkoutsPage() {
         }}
         onSelectWizard={openWizard}
         onSelectBlank={() => handleCreateProgram('Custom Program')}
+        onSelectImport={() => {
+          setIsAddModalOpen(false);
+          setIsImportOpen(true);
+        }}
       />
       <ChooseGoalModal
         isOpen={isSplitModalOpen}
@@ -400,6 +437,25 @@ export function WorkoutsPage() {
         isOpen={isCustomLibOpen}
         onClose={() => setIsCustomLibOpen(false)}
       />
+      {shareProgram && (
+        <React.Suspense fallback={null}>
+          <ProgramShareModal
+            isOpen={Boolean(shareProgram)}
+            program={shareProgram}
+            unit={settings?.weightUnit || 'kg'}
+            onClose={() => setShareProgram(null)}
+          />
+        </React.Suspense>
+      )}
+      {isImportOpen && (
+        <React.Suspense fallback={null}>
+          <ImportProgramModal
+            isOpen={isImportOpen}
+            onClose={() => setIsImportOpen(false)}
+            onImportPrograms={handleImportPrograms}
+          />
+        </React.Suspense>
+      )}
     </div>
   );
 }

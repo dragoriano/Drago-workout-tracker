@@ -244,7 +244,7 @@ describe('formatSessionsToCSV', () => {
     const csv = formatSessionsToCSV([], programs, 'kg');
     assert.equal(
       csv,
-      'Date,Time,Workout,Program,Duration (min),Exercise,Set #,Set Type,Weight,Unit,Reps,RPE,Completed,Volume',
+      'Date,Time,Workout,Program,Duration (min),Exercise,Set #,Set Type,Weight,Unit,Reps,RPE,Completed,Volume,Tracking Mode,Duration (s)',
     );
   });
 
@@ -299,14 +299,14 @@ describe('formatSessionsToCSV', () => {
     assert.equal(lines.length, 5);
     assert.equal(
       lines[0],
-      'Date,Time,Workout,Program,Duration (min),Exercise,Set #,Set Type,Weight,Unit,Reps,RPE,Completed,Volume',
+      'Date,Time,Workout,Program,Duration (min),Exercise,Set #,Set Type,Weight,Unit,Reps,RPE,Completed,Volume,Tracking Mode,Duration (s)',
     );
 
     const newDate = format(new Date(newerFreestyleTs), 'yyyy-MM-dd');
     const newTime = format(new Date(newerFreestyleTs), 'HH:mm');
     assert.equal(
       lines[1],
-      `${newDate},${newTime},"Arm ""Blaster""",Freestyle,30,Bicep Curl,1,drop,15,lbs,12,9,Yes,180`,
+      `${newDate},${newTime},"Arm ""Blaster""",Freestyle,30,Bicep Curl,1,drop,15,lbs,12,9,Yes,180,weight_reps,`,
     );
 
     const oldDate = format(new Date(BASE_TS), 'yyyy-MM-dd');
@@ -314,21 +314,21 @@ describe('formatSessionsToCSV', () => {
     // Warmup set -> Volume = 0
     assert.equal(
       lines[2],
-      `${oldDate},${oldTime},Push Day,"PPL, 6-Day",50,Bench Press,1,warmup,60,lbs,8,,Yes,0`,
+      `${oldDate},${oldTime},Push Day,"PPL, 6-Day",50,Bench Press,1,warmup,60,lbs,8,,Yes,0,weight_reps,`,
     );
     // Working completed set -> Volume = 500
     assert.equal(
       lines[3],
-      `${oldDate},${oldTime},Push Day,"PPL, 6-Day",50,Bench Press,2,working,100,lbs,5,8.5,Yes,500`,
+      `${oldDate},${oldTime},Push Day,"PPL, 6-Day",50,Bench Press,2,working,100,lbs,5,8.5,Yes,500,weight_reps,`,
     );
     // Incomplete set -> Volume = 0
     assert.equal(
       lines[4],
-      `${oldDate},${oldTime},Push Day,"PPL, 6-Day",50,Bench Press,3,failure,100,lbs,5,,No,0`,
+      `${oldDate},${oldTime},Push Day,"PPL, 6-Day",50,Bench Press,3,failure,100,lbs,5,,No,0,weight_reps,`,
     );
   });
 
-  it('uses Quick Workout fallback when freestyle workoutName is omitted', () => {
+  it('uses Quick Workout fallback and exports trackingMode & timed durations cleanly', () => {
     const freestyleNoName = makeSession({
       id: 's-fs',
       programId: FREESTYLE_PROGRAM_ID,
@@ -339,17 +339,18 @@ describe('formatSessionsToCSV', () => {
         {
           id: 'ex-1',
           name: 'Plank',
+          trackingMode: 'timed',
           notes: '',
           restTimerConfig: 60,
           lastUpdated: BASE_TS,
           history: [],
-          sets: [{ id: 'p1', weight: 0, reps: 60, completed: true }],
+          sets: [{ id: 'p1', weight: 0, reps: 1, duration: 60, completed: true }],
         },
       ],
     });
 
     const csv = formatSessionsToCSV([freestyleNoName], programs, 'kg');
     const row = csv.split('\n')[1];
-    assert.ok(row.includes(',Quick Workout,Freestyle,15,Plank,1,working,0,kg,60,,Yes,0'));
+    assert.ok(row.includes(',Quick Workout,Freestyle,15,Plank,1,working,0,kg,1,,Yes,0,timed,60'));
   });
 });

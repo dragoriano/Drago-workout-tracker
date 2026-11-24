@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Calculator, ChevronLeft, RotateCcw, Dumbbell, CheckCircle2, Trophy, X, Edit2, Plus, Zap } from 'lucide-react';
-import type { Exercise, Set, WorkoutSession } from '../../types';
+import type { Exercise, ExerciseTrackingMode, Set, WorkoutSession } from '../../types';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { PromptModal } from '../../components/ui/PromptModal';
@@ -10,6 +10,17 @@ import { PlateCalculatorModal } from '../../components/ui/PlateCalculatorModal';
 import { getExerciseMuscleGroups } from '../../data/exercises';
 import { generateId } from '../../utils/uuid';
 import { useAppStore } from '../../store/useAppStore';
+import {
+  calculateSetWorkingVolume,
+  formatDurationCompact,
+  getExerciseTrackingMode,
+} from '../../utils/exerciseModes';
+import {
+  computeSupersetMap,
+  cleanupOrphanSupersets,
+  resolveSupersetSetCompletion,
+  toggleSupersetLink,
+} from '../../utils/supersets';
 import {
   computeOverloadSpikePercent,
   computeSmartSets,
@@ -66,6 +77,15 @@ export function WorkoutSessionPage() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [restTimer, setRestTimer] = useState<number | null>(null);
   const [initialRestTimer, setInitialRestTimer] = useState<number | null>(null);
+  const [restSubtitle, setRestSubtitle] = useState<string>('Recovery');
+  const [activeSupersetFocusId, setActiveSupersetFocusId] = useState<string | null>(null);
+  const [supersetBanner, setSupersetBanner] = useState<{
+    groupLabel: string;
+    nextLabel: string;
+    nextExerciseName: string;
+    targetExerciseId: string;
+  } | null>(null);
+  const supersetBannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showOverloadWarning, setShowOverloadWarning] = useState(false);
   const [overloadPercent, setOverloadPercent] = useState(0);
   const [isDeloadDay, setIsDeloadDay] = useState(false);
@@ -82,7 +102,7 @@ export function WorkoutSessionPage() {
   }>({ isOpen: false, weight: 0 });
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [achievedPRs, setAchievedPRs] = useState<string[]>([]);
-  const [prNotification, setPrNotification] = useState<{ exerciseName: string, weight: number } | null>(null);
+  const [prNotification, setPrNotification] = useState<{ exerciseName: string, valueLabel: string } | null>(null);
   const pendingSessionId = useRef<string | null>(null);
   const isFinishingRef = useRef(false);
   const initializedSessionKeyRef = useRef<string | null>(null);
@@ -222,6 +242,7 @@ export function WorkoutSessionPage() {
   const handleAddSet = (exerciseId: string) => {
     setExercises(prev => prev.map(ex => {
       if (ex.id === exerciseId) {
+        const mode = getExerciseTrackingMode(ex);
         const workingSets = ex.sets.filter(s => !isWarmupSet(s));
         const refSet = workingSets[workingSets.length - 1] ?? ex.sets[ex.sets.length - 1];
         return {
@@ -229,7 +250,8 @@ export function WorkoutSessionPage() {
           sets: [...ex.sets, {
             id: generateId(),
             weight: refSet ? refSet.weight : 0,
-            reps: refSet ? refSet.reps : 0,
+            reps: mode === 'timed' ? 1 : (refSet ? refSet.reps : 0),
+            ...(mode === 'timed' ? { duration: refSet?.duration ?? 45 } : {}),
             completed: false,
             setType: 'working',
           }]
@@ -237,6 +259,32 @@ export function WorkoutSessionPage() {
       }
       return ex;
     }));
+  };
+
+  const handleUpdateTrackingMode = (exerciseId: string, mode: ExerciseTrackingMode) => {
+    setExercises((prev) =>
+      prev.map((ex) => {
+        if (ex.id !== exerciseId) return ex;
+        return {
+          ...ex,
+          trackingMode: mode,
+          sets:
+            mode === 'timed'
+              ? ex.sets.map((s) => ({
+                  ...s,
+                  duration: s.duration ?? 45,
+                  reps: s.reps || 1,
+                }))
+              : ex.sets,
+        };
+      }),
+    );
+  };
+
+  const handleUpdateGroupRestTimer = (groupId: string, seconds: number) => {
+    setExercises((prev) =>
+      prev.map((ex) => (ex.supersetId === groupId ? { ...ex, restTimerConfig: seconds } : ex)),
+    );
   };
 
   const handleDeleteSet = (exerciseId: string, setId: string) => {
@@ -309,72 +357,137 @@ export function WorkoutSessionPage() {
   };
 
   const handleToggleSet = (exerciseId: string, setId: string) => {
-    setExercises(prev => prev.map(ex => {
+    const targetEx = exercises.find((ex) => ex.id === exerciseId);
+    const prevSet = targetEx?.sets.find((s) => s.id === setId);
+    if (!targetEx || !prevSet) return;
+
+    const willComplete = !prevSet.completed;
+    const nextExercises = exercises.map((ex) => {
       if (ex.id !== exerciseId) return ex;
-      
-      const newSets = ex.sets.map(s => {
-        if (s.id !== setId) return s;
-        if (!s.completed) {
-          if (settings?.vibrateOnComplete) {
-            try { window.navigator.vibrate(50); } catch (e) {}
-          }
-          if (settings?.soundEnabled) {
-            try {
-              const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-              const osc = ctx.createOscillator();
-              const gain = ctx.createGain();
-              osc.connect(gain);
-              gain.connect(ctx.destination);
-              osc.type = 'sine';
-              osc.frequency.setValueAtTime(600, ctx.currentTime);
-              osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
-              gain.gain.setValueAtTime(0, ctx.currentTime);
-              gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.02);
-              gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-              osc.start(ctx.currentTime);
-              osc.stop(ctx.currentTime + 0.1);
-              osc.onended = () => ctx.close();
-            } catch(e) {}
-          }
-        }
-        return { ...s, completed: !s.completed };
+      return {
+        ...ex,
+        sets: ex.sets.map((s) => (s.id === setId ? { ...s, completed: willComplete } : s)),
+      };
+    });
+
+    setExercises(nextExercises);
+
+    if (!willComplete) return;
+
+    if (settings?.vibrateOnComplete) {
+      try {
+        window.navigator.vibrate(50);
+      } catch {}
+    }
+    if (settings?.soundEnabled) {
+      try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.1);
+        osc.onended = () => ctx.close();
+      } catch {}
+    }
+
+    const updatedEx = nextExercises.find((ex) => ex.id === exerciseId)!;
+    const toggledSet = updatedEx.sets.find((s) => s.id === setId)!;
+    const isWarmup = isWarmupSet(toggledSet);
+    const outcome = resolveSupersetSetCompletion(nextExercises, exerciseId, setId);
+
+    if (outcome.shouldStartRest) {
+      const restLabel = outcome.roundCompleted && outcome.groupLabel
+        ? `${outcome.groupLabel} · Round ${outcome.roundNumber}/${outcome.totalRounds} done`
+        : 'Recovery';
+      startRestTimer(outcome.restSeconds, restLabel);
+      setSupersetBanner(null);
+      setActiveSupersetFocusId(outcome.nextExerciseId);
+    } else if (outcome.nextExerciseId && outcome.nextLabel && outcome.nextExerciseName) {
+      setExpandedExercises((prev) => ({
+        ...prev,
+        [outcome.nextExerciseId!]: true,
+      }));
+      setActiveSupersetFocusId(outcome.nextExerciseId);
+      setSupersetBanner({
+        groupLabel: outcome.groupLabel || 'Superset',
+        nextLabel: outcome.nextLabel,
+        nextExerciseName: outcome.nextExerciseName,
+        targetExerciseId: outcome.nextExerciseId,
       });
+      if (supersetBannerTimeoutRef.current) {
+        clearTimeout(supersetBannerTimeoutRef.current);
+      }
+      supersetBannerTimeoutRef.current = setTimeout(() => {
+        setSupersetBanner(null);
+      }, 3500);
+      setTimeout(() => {
+        document
+          .getElementById(`exercise-card-${outcome.nextExerciseId}`)
+          ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 120);
+    }
 
-      const toggledSet = newSets.find(s => s.id === setId);
-      if (toggledSet?.completed) {
-        const isWarmup = isWarmupSet(toggledSet);
-        startRestTimer(isWarmup ? Math.min(ex.restTimerConfig, 60) : ex.restTimerConfig);
+    // Live PR Toast Detection (working sets only, mode-aware)
+    if (!isWarmup && !achievedPRs.includes(updatedEx.id)) {
+      const mode = getExerciseTrackingMode(updatedEx);
+      const unitLabel = settings?.weightUnit || 'kg';
+      let isNewPR = false;
+      let prLabel = '';
 
-        // PR Detection (working sets only)
-        const currentWeight = toggledSet.weight || 0;
-        if (!isWarmup && currentWeight > 0) {
-          let previousMaxWeight = 0;
-          ex.history.forEach(hist => {
-            hist.sets.forEach(hs => {
-              if (hs.completed && !isWarmupSet(hs) && hs.weight > previousMaxWeight) previousMaxWeight = hs.weight;
-            });
+      if (mode === 'timed') {
+        const curDur = toggledSet.duration ?? 0;
+        let prevMaxDur = 0;
+        updatedEx.history.forEach((hist) => {
+          hist.sets.forEach((hs) => {
+            if (hs.completed && !isWarmupSet(hs) && (hs.duration ?? 0) > prevMaxDur) {
+              prevMaxDur = hs.duration ?? 0;
+            }
           });
-          
-          if (currentWeight > previousMaxWeight && !achievedPRs.includes(ex.id)) {
-            setAchievedPRs(prev => [...prev, ex.id]);
-            setPrNotification({ exerciseName: ex.name, weight: currentWeight });
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.3 }, zIndex: 100 });
-            
-            setTimeout(() => {
-              setPrNotification(null);
-            }, 4000);
-          }
+        });
+        if (curDur > prevMaxDur && curDur > 0) {
+          isNewPR = true;
+          prLabel = `${formatDurationCompact(curDur)} Hold`;
+        }
+      } else if (mode === 'weight_reps' || (mode === 'bodyweight_reps' && toggledSet.weight > 0)) {
+        const currentWeight = toggledSet.weight || 0;
+        let previousMaxWeight = 0;
+        updatedEx.history.forEach((hist) => {
+          hist.sets.forEach((hs) => {
+            if (hs.completed && !isWarmupSet(hs) && hs.weight > previousMaxWeight) {
+              previousMaxWeight = hs.weight;
+            }
+          });
+        });
+        if (currentWeight > previousMaxWeight && currentWeight > 0) {
+          isNewPR = true;
+          prLabel = `${currentWeight} ${unitLabel}`;
         }
       }
 
-      return { ...ex, sets: newSets };
-    }));
+      if (isNewPR) {
+        setAchievedPRs((prev) => [...prev, updatedEx.id]);
+        setPrNotification({ exerciseName: updatedEx.name, valueLabel: prLabel });
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.3 }, zIndex: 100 });
+        setTimeout(() => {
+          setPrNotification(null);
+        }, 4000);
+      }
+    }
   };
 
-  const startRestTimer = (seconds: number) => {
+  const startRestTimer = (seconds: number, label = 'Recovery') => {
     if (seconds <= 0) return;
     const end = Date.now() + seconds * 1000;
     lastSpokenSecondRef.current = null;
+    setRestSubtitle(label);
     setInitialRestTimer(seconds);
     setRestEndTime(end);
     setRestTimer(seconds);
@@ -510,27 +623,7 @@ export function WorkoutSessionPage() {
   };
 
   const handleToggleSuperset = async (index: number) => {
-    if (index === 0) return;
-    const currentEx = exercises[index];
-    const prevEx = exercises[index - 1];
-
-    const newExercises = [...exercises];
-
-    if (currentEx.supersetId && currentEx.supersetId === prevEx.supersetId) {
-      // Toggle OFF — clear supersetId from ALL exercises sharing this group
-      const targetId = currentEx.supersetId;
-      for (let i = 0; i < newExercises.length; i++) {
-        if (newExercises[i].supersetId === targetId) {
-          newExercises[i] = { ...newExercises[i], supersetId: undefined };
-        }
-      }
-    } else {
-      // Toggle ON
-      const supersetId = prevEx.supersetId || generateId();
-      newExercises[index - 1] = { ...prevEx, supersetId };
-      newExercises[index] = { ...currentEx, supersetId };
-    }
-    setExercises(newExercises);
+    setExercises((prev) => toggleSupersetLink(prev, index, generateId));
   };
 
   const handleFinishWorkout = async () => {
@@ -625,6 +718,7 @@ export function WorkoutSessionPage() {
       import('../../supabase/supabaseClient'),
       import('../../storage/supabaseSync'),
     ]).then(async ([{ supabase }, { pushToSupabase }]) => {
+      if (!supabase) return;
       const { data } = await supabase.auth.getSession();
       if (data.session?.user) {
         await pushToSupabase(data.session.user.id);
@@ -643,36 +737,42 @@ export function WorkoutSessionPage() {
   };
 
   // ── Reordering Logic ─────────────────────────────────────────────
+  const supersetMap = React.useMemo(() => computeSupersetMap(exercises), [exercises]);
+
   const blocks = React.useMemo(() => {
     const result: { id: string; exercises: Exercise[] }[] = [];
     let currentSupersetId: string | undefined = undefined;
 
     exercises.forEach((ex) => {
-      if (ex.supersetId && ex.supersetId === currentSupersetId) {
+      const activeMeta = supersetMap.get(ex.id);
+      if (activeMeta && activeMeta.groupId === currentSupersetId) {
         result[result.length - 1].exercises.push(ex);
       } else {
-        currentSupersetId = ex.supersetId;
+        currentSupersetId = activeMeta?.groupId;
         result.push({
-          id: ex.supersetId || ex.id,
+          id: activeMeta?.groupId || ex.id,
           exercises: [ex]
         });
       }
     });
     return result;
-  }, [exercises]);
+  }, [exercises, supersetMap]);
 
   const handleReorderBlocks = (newBlocks: typeof blocks) => {
-    const flattened = newBlocks.flatMap((b) => b.exercises);
+    const flattened = cleanupOrphanSupersets(newBlocks.flatMap((b) => b.exercises));
     setExercises(flattened);
   };
   const handleAddSessionExercise = (
     meta: CatalogExerciseItem,
     setsCount: number,
-    reps: number,
+    repsOrDuration: number,
+    trackingMode?: ExerciseTrackingMode,
   ) => {
     const newEx = buildFreestyleExercise(meta, sessions, settings, {
       setsCount,
-      defaultReps: reps,
+      defaultReps: trackingMode === 'timed' ? 1 : repsOrDuration,
+      defaultDuration: trackingMode === 'timed' ? repsOrDuration : 45,
+      trackingMode,
       isDeload: isDeloadDay,
     });
     setExercises((prev) => [...prev, newEx]);
@@ -680,7 +780,7 @@ export function WorkoutSessionPage() {
   };
 
   const handleRemoveExercise = (exId: string) => {
-    setExercises((prev) => prev.filter((ex) => ex.id !== exId));
+    setExercises((prev) => cleanupOrphanSupersets(prev.filter((ex) => ex.id !== exId)));
   };
 
   const muscleRecovery = React.useMemo(
@@ -730,11 +830,10 @@ export function WorkoutSessionPage() {
   const totalSets = exercises.reduce((acc, ex) => acc + ex.sets.length, 0);
   const completedSets = exercises.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed).length, 0);
   const totalVolume = exercises.reduce(
-    (acc, ex) =>
-      acc +
-      ex.sets
-        .filter((s) => s.completed && !isWarmupSet(s))
-        .reduce((sum, s) => sum + s.weight * s.reps, 0),
+    (acc, ex) => {
+      const mode = getExerciseTrackingMode(ex);
+      return acc + ex.sets.reduce((sum, s) => sum + calculateSetWorkingVolume(s, mode), 0);
+    },
     0,
   );
   const progressPercent = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
@@ -891,12 +990,16 @@ export function WorkoutSessionPage() {
                   block={block}
                   exercises={exercises}
                   expandedExercises={expandedExercises}
+                  supersetMap={supersetMap}
+                  activeSupersetFocusId={activeSupersetFocusId}
                   toggleExercise={toggleExercise}
                   handleToggleSet={handleToggleSet}
                   handleUpdateSet={handleUpdateSet}
                   handleDeleteSet={handleDeleteSet}
                   handleAddSet={handleAddSet}
                   handleUpdateRestTimer={handleUpdateRestTimer}
+                  handleUpdateGroupRestTimer={handleUpdateGroupRestTimer}
+                  handleUpdateTrackingMode={handleUpdateTrackingMode}
                   handleGenerateWarmup={handleGenerateWarmup}
                   handleOpenNotes={handleOpenNotes}
                   handleOpenSwap={handleOpenSwap}
@@ -940,9 +1043,40 @@ export function WorkoutSessionPage() {
         </button>
       </div>
 
+      <AnimatePresence>
+        {supersetBanner && (
+          <motion.button
+            type="button"
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 40, opacity: 0 }}
+            onClick={() => {
+              document
+                .getElementById(`exercise-card-${supersetBanner.targetExerciseId}`)
+                ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              setSupersetBanner(null);
+            }}
+            className="fixed bottom-[126px] left-4 right-4 z-50 rounded-2xl border border-amber-500/40 bg-card/95 px-4 py-3 text-left shadow-2xl backdrop-blur-xl flex items-center justify-between gap-3"
+          >
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-wider text-amber-400">
+                ⚡ {supersetBanner.groupLabel} · Auto-Advance
+              </p>
+              <p className="text-sm font-bold text-content truncate">
+                Next up: {supersetBanner.nextLabel} — {supersetBanner.nextExerciseName}
+              </p>
+            </div>
+            <span className="shrink-0 rounded-lg bg-amber-500/20 px-2.5 py-1 text-[10px] font-black uppercase text-amber-400">
+              Jump
+            </span>
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       <RestTimerOverlay
         restTimer={restTimer}
         initialRestTimer={initialRestTimer}
+        subtitle={restSubtitle}
         onSubtract15={() => {
           if (restEndTime === null) return;
           const nextEnd = Math.max(Date.now() + 1000, restEndTime - 15000);
@@ -983,7 +1117,7 @@ export function WorkoutSessionPage() {
               <div className="flex-1">
                 <p className="text-[10px] font-black uppercase tracking-widest text-yellow-500">New Personal Record!</p>
                 <p className="text-sm font-bold text-content leading-tight mt-0.5">{prNotification.exerciseName}</p>
-                <p className="text-xs font-semibold text-muted mt-1">{prNotification.weight} {settings?.weightUnit || 'kg'}</p>
+                <p className="text-xs font-semibold text-muted mt-1">{prNotification.valueLabel}</p>
               </div>
               <button onClick={() => setPrNotification(null)} className="p-2 text-muted hover:text-content transition-colors">
                 <X size={16} />

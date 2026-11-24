@@ -4,6 +4,7 @@ import { Play } from 'lucide-react';
 interface RestTimerOverlayProps {
   restTimer: number | null;
   initialRestTimer: number | null;
+  subtitle?: string;
   onSubtract15: () => void;
   onAdd15: () => void;
   onSkip: () => void;
@@ -12,6 +13,7 @@ interface RestTimerOverlayProps {
 export function RestTimerOverlay({
   restTimer,
   initialRestTimer,
+  subtitle,
   onSubtract15,
   onAdd15,
   onSkip,
@@ -23,10 +25,10 @@ export function RestTimerOverlay({
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
-          className="fixed bottom-[120px] left-4 right-4 z-50 rounded-3xl border border-black/10 dark:border-content/10 bg-card/95 p-4 shadow-2xl backdrop-blur-xl flex items-center justify-between"
+          className="fixed bottom-[120px] left-4 right-4 z-50 rounded-3xl border border-black/10 dark:border-content/10 bg-card/95 p-4 shadow-2xl backdrop-blur-xl flex items-center justify-between gap-2"
         >
-          <div className="flex items-center gap-4">
-            <div className="relative w-16 h-16 flex items-center justify-center">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
               <svg className="absolute inset-0 w-full h-full -rotate-90">
                 <circle
                   cx="32"
@@ -56,14 +58,16 @@ export function RestTimerOverlay({
                 {Math.floor(restTimer / 60)}:{(restTimer % 60).toString().padStart(2, '0')}
               </div>
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-[10px] font-bold text-muted uppercase tracking-wider mb-0.5">
                 Rest Timer
               </p>
-              <p className="text-sm font-bold text-content leading-tight">Recovery</p>
+              <p className="text-sm font-bold text-content leading-tight truncate">
+                {subtitle || 'Recovery'}
+              </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 shrink-0">
             <button
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-page/5 text-sm font-bold"
               onClick={onSubtract15}

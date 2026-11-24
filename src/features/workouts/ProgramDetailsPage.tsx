@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Calendar, Dumbbell, List, Edit2, Play, Trash2, Plus, Flame, Weight, Snowflake } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Dumbbell, List, Edit2, Play, Share2, Trash2, Plus, Flame, Weight, Snowflake } from 'lucide-react';
 import { WorkoutProgram, WorkoutDay, Exercise } from '../../types';
 import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { PromptModal } from '../../components/ui/PromptModal';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { useAppStore } from '../../store/useAppStore';
+import { getExerciseTrackingMode } from '../../utils/exerciseModes';
+import { cleanupOrphanSupersets, toggleSupersetLink } from '../../utils/supersets';
 import { generateId } from '../../utils/uuid';
 import { PullToRefresh } from '../../components/ui/PullToRefresh';
 import {
@@ -14,6 +16,10 @@ import {
   ExerciseFormData,
   ExerciseManagerModal,
 } from './components/ExerciseManagerModal';
+
+const ProgramShareModal = React.lazy(() =>
+  import('./components/ProgramShareModal').then((m) => ({ default: m.ProgramShareModal })),
+);
 
 interface ExerciseModalState {
   isOpen: boolean;
@@ -26,7 +32,9 @@ export function ProgramDetailsPage() {
 
   const programs = useAppStore(s => s.programs);
   const sessions = useAppStore(s => s.sessions);
+  const settings = useAppStore(s => s.settings);
   const isHydrated = useAppStore(s => s.isHydrated);
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   const program = programs.find(p => p.id === programId) || null;
 
@@ -210,9 +218,10 @@ export function ProgramDetailsPage() {
     const isSame = JSON.stringify(newExercises.map(e => e.id)) === JSON.stringify(exerciseModal.day.exercises.map(e => e.id));
     if (isSame) return;
 
+    const cleaned = cleanupOrphanSupersets(newExercises);
     const updatedDay: WorkoutDay = {
       ...exerciseModal.day,
-      exercises: newExercises
+      exercises: cleaned
     };
 
     const updatedProgram: WorkoutProgram = {
@@ -227,6 +236,7 @@ export function ProgramDetailsPage() {
 
   const openEditExercise = (ex: Exercise) => {
     setEditingExercise(ex);
+    const mode = getExerciseTrackingMode(ex);
     setExerciseForm({
       name: ex.name,
       muscleGroup: ex.muscleGroup ?? [],
@@ -234,7 +244,9 @@ export function ProgramDetailsPage() {
       secondaryMuscles: ex.secondaryMuscles || [],
       sets: String(ex.sets.length),
       reps: String(ex.sets[0]?.reps ?? 10),
+      duration: String(ex.sets[0]?.duration ?? 45),
       restTimer: String(ex.restTimerConfig),
+      trackingMode: mode,
     });
   };
 
@@ -249,6 +261,10 @@ export function ProgramDetailsPage() {
         ...(exerciseForm.muscleGroup || [])
       ])).filter(Boolean);
 
+      const mode = exerciseForm.trackingMode;
+      const parsedDuration = Math.max(5, parseInt(exerciseForm.duration) || 45);
+      const parsedReps = Math.max(1, parseInt(exerciseForm.reps) || 10);
+
       const newExercise: Exercise = {
         id: editingExercise ? editingExercise.id : generateId(),
         name: exerciseForm.name,
@@ -256,10 +272,14 @@ export function ProgramDetailsPage() {
         primaryMuscle: exerciseForm.primaryMuscle,
         secondaryMuscles: exerciseForm.secondaryMuscles,
         notes: editingExercise ? editingExercise.notes : '',
+        supersetId: editingExercise?.supersetId,
+        supersetOrder: editingExercise?.supersetOrder,
+        trackingMode: mode,
         sets: Array.from({ length: parseInt(exerciseForm.sets) || 1 }).map((_, i) => ({
           id: editingExercise?.sets[i]?.id || generateId(),
           weight: editingExercise?.sets[i]?.weight || 0,
-          reps: parseInt(exerciseForm.reps) || 10,
+          reps: mode === 'timed' ? 1 : parsedReps,
+          ...(mode === 'timed' ? { duration: editingExercise?.sets[i]?.duration ?? parsedDuration } : {}),
           completed: false,
         })),
         history: editingExercise ? editingExercise.history : [],
@@ -303,7 +323,9 @@ export function ProgramDetailsPage() {
 
     const updatedDay: WorkoutDay = {
       ...exerciseModal.day,
-      exercises: exerciseModal.day.exercises.filter(e => e.id !== exerciseId),
+      exercises: cleanupOrphanSupersets(
+        exerciseModal.day.exercises.filter(e => e.id !== exerciseId),
+      ),
     };
 
     const updatedProgram: WorkoutProgram = {
@@ -319,25 +341,7 @@ export function ProgramDetailsPage() {
   const handleToggleSuperset = async (index: number) => {
     if (!program || !exerciseModal.day || index === 0) return;
     const day = exerciseModal.day;
-    const currentEx = day.exercises[index];
-    const prevEx = day.exercises[index - 1];
-
-    const newExercises = [...day.exercises];
-
-    if (currentEx.supersetId && currentEx.supersetId === prevEx.supersetId) {
-      // Toggle OFF — clear supersetId from ALL exercises sharing this group
-      const targetId = currentEx.supersetId;
-      for (let i = 0; i < newExercises.length; i++) {
-        if (newExercises[i].supersetId === targetId) {
-          newExercises[i] = { ...newExercises[i], supersetId: undefined };
-        }
-      }
-    } else {
-      // Toggle ON
-      const supersetId = prevEx.supersetId || generateId();
-      newExercises[index - 1] = { ...prevEx, supersetId };
-      newExercises[index] = { ...currentEx, supersetId };
-    }
+    const newExercises = toggleSupersetLink(day.exercises, index, generateId);
 
     const updatedDay: WorkoutDay = { ...day, exercises: newExercises };
     const updatedProgram: WorkoutProgram = {
@@ -402,13 +406,22 @@ export function ProgramDetailsPage() {
               <Edit2 size={16}className="text-muted shrink-0" />
             </button>
           </div>
-          <button 
-            onClick={handleDelete} 
-            className="p-3 text-red-500 hover:bg-page/10 dark:bg-content/10 rounded-full transition-colors shrink-0"
-            title="Delete Program"
-          >
-            <Trash2 size={24}/>
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => setIsShareOpen(true)}
+              className="p-2.5 text-sky-400 hover:bg-page/10 dark:bg-content/10 rounded-full transition-colors"
+              title="Share Program"
+            >
+              <Share2 size={20} />
+            </button>
+            <button 
+              onClick={handleDelete} 
+              className="p-2.5 text-red-500 hover:bg-page/10 dark:bg-content/10 rounded-full transition-colors"
+              title="Delete Program"
+            >
+              <Trash2 size={22}/>
+            </button>
+          </div>
         </div>
 
         {/* Week calendar */}
@@ -586,6 +599,17 @@ export function ProgramDetailsPage() {
           onConfirm={confirmConfig.onConfirm}
           onCancel={() => setConfirmConfig(null)}
         />
+      )}
+
+      {isShareOpen && (
+        <React.Suspense fallback={null}>
+          <ProgramShareModal
+            isOpen={isShareOpen}
+            program={program}
+            unit={settings?.weightUnit || 'kg'}
+            onClose={() => setIsShareOpen(false)}
+          />
+        </React.Suspense>
       )}
     </>
   );

@@ -9,17 +9,34 @@ import {
   Flame,
   GripVertical,
   Link,
+  Play,
   Plus,
   RotateCcw,
   Sparkles,
+  Square,
+  Timer,
   Trash2,
   TrendingUp,
   Unlink,
   Youtube,
 } from 'lucide-react';
 import { AnimatePresence, motion, Reorder, useDragControls } from 'framer-motion';
-import type { AppSettings, EffortScale, Exercise, Set } from '../../../types';
+import type {
+  AppSettings,
+  EffortScale,
+  Exercise,
+  ExerciseTrackingMode,
+  Set,
+} from '../../../types';
 import { cn } from '../../../utils/cn';
+import {
+  EXERCISE_TRACKING_MODES,
+  formatDurationCompact,
+  formatSetSummary,
+  getExerciseTrackingMode,
+  stepSetDuration,
+  supportsEstimated1RM,
+} from '../../../utils/exerciseModes';
 import {
   formatEffortLabel,
   getBestSet1RM,
@@ -32,6 +49,10 @@ import {
   rpeToRir,
   type WeightUnit,
 } from '../../../utils/strength';
+import {
+  getSupersetRoundProgress,
+  type SupersetMeta,
+} from '../../../utils/supersets';
 import {
   REST_TIMER_PRESETS,
   stepSetReps,
@@ -86,6 +107,26 @@ function getQuickAdjustTarget(sets: Set[]): QuickAdjustTarget | null {
   return { set: fallback, label };
 }
 
+function playHoldTargetBeep() {
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.25);
+    osc.onended = () => ctx.close();
+  } catch {
+    // Ignore audio context restriction errors
+  }
+}
+
 interface ExerciseItemProps {
   key?: React.Key;
   exercise: Exercise;
@@ -97,6 +138,7 @@ interface ExerciseItemProps {
   onSetDelete: (exId: string, setId: string) => void;
   onSetAdd: (exId: string) => void;
   onUpdateRestTimer: (exId: string, seconds: number) => void;
+  onUpdateTrackingMode: (exId: string, mode: ExerciseTrackingMode) => void;
   onGenerateWarmup: (exId: string) => void;
   onOpenNotes: (e: React.MouseEvent, ex: Exercise) => void;
   onOpenSwap: (e: React.MouseEvent, ex: Exercise) => void;
@@ -105,6 +147,8 @@ interface ExerciseItemProps {
   onToggleSuperset: (index: number) => void;
   isSupersettedWithNext: boolean;
   isSupersettedWithPrev: boolean;
+  supersetMeta?: SupersetMeta | null;
+  isSupersetNextUp?: boolean;
   settings: AppSettings | null;
   isDeloadDay?: boolean;
   muscleReadiness?: MuscleRecoveryStatus | null;
@@ -122,6 +166,7 @@ export function DraggableExerciseItem({
   onSetDelete,
   onSetAdd,
   onUpdateRestTimer,
+  onUpdateTrackingMode,
   onGenerateWarmup,
   onOpenNotes,
   onOpenSwap,
@@ -129,12 +174,15 @@ export function DraggableExerciseItem({
   onOpenPlateCalc,
   onToggleSuperset,
   isSupersettedWithNext,
+  supersetMeta,
+  isSupersetNextUp,
   settings,
   isDeloadDay,
   muscleReadiness,
   onRemoveExercise,
   dragControls,
 }: ExerciseItemProps) {
+  const mode = getExerciseTrackingMode(exercise);
   const completedExSets = exercise.sets.filter((s) => s.completed).length;
   const totalExSets = exercise.sets.length;
   const workingSets = exercise.sets.filter((s) => !isWarmupSet(s));
@@ -143,18 +191,72 @@ export function DraggableExerciseItem({
   const displaySetsDone = workingSets.length > 0 ? completedWorkingSets : completedExSets;
   const displaySetsTotal = workingSets.length > 0 ? workingSets.length : totalExSets;
   const lastSession = exercise.history[exercise.history.length - 1];
-  const best1RM = getBestSet1RM(exercise.sets, true);
+  const best1RM = supportsEstimated1RM(mode) ? getBestSet1RM(exercise.sets, true) : null;
   const unit: WeightUnit = settings?.weightUnit === 'lbs' ? 'lbs' : 'kg';
   const weightStep = unit === 'lbs' ? 5 : 2.5;
   const effortScale: EffortScale = settings?.effortScale || 'rpe';
   const coach = evaluateExerciseCoach(exercise, !!isDeloadDay, settings);
   const quickTarget = getQuickAdjustTarget(exercise.sets);
   const firstWorkingWeight = workingSets[0]?.weight ?? 0;
-  const canGenerateWarmup = Number.isFinite(firstWorkingWeight) && firstWorkingWeight > 0;
+  const canGenerateWarmup =
+    (mode === 'weight_reps' || mode === 'bodyweight_reps') &&
+    Number.isFinite(firstWorkingWeight) &&
+    firstWorkingWeight > 0;
+  const showPlateAndWarmup = mode === 'weight_reps' || (mode === 'bodyweight_reps' && canGenerateWarmup);
 
   const [showRestPresets, setShowRestPresets] = React.useState(false);
   const [isPressing, setIsPressing] = React.useState(false);
   const pressTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Live stopwatch for timed exercises
+  const [isHolding, setIsHolding] = React.useState(false);
+  const [holdElapsed, setHoldElapsed] = React.useState(0);
+  const holdStartRef = React.useRef<number | null>(null);
+  const targetCueFiredRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!isHolding || holdStartRef.current === null) return;
+    const targetSec = quickTarget?.set.duration ?? 45;
+    const interval = setInterval(() => {
+      if (holdStartRef.current === null) return;
+      const elapsed = Math.floor((Date.now() - holdStartRef.current) / 1000);
+      setHoldElapsed(elapsed);
+      if (
+        targetSec > 0 &&
+        elapsed >= targetSec &&
+        !targetCueFiredRef.current
+      ) {
+        targetCueFiredRef.current = true;
+        if (settings?.soundEnabled) playHoldTargetBeep();
+        if (settings?.vibrateOnComplete) {
+          try {
+            window.navigator.vibrate([120, 60, 120]);
+          } catch {}
+        }
+      }
+    }, 200);
+    return () => clearInterval(interval);
+  }, [isHolding, quickTarget?.set.duration, settings?.soundEnabled, settings?.vibrateOnComplete]);
+
+  const handleStartHold = () => {
+    holdStartRef.current = Date.now();
+    targetCueFiredRef.current = false;
+    setHoldElapsed(0);
+    setIsHolding(true);
+  };
+
+  const handleStopAndLogHold = () => {
+    const logged = Math.max(1, holdElapsed);
+    setIsHolding(false);
+    holdStartRef.current = null;
+    if (quickTarget) {
+      onSetUpdate(exercise.id, quickTarget.set.id, 'duration', logged);
+      if (!quickTarget.set.completed) {
+        onSetToggle(exercise.id, quickTarget.set.id);
+      }
+    }
+    setHoldElapsed(0);
+  };
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (!dragControls) return;
@@ -178,15 +280,29 @@ export function DraggableExerciseItem({
     setIsPressing(false);
   };
 
+  const weightColLabel =
+    mode === 'assisted_reps'
+      ? `-${unit}`
+      : mode === 'bodyweight_reps'
+        ? `+${unit}`
+        : mode === 'timed'
+          ? 'Load'
+          : unit;
+
+  const repsColLabel = mode === 'timed' ? 'Sec' : 'Reps';
+
   return (
-    <div className="relative w-full min-w-0">
+    <div id={`exercise-card-${exercise.id}`} className="relative w-full min-w-0">
       {isSupersettedWithNext && (
         <div className="absolute left-[34px] top-[60px] bottom-[-16px] w-[2px] bg-amber-500 z-[5]" />
       )}
       <div
         className={cn(
           'rounded-2xl border overflow-hidden transition-all duration-300 relative z-[6] w-full',
-          exercise.supersetId ? 'bg-amber-500/5 border-amber-500/30' : 'bg-surface border-content/5',
+          supersetMeta
+            ? 'bg-amber-500/5 border-amber-500/30'
+            : 'bg-surface border-content/5',
+          isSupersetNextUp && 'ring-2 ring-amber-400/75 border-amber-500/60 bg-amber-500/10',
           isPressing && 'scale-[0.98] opacity-80',
         )}
       >
@@ -197,18 +313,36 @@ export function DraggableExerciseItem({
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <div
                     className={cn(
-                      'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg font-bold text-xs',
-                      exercise.supersetId
+                      'flex h-7 min-w-7 px-1 shrink-0 items-center justify-center rounded-lg font-bold text-xs',
+                      supersetMeta
                         ? 'bg-amber-500/20 text-amber-500'
                         : 'bg-primary-500/20 text-primary-400',
                     )}
                   >
-                    {index + 1}
+                    {supersetMeta ? supersetMeta.label : index + 1}
                   </div>
                   <h2 className="text-sm font-bold text-content leading-tight">{exercise.name}</h2>
-                  {exercise.supersetId && (
+                  {supersetMeta && (
                     <span className="text-[9px] bg-amber-500/20 text-amber-500 px-1.5 py-0.5 rounded uppercase font-black tracking-tighter">
-                      Superset
+                      {supersetMeta.kindLabel}
+                    </span>
+                  )}
+                  {mode !== 'weight_reps' && (
+                    <span
+                      className={cn(
+                        'text-[9px] px-1.5 py-0.5 rounded uppercase font-black tracking-wider',
+                        mode === 'bodyweight_reps'
+                          ? 'bg-emerald-500/15 text-emerald-400'
+                          : mode === 'assisted_reps'
+                            ? 'bg-sky-500/15 text-sky-400'
+                            : 'bg-amber-500/15 text-amber-400',
+                      )}
+                    >
+                      {mode === 'bodyweight_reps'
+                        ? 'BW'
+                        : mode === 'assisted_reps'
+                          ? 'Assist'
+                          : 'Timed'}
                     </span>
                   )}
                 </div>
@@ -286,13 +420,15 @@ export function DraggableExerciseItem({
               </div>
 
               <div className="flex items-center gap-1">
-                <button
-                  className="text-muted hover:text-primary-400 p-1.5 transition-colors"
-                  onClick={(e) => onOpenPlateCalc(e, exercise)}
-                  title="Plate Calculator"
-                >
-                  <Calculator size={16} />
-                </button>
+                {showPlateAndWarmup && (
+                  <button
+                    className="text-muted hover:text-primary-400 p-1.5 transition-colors"
+                    onClick={(e) => onOpenPlateCalc(e, exercise)}
+                    title="Plate Calculator"
+                  >
+                    <Calculator size={16} />
+                  </button>
+                )}
 
                 <button
                   className="text-red-500/60 hover:text-red-500 p-1.5 transition-colors"
@@ -328,15 +464,15 @@ export function DraggableExerciseItem({
                   <button
                     className={cn(
                       'p-1.5 transition-colors',
-                      exercise.supersetId ? 'text-amber-500' : 'text-muted',
+                      supersetMeta ? 'text-amber-500' : 'text-muted',
                     )}
                     onClick={(e) => {
                       e.stopPropagation();
                       onToggleSuperset(index);
                     }}
-                    title={exercise.supersetId ? 'Unlink Superset' : 'Link Superset'}
+                    title={supersetMeta ? 'Unlink from Superset' : 'Link Superset with Previous'}
                   >
-                    {exercise.supersetId ? <Unlink size={16} /> : <Link size={16} />}
+                    {supersetMeta ? <Unlink size={16} /> : <Link size={16} />}
                   </button>
                 )}
 
@@ -366,6 +502,29 @@ export function DraggableExerciseItem({
               exit={{ height: 0, opacity: 0 }}
               className="px-4 pb-4"
             >
+              {/* Tracking Mode Selector */}
+              <div className="mb-3 flex items-center gap-1 rounded-xl bg-page/60 border border-content/10 p-1">
+                {EXERCISE_TRACKING_MODES.map((opt) => {
+                  const active = mode === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => onUpdateTrackingMode(exercise.id, opt.value)}
+                      className={cn(
+                        'flex-1 rounded-lg py-1 text-[10px] font-bold transition-all',
+                        active
+                          ? 'bg-primary-500 text-white shadow-sm'
+                          : 'text-muted hover:text-content',
+                      )}
+                      title={opt.description}
+                    >
+                      {opt.shortLabel}
+                    </button>
+                  );
+                })}
+              </div>
+
               {lastSession && lastSession.sets.length > 0 && (
                 <div className="mb-4 text-xs">
                   <div className="flex items-center gap-1 text-muted mb-2">
@@ -387,8 +546,7 @@ export function DraggableExerciseItem({
                         const effortText = !isWarmupSet(s) ? formatEffortLabel(s.rpe, effortScale) : '';
                         return (
                           <span key={s.id || i} className={cn(st === 'warmup' && 'opacity-70')}>
-                            {tag}: {s.weight}
-                            {unit} × {s.reps}
+                            {tag}: {formatSetSummary(s, mode, unit)}
                             {effortText ? ` · ${effortText}` : ''}
                           </span>
                         );
@@ -403,11 +561,16 @@ export function DraggableExerciseItem({
                   <span className="text-sky-400 text-lg">❄️</span>
                   <div>
                     <p className="text-sm font-bold text-sky-300 leading-tight">
-                      Deload Day — {coach.targetWeight}
-                      {unit} × {coach.targetReps}
+                      {mode === 'timed'
+                        ? `Deload Day — ${formatDurationCompact(coach.targetDuration)}`
+                        : mode === 'assisted_reps'
+                          ? `Deload Day — -${coach.targetWeight}${unit} × ${coach.targetReps}`
+                          : `Deload Day — ${coach.targetWeight}${unit} × ${coach.targetReps}`}
                     </p>
                     <p className="text-[10px] font-bold text-sky-500/70 mt-1 uppercase tracking-wider">
-                      60% of last session • Focus on form &amp; recovery
+                      {mode === 'assisted_reps'
+                        ? '+20% assistance · Focus on form & recovery'
+                        : '60% of last session • Focus on form & recovery'}
                     </p>
                   </div>
                 </div>
@@ -418,8 +581,13 @@ export function DraggableExerciseItem({
                   <Sparkles className="text-primary-400 shrink-0" size={18} />
                   <div>
                     <p className="text-sm font-semibold text-content leading-tight">
-                      First session! Aim for {coach.targetReps} reps at {coach.targetWeight}
-                      {unit}
+                      {mode === 'timed'
+                        ? `First session! Aim for ${formatDurationCompact(coach.targetDuration)}`
+                        : mode === 'bodyweight_reps' && coach.targetWeight === 0
+                          ? `First session! Aim for ${coach.targetReps} bodyweight reps`
+                          : mode === 'assisted_reps'
+                            ? `First session! Aim for ${coach.targetReps} reps (-${coach.targetWeight}${unit} assist)`
+                            : `First session! Aim for ${coach.targetReps} reps at ${coach.targetWeight}${unit}`}
                     </p>
                     <p className="text-[10px] font-bold text-muted mt-1 uppercase tracking-wider">
                       First Session · Build the baseline
@@ -433,12 +601,19 @@ export function DraggableExerciseItem({
                   <span className="text-red-400 text-base shrink-0">📉</span>
                   <div>
                     <p className="text-sm font-bold text-red-300 leading-tight">
-                      Auto-Deload — {coach.targetWeight}
-                      {unit} × {coach.targetReps}
+                      {mode === 'timed'
+                        ? `Auto-Deload — ${formatDurationCompact(coach.targetDuration)}`
+                        : mode === 'assisted_reps'
+                          ? `More Assistance — -${coach.targetWeight}${unit} × ${coach.targetReps}`
+                          : `Auto-Deload — ${coach.targetWeight}${unit} × ${coach.targetReps}`}
                     </p>
                     <p className="text-[10px] font-bold text-red-500/60 mt-1 uppercase tracking-wider">
-                      {coach.consecutiveFails} consecutive fails · Weight reduced{' '}
-                      {coach.deloadReductionPct}%
+                      {coach.consecutiveFails} consecutive fails ·{' '}
+                      {mode === 'timed'
+                        ? `Hold reduced ${coach.deloadReductionPct}%`
+                        : mode === 'assisted_reps'
+                          ? `Assistance increased ${coach.deloadReductionPct}%`
+                          : `Weight reduced ${coach.deloadReductionPct}%`}
                     </p>
                   </div>
                 </div>
@@ -449,14 +624,15 @@ export function DraggableExerciseItem({
                   <span className="text-amber-400 text-base shrink-0">⚡</span>
                   <div>
                     <p className="text-sm font-bold text-amber-300 leading-tight">
-                      Try again — {coach.targetWeight}
-                      {unit} × {coach.targetReps}
+                      {mode === 'timed'
+                        ? `Try again — ${formatDurationCompact(coach.targetDuration)}`
+                        : `Try again — ${coach.targetWeight}${unit} × ${coach.targetReps}`}
                     </p>
                     <p className="text-[10px] font-bold text-amber-500/60 mt-1 uppercase tracking-wider">
                       {coach.consecutiveFails === 1
                         ? '1 failed session'
                         : `${coach.consecutiveFails} consecutive fails`}{' '}
-                      · Keep the weight, push harder
+                      · Consolidate target before progressing
                     </p>
                   </div>
                 </div>
@@ -467,11 +643,12 @@ export function DraggableExerciseItem({
                   <span className="text-amber-400 text-base shrink-0">⚖️</span>
                   <div>
                     <p className="text-sm font-bold text-amber-300 leading-tight">
-                      Consolidate — {coach.targetWeight}
-                      {unit} × {coach.targetReps}
+                      {mode === 'timed'
+                        ? `Consolidate — ${formatDurationCompact(coach.targetDuration)}`
+                        : `Consolidate — ${coach.targetWeight}${unit} × ${coach.targetReps}`}
                     </p>
                     <p className="text-[10px] font-bold text-amber-500/70 mt-1 uppercase tracking-wider">
-                      Last avg {formatEffortLabel(coach.avgRecentRpe ?? undefined, effortScale)} · Hold weight before overloading
+                      Last avg {formatEffortLabel(coach.avgRecentRpe ?? undefined, effortScale)} · Hold before overloading
                     </p>
                   </div>
                 </div>
@@ -482,11 +659,22 @@ export function DraggableExerciseItem({
                   <span className="text-emerald-400 text-base shrink-0">🚀</span>
                   <div>
                     <p className="text-sm font-bold text-emerald-300 leading-tight">
-                      Overload! Aim for {coach.targetWeight}
-                      {unit} × {coach.targetReps}
+                      {mode === 'timed'
+                        ? `Overload! Aim for ${formatDurationCompact(coach.targetDuration)}`
+                        : mode === 'assisted_reps'
+                          ? `Progress! Reduce assist to -${coach.targetWeight}${unit} × ${coach.targetReps}`
+                          : mode === 'bodyweight_reps' && coach.targetWeight === 0
+                            ? `Progress! Aim for ${coach.targetReps} bodyweight reps`
+                            : `Overload! Aim for ${coach.targetWeight}${unit} × ${coach.targetReps}`}
                     </p>
                     <p className="text-[10px] font-bold text-emerald-500/60 mt-1 uppercase tracking-wider">
-                      2 sessions done · +2.5{unit} progressive overload
+                      {mode === 'timed'
+                        ? '2 sessions done · +5s hold progression'
+                        : mode === 'assisted_reps'
+                          ? '2 sessions done · -2.5' + unit + ' less assistance'
+                          : mode === 'bodyweight_reps' && coach.repsModifier > 0
+                            ? '2 sessions done · +1 rep progression'
+                            : `2 sessions done · +2.5${unit} progressive overload`}
                     </p>
                   </div>
                 </div>
@@ -497,12 +685,52 @@ export function DraggableExerciseItem({
                   <Sparkles className="text-primary-400 shrink-0" size={18} />
                   <div>
                     <p className="text-sm font-semibold text-content leading-tight">
-                      Maintain — {coach.targetWeight}
-                      {unit} × {coach.targetReps}
+                      {mode === 'timed'
+                        ? `Maintain — ${formatDurationCompact(coach.targetDuration)}`
+                        : `Maintain — ${coach.targetWeight}${unit} × ${coach.targetReps}`}
                     </p>
                     <p className="text-[10px] font-bold text-muted mt-1 uppercase tracking-wider">
-                      1 success · Hold weight, aim for 2 before overloading
+                      1 success · Hold target, aim for 2 before overloading
                     </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Hold Stopwatch for Timed Exercises */}
+              {mode === 'timed' && quickTarget && (
+                <div className="mb-3 rounded-xl bg-amber-500/10 border border-amber-500/25 p-2.5 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Timer size={16} className="text-amber-400 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                        Hold Stopwatch · {quickTarget.label}
+                      </p>
+                      <p className="font-mono text-sm font-black text-content tabular-nums">
+                        {formatDurationCompact(holdElapsed)}{' '}
+                        <span className="text-xs font-medium text-muted">
+                          / {formatDurationCompact(quickTarget.set.duration ?? 45)} target
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {!isHolding ? (
+                      <button
+                        type="button"
+                        onClick={handleStartHold}
+                        className="inline-flex items-center gap-1 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-black text-zinc-950 active:scale-95 transition-transform"
+                      >
+                        <Play size={12} /> Start Hold
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleStopAndLogHold}
+                        className="inline-flex items-center gap-1 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-black text-zinc-950 active:scale-95 transition-transform"
+                      >
+                        <Square size={12} /> Stop &amp; Log
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -516,8 +744,7 @@ export function DraggableExerciseItem({
                           {quickTarget.label}
                         </span>
                         <span className="text-[11px] font-bold text-muted tabular-nums truncate">
-                          {quickTarget.set.weight}
-                          {unit} × {quickTarget.set.reps}
+                          {formatSetSummary(quickTarget.set, mode, unit)}
                         </span>
                       </>
                     ) : (
@@ -544,25 +771,27 @@ export function DraggableExerciseItem({
                       <span>{exercise.restTimerConfig}s</span>
                     </button>
 
-                    <button
-                      type="button"
-                      disabled={!canGenerateWarmup}
-                      onClick={() => onGenerateWarmup(exercise.id)}
-                      title={
-                        canGenerateWarmup
-                          ? `Generate warm-up ramp from ${firstWorkingWeight}${unit}`
-                          : 'Set a working weight above 0 to generate warm-ups'
-                      }
-                      className={cn(
-                        'inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-all',
-                        canGenerateWarmup
-                          ? 'bg-sky-500/15 border-sky-500/35 text-sky-400 hover:bg-sky-500/25 active:scale-95'
-                          : 'bg-surface/40 border-content/5 text-muted/40 opacity-50 cursor-not-allowed',
-                      )}
-                    >
-                      <Flame size={12} className="shrink-0" />
-                      <span>Warm-Up</span>
-                    </button>
+                    {(mode === 'weight_reps' || mode === 'bodyweight_reps') && (
+                      <button
+                        type="button"
+                        disabled={!canGenerateWarmup}
+                        onClick={() => onGenerateWarmup(exercise.id)}
+                        title={
+                          canGenerateWarmup
+                            ? `Generate warm-up ramp from ${firstWorkingWeight}${unit}`
+                            : 'Set a working weight above 0 to generate warm-ups'
+                        }
+                        className={cn(
+                          'inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-all',
+                          canGenerateWarmup
+                            ? 'bg-sky-500/15 border-sky-500/35 text-sky-400 hover:bg-sky-500/25 active:scale-95'
+                            : 'bg-surface/40 border-content/5 text-muted/40 opacity-50 cursor-not-allowed',
+                        )}
+                      >
+                        <Flame size={12} className="shrink-0" />
+                        <span>Warm-Up</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -606,13 +835,13 @@ export function DraggableExerciseItem({
                             stepSetWeight(quickTarget.set.weight, -weightStep),
                           )
                         }
-                        aria-label={`Decrease ${quickTarget.label} weight by ${weightStep} ${unit}`}
+                        aria-label={`Decrease ${quickTarget.label} load by ${weightStep} ${unit}`}
                         className="flex-1 h-9 flex items-center justify-center text-xs font-bold text-content hover:bg-content/5 active:bg-content/10 transition-colors tabular-nums disabled:opacity-35 disabled:pointer-events-none"
                       >
                         -{weightStep}
                       </button>
                       <span className="px-1.5 text-[10px] font-bold uppercase text-muted border-x border-content/10 select-none shrink-0">
-                        {unit}
+                        {weightColLabel}
                       </span>
                       <button
                         type="button"
@@ -624,57 +853,96 @@ export function DraggableExerciseItem({
                             stepSetWeight(quickTarget.set.weight, weightStep),
                           )
                         }
-                        aria-label={`Increase ${quickTarget.label} weight by ${weightStep} ${unit}`}
+                        aria-label={`Increase ${quickTarget.label} load by ${weightStep} ${unit}`}
                         className="flex-1 h-9 flex items-center justify-center text-xs font-bold text-primary-400 hover:bg-primary-500/10 active:bg-primary-500/20 transition-colors tabular-nums"
                       >
                         +{weightStep}
                       </button>
                     </div>
 
-                    <div className="flex items-center rounded-xl bg-surface border border-content/10 overflow-hidden min-w-0">
-                      <button
-                        type="button"
-                        disabled={quickTarget.set.reps <= 0}
-                        onClick={() =>
-                          onSetUpdate(
-                            exercise.id,
-                            quickTarget.set.id,
-                            'reps',
-                            stepSetReps(quickTarget.set.reps, -1),
-                          )
-                        }
-                        aria-label={`Decrease ${quickTarget.label} reps by 1`}
-                        className="flex-1 h-9 flex items-center justify-center text-xs font-bold text-content hover:bg-content/5 active:bg-content/10 transition-colors tabular-nums disabled:opacity-35 disabled:pointer-events-none"
-                      >
-                        -1
-                      </button>
-                      <span className="px-1.5 text-[10px] font-bold uppercase text-muted border-x border-content/10 select-none shrink-0">
-                        reps
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onSetUpdate(
-                            exercise.id,
-                            quickTarget.set.id,
-                            'reps',
-                            stepSetReps(quickTarget.set.reps, 1),
-                          )
-                        }
-                        aria-label={`Increase ${quickTarget.label} reps by 1`}
-                        className="flex-1 h-9 flex items-center justify-center text-xs font-bold text-primary-400 hover:bg-primary-500/10 active:bg-primary-500/20 transition-colors tabular-nums"
-                      >
-                        +1
-                      </button>
-                    </div>
+                    {mode === 'timed' ? (
+                      <div className="flex items-center rounded-xl bg-surface border border-content/10 overflow-hidden min-w-0">
+                        <button
+                          type="button"
+                          disabled={(quickTarget.set.duration ?? 0) <= 0}
+                          onClick={() =>
+                            onSetUpdate(
+                              exercise.id,
+                              quickTarget.set.id,
+                              'duration',
+                              stepSetDuration(quickTarget.set.duration ?? 45, -5),
+                            )
+                          }
+                          aria-label={`Decrease ${quickTarget.label} hold duration by 5 seconds`}
+                          className="flex-1 h-9 flex items-center justify-center text-xs font-bold text-content hover:bg-content/5 active:bg-content/10 transition-colors tabular-nums disabled:opacity-35 disabled:pointer-events-none"
+                        >
+                          -5s
+                        </button>
+                        <span className="px-1.5 text-[10px] font-bold uppercase text-muted border-x border-content/10 select-none shrink-0">
+                          hold
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onSetUpdate(
+                              exercise.id,
+                              quickTarget.set.id,
+                              'duration',
+                              stepSetDuration(quickTarget.set.duration ?? 45, 5),
+                            )
+                          }
+                          aria-label={`Increase ${quickTarget.label} hold duration by 5 seconds`}
+                          className="flex-1 h-9 flex items-center justify-center text-xs font-bold text-primary-400 hover:bg-primary-500/10 active:bg-primary-500/20 transition-colors tabular-nums"
+                        >
+                          +5s
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center rounded-xl bg-surface border border-content/10 overflow-hidden min-w-0">
+                        <button
+                          type="button"
+                          disabled={quickTarget.set.reps <= 0}
+                          onClick={() =>
+                            onSetUpdate(
+                              exercise.id,
+                              quickTarget.set.id,
+                              'reps',
+                              stepSetReps(quickTarget.set.reps, -1),
+                            )
+                          }
+                          aria-label={`Decrease ${quickTarget.label} reps by 1`}
+                          className="flex-1 h-9 flex items-center justify-center text-xs font-bold text-content hover:bg-content/5 active:bg-content/10 transition-colors tabular-nums disabled:opacity-35 disabled:pointer-events-none"
+                        >
+                          -1
+                        </button>
+                        <span className="px-1.5 text-[10px] font-bold uppercase text-muted border-x border-content/10 select-none shrink-0">
+                          reps
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onSetUpdate(
+                              exercise.id,
+                              quickTarget.set.id,
+                              'reps',
+                              stepSetReps(quickTarget.set.reps, 1),
+                            )
+                          }
+                          aria-label={`Increase ${quickTarget.label} reps by 1`}
+                          className="flex-1 h-9 flex items-center justify-center text-xs font-bold text-primary-400 hover:bg-primary-500/10 active:bg-primary-500/20 transition-colors tabular-nums"
+                        >
+                          +1
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
 
               <div className="grid grid-cols-[34px_1fr_1fr_52px_34px_26px] items-center gap-1.5 px-1 text-[10px] font-bold uppercase tracking-wider text-muted mt-2">
                 <span className="text-center">Set</span>
-                <span className="text-center">{unit}</span>
-                <span className="text-center">Reps</span>
+                <span className="text-center">{weightColLabel}</span>
+                <span className="text-center">{repsColLabel}</span>
                 <span className="text-center">{effortScale.toUpperCase()}</span>
                 <span className="text-center">✓</span>
                 <span />
@@ -754,19 +1022,40 @@ export function DraggableExerciseItem({
                             warmup && 'opacity-75',
                             set.completed && (warmup ? 'text-sky-400' : 'text-emerald-400'),
                           )}
-                          placeholder="0"
+                          placeholder={mode === 'bodyweight_reps' || mode === 'timed' ? 'BW' : '0'}
                         />
-                        <input
-                          type="number"
-                          value={set.reps || ''}
-                          onChange={(e) => onSetUpdate(exercise.id, set.id, 'reps', Number(e.target.value))}
-                          className={cn(
-                            'h-11 w-full min-w-0 rounded-xl bg-page text-center text-base font-bold outline-none',
-                            warmup && 'opacity-75',
-                            set.completed && (warmup ? 'text-sky-400' : 'text-emerald-400'),
-                          )}
-                          placeholder="0"
-                        />
+                        {mode === 'timed' ? (
+                          <input
+                            type="number"
+                            value={set.duration || ''}
+                            onChange={(e) =>
+                              onSetUpdate(
+                                exercise.id,
+                                set.id,
+                                'duration',
+                                Math.max(0, Math.round(Number(e.target.value) || 0)),
+                              )
+                            }
+                            className={cn(
+                              'h-11 w-full min-w-0 rounded-xl bg-page text-center text-base font-bold outline-none',
+                              warmup && 'opacity-75',
+                              set.completed && (warmup ? 'text-sky-400' : 'text-emerald-400'),
+                            )}
+                            placeholder="45"
+                          />
+                        ) : (
+                          <input
+                            type="number"
+                            value={set.reps || ''}
+                            onChange={(e) => onSetUpdate(exercise.id, set.id, 'reps', Number(e.target.value))}
+                            className={cn(
+                              'h-11 w-full min-w-0 rounded-xl bg-page text-center text-base font-bold outline-none',
+                              warmup && 'opacity-75',
+                              set.completed && (warmup ? 'text-sky-400' : 'text-emerald-400'),
+                            )}
+                            placeholder="0"
+                          />
+                        )}
                         {warmup ? (
                           <div className="text-center text-xs font-bold text-muted/40">—</div>
                         ) : (
@@ -862,12 +1151,16 @@ interface WorkoutBlockProps {
   block: WorkoutBlockData;
   exercises: Exercise[];
   expandedExercises: Record<string, boolean>;
+  supersetMap: Map<string, SupersetMeta>;
+  activeSupersetFocusId?: string | null;
   toggleExercise: (id: string) => void;
   handleToggleSet: (exId: string, setId: string) => void;
   handleUpdateSet: (exId: string, setId: string, field: keyof Set, value: Set[keyof Set]) => void;
   handleDeleteSet: (exId: string, setId: string) => void;
   handleAddSet: (exId: string) => void;
   handleUpdateRestTimer: (exId: string, seconds: number) => void;
+  handleUpdateGroupRestTimer: (groupId: string, seconds: number) => void;
+  handleUpdateTrackingMode: (exId: string, mode: ExerciseTrackingMode) => void;
   handleGenerateWarmup: (exId: string) => void;
   handleOpenNotes: (e: React.MouseEvent, ex: Exercise) => void;
   handleOpenSwap: (e: React.MouseEvent, ex: Exercise) => void;
@@ -885,12 +1178,16 @@ export function WorkoutBlock({
   block,
   exercises,
   expandedExercises,
+  supersetMap,
+  activeSupersetFocusId,
   toggleExercise,
   handleToggleSet,
   handleUpdateSet,
   handleDeleteSet,
   handleAddSet,
   handleUpdateRestTimer,
+  handleUpdateGroupRestTimer,
+  handleUpdateTrackingMode,
   handleGenerateWarmup,
   handleOpenNotes,
   handleOpenSwap,
@@ -904,6 +1201,10 @@ export function WorkoutBlock({
   onDragStart,
 }: WorkoutBlockProps) {
   const controls = useDragControls();
+  const [showGroupRestPresets, setShowGroupRestPresets] = React.useState(false);
+
+  const firstMeta = block.exercises.length >= 2 ? supersetMap.get(block.exercises[0].id) : undefined;
+  const roundProgress = firstMeta ? getSupersetRoundProgress(block.exercises) : null;
 
   return (
     <Reorder.Item
@@ -912,17 +1213,75 @@ export function WorkoutBlock({
       dragListener={false}
       dragControls={controls}
       onDragStart={onDragStart}
-      className="grid gap-4 w-full cursor-default"
+      className="grid gap-3 w-full cursor-default"
     >
+      {firstMeta && roundProgress && (
+        <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 px-3 py-2 space-y-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  'rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider',
+                  firstMeta.size >= 3
+                    ? 'bg-orange-500/20 text-orange-400'
+                    : 'bg-amber-500/20 text-amber-400',
+                )}
+              >
+                {firstMeta.kindLabel} {firstMeta.letter}
+              </span>
+              <span className="text-xs font-bold text-content tabular-nums">
+                Round {roundProgress.completedRounds}/{roundProgress.totalRounds}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowGroupRestPresets((prev) => !prev)}
+              className={cn(
+                'inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-bold tabular-nums transition-all',
+                showGroupRestPresets
+                  ? 'bg-amber-500 border-amber-500 text-zinc-950'
+                  : 'bg-surface border-amber-500/30 text-amber-400 hover:bg-amber-500/15',
+              )}
+            >
+              <span aria-hidden="true">⏱</span>
+              <span>{firstMeta.sharedRestSeconds}s round rest</span>
+            </button>
+          </div>
+          {showGroupRestPresets && (
+            <div className="grid grid-cols-6 gap-1">
+              {REST_TIMER_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => {
+                    handleUpdateGroupRestTimer(firstMeta.groupId, preset);
+                    setShowGroupRestPresets(false);
+                  }}
+                  className={cn(
+                    'h-7 rounded-lg border text-[11px] font-bold tabular-nums transition-all',
+                    firstMeta.sharedRestSeconds === preset
+                      ? 'bg-amber-500 border-amber-500 text-zinc-950'
+                      : 'bg-surface border-content/10 text-muted hover:text-content',
+                  )}
+                >
+                  {preset}s
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {block.exercises.map((exercise) => {
         const exIndex = exercises.findIndex((e) => e.id === exercise.id);
+        const supersetMeta = supersetMap.get(exercise.id) ?? null;
         const isSupersettedWithNext =
           exIndex < exercises.length - 1 &&
-          Boolean(exercise.supersetId) &&
+          Boolean(supersetMeta) &&
           exercise.supersetId === exercises[exIndex + 1].supersetId;
         const isSupersettedWithPrev =
           exIndex > 0 &&
-          Boolean(exercise.supersetId) &&
+          Boolean(supersetMeta) &&
           exercise.supersetId === exercises[exIndex - 1].supersetId;
 
         return (
@@ -937,6 +1296,7 @@ export function WorkoutBlock({
             onSetDelete={handleDeleteSet}
             onSetAdd={handleAddSet}
             onUpdateRestTimer={handleUpdateRestTimer}
+            onUpdateTrackingMode={handleUpdateTrackingMode}
             onGenerateWarmup={handleGenerateWarmup}
             onOpenNotes={handleOpenNotes}
             onOpenSwap={handleOpenSwap}
@@ -948,6 +1308,8 @@ export function WorkoutBlock({
             onToggleSuperset={handleToggleSuperset}
             isSupersettedWithNext={isSupersettedWithNext}
             isSupersettedWithPrev={isSupersettedWithPrev}
+            supersetMeta={supersetMeta}
+            isSupersetNextUp={activeSupersetFocusId === exercise.id}
             settings={settings}
             dragControls={controls}
             isDeloadDay={isDeloadDay}

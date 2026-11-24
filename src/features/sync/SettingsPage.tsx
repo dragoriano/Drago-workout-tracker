@@ -16,6 +16,11 @@ import { useAppStore, DEFAULT_SETTINGS } from '../../store/useAppStore';
 import { PullToRefresh } from '../../components/ui/PullToRefresh';
 import { PlateCalculatorModal } from '../../components/ui/PlateCalculatorModal';
 import { downloadCSV, formatSessionsToCSV } from '../../utils/sessionExport';
+import {
+  decodeProgramSharePayload,
+  encodeProgramsShareCode,
+  prepareImportedProgram,
+} from '../../utils/programShare';
 import { BARBELL_PRESETS, DEFAULT_BARBELL_WEIGHT, WeightUnit } from '../../utils/strength';
 import type { User } from '@supabase/supabase-js';
 
@@ -225,86 +230,21 @@ export function SettingsPage() {
     reader.readAsText(file);
   };
 
-  // ── Compression helpers ────────────────────────────────────────────
-  const compressToBase64 = async (str: string): Promise<string> => {
-    const bytes = new TextEncoder().encode(str);
-    const stream = new CompressionStream('gzip');
-    const writer = stream.writable.getWriter();
-    writer.write(bytes);
-    writer.close();
-    const compressed = await new Response(stream.readable).arrayBuffer();
-    const uint8 = new Uint8Array(compressed);
-    let binary = '';
-    uint8.forEach(b => binary += String.fromCharCode(b));
-    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-  };
-
-  const decompressFromBase64 = async (b64: string): Promise<string> => {
-    const padded = b64.replace(/-/g, '+').replace(/_/g, '/').padEnd(b64.length + (4 - b64.length % 4) % 4, '=');
-    const binary = atob(padded);
-    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
-    const stream = new DecompressionStream('gzip');
-    const writer = stream.writable.getWriter();
-    writer.write(bytes);
-    writer.close();
-    const decompressed = await new Response(stream.readable).arrayBuffer();
-    return new TextDecoder().decode(decompressed);
-  };
-
   const handleShareQR = async () => {
     const programs = await db.getPrograms();
 
-    // Strip history and large runtime fields — keep only what's needed to reconstruct
-    const minimalPrograms = programs.map(p => ({
-      id: p.id,
-      name: p.name,
-      goal: p.goal,
-      theme: p.theme,
-      status: p.status,
-      createdAt: p.createdAt,
-      updatedAt: p.updatedAt,
-      days: p.days.map(d => ({
-        id: d.id,
-        name: d.name,
-        order: d.order,
-        isDeloadDay: d.isDeloadDay,
-        exercises: d.exercises.map(e => ({
-          id: e.id,
-          name: e.name,
-          primaryMuscle: e.primaryMuscle,
-          secondaryMuscles: e.secondaryMuscles,
-          notes: e.notes,
-          restTimerConfig: e.restTimerConfig,
-          lastUpdated: e.lastUpdated,
-          supersetId: e.supersetId,
-          history: [], // Strip history — too large for QR
-          sets: e.sets.map(s => ({
-            id: s.id,
-            weight: s.weight,
-            reps: s.reps,
-            completed: false,
-            ...(s.setType && s.setType !== 'working' ? { setType: s.setType } : {}),
-          }))
-        }))
-      }))
-    }));
-
-    const payload = JSON.stringify({ type: 'dragoriano-programs', v: 2, data: minimalPrograms });
-
     try {
-      const compressed = await compressToBase64(payload);
-      const qrPayload = `DRG2:${compressed}`; // Versioned prefix for the scanner
+      const { code, fitsQR } = await encodeProgramsShareCode(programs);
 
-      // QR v40 max alphanumeric capacity is ~4296 chars
-      if (qrPayload.length > 4200) {
+      if (!fitsQR) {
         setAlertMessage({
           title: 'Data Too Large',
-          message: `Your ${programs.length} program(s) exceed QR capacity even after compression. Share individual programs or use Export Data (JSON) instead.`
+          message: `Your ${programs.length} program(s) exceed QR capacity even after compression. Share individual programs from the Programs page or use Export Data (JSON) instead.`
         });
         return;
       }
 
-      setQrData(qrPayload);
+      setQrData(code);
       setShowDataModal(false);
       setShowQR(true);
     } catch (err) {
@@ -717,7 +657,7 @@ export function SettingsPage() {
             <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">About</h2>
             <div className="rounded-2xl bg-card p-6 text-center">
               <h3 className="font-black text-primary-400 tracking-widest uppercase">Dragoriano</h3>
-              <p className="text-sm text-muted mt-1">Workout Tracker v1.7.0</p>
+              <p className="text-sm text-muted mt-1">Workout Tracker v1.8.0</p>
             </div>
           </section>
         </div>
@@ -778,7 +718,7 @@ export function SettingsPage() {
                 <X size={20} />
               </button>
             </div>
-            <div className="mx-auto mb-4 flex aspect-square w-full max-w-[250px] items-center justify-center rounded-xl bg-content p-4">
+            <div className="mx-auto mb-4 flex aspect-square w-full max-w-[250px] items-center justify-center rounded-xl bg-white border border-black/10 p-4">
               <QRCodeSVG value={qrData} size={200} />
             </div>
             <p className="text-sm text-muted">Scan this code with another device running Dragoriano to import your workout programs.</p>
@@ -842,29 +782,27 @@ export function SettingsPage() {
             onScanSuccess={async (decodedText) => {
               setShowQRScanner(false);
               try {
-                let parsed: any;
-
-                if (decodedText.startsWith('DRG2:')) {
-                  // New compressed format
-                  const b64 = decodedText.slice(5);
-                  const json = await decompressFromBase64(b64);
-                  parsed = JSON.parse(json);
-                } else {
-                  // Legacy plain JSON format (backward compat)
-                  parsed = JSON.parse(decodedText);
+                const { programs: decodedPrograms } = await decodeProgramSharePayload(decodedText);
+                const hasActive = programs.some((p) => p.status === 'active');
+                for (let i = 0; i < decodedPrograms.length; i++) {
+                  const prepared = prepareImportedProgram(decodedPrograms[i], {
+                    status: !hasActive && i === 0 ? 'active' : 'paused',
+                  });
+                  await db.saveProgram(prepared);
                 }
-
-                if (parsed.type === 'dragoriano-programs' && Array.isArray(parsed.data)) {
-                  for (const program of parsed.data) {
-                    await db.saveProgram(program);
-                  }
-                  await useAppStore.getState().hydrate();
-                  setAlertMessage({ title: 'Success', message: `Imported ${parsed.data.length} program(s) successfully!` });
-                } else {
-                  setAlertMessage({ title: 'Invalid QR', message: 'This QR code does not contain Dragoriano workout data.' });
-                }
-              } catch {
-                setAlertMessage({ title: 'Error', message: 'Could not parse QR code data. Make sure it was generated by Dragoriano.' });
+                await useAppStore.getState().hydrate();
+                setAlertMessage({
+                  title: 'Success',
+                  message: `Imported ${decodedPrograms.length} program(s) successfully!`,
+                });
+              } catch (err: unknown) {
+                setAlertMessage({
+                  title: 'Invalid QR',
+                  message:
+                    err instanceof Error
+                      ? err.message
+                      : 'Could not parse QR code data. Make sure it was generated by Dragoriano.',
+                });
               }
             }}
           />

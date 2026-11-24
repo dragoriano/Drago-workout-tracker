@@ -1,5 +1,6 @@
 import { differenceInCalendarDays, startOfDay, subDays } from 'date-fns';
 import { PR, WorkoutSession } from '../types';
+import { getExerciseTrackingMode, supportsEstimated1RM } from './exerciseModes';
 import { getBestSet1RM, isWarmupSet } from './strength';
 
 export function computeStreaks(sessions: WorkoutSession[]): { current: number; longest: number } {
@@ -81,6 +82,7 @@ export function computeTopEstimated1RMs(sessions: WorkoutSession[]): StrengthBen
   for (const session of sessions) {
     if (!session.date || isNaN(new Date(session.date).getTime())) continue;
     for (const ex of session.exercisesSnapshot || []) {
+      if (!supportsEstimated1RM(getExerciseTrackingMode(ex))) continue;
       const best = getBestSet1RM(ex.sets);
       if (!best) continue;
 

@@ -1,6 +1,10 @@
 import { format } from 'date-fns';
 import type { PR, Set, WorkoutProgram, WorkoutSession } from '../types';
 import { FREESTYLE_PROGRAM_ID } from './customExercises';
+import {
+  calculateSetWorkingVolume,
+  getExerciseTrackingMode,
+} from './exerciseModes';
 import { calculateEstimated1RM, getSetType, isWarmupSet } from './strength';
 
 const CSV_HEADERS = [
@@ -18,7 +22,16 @@ const CSV_HEADERS = [
   'RPE',
   'Completed',
   'Volume',
+  'Tracking Mode',
+  'Duration (s)',
 ] as const;
+
+interface PriorExerciseBest {
+  maxWeight: number;
+  maxE1RM: number;
+  maxReps: number;
+  maxDuration: number;
+}
 
 export function recalculateSessionMetrics(
   editedSession: WorkoutSession,
@@ -31,16 +44,17 @@ export function recalculateSessionMetrics(
       s.date < editedSession.date,
   );
 
-  const priorBestByExercise = new Map<string, { maxWeight: number; maxE1RM: number }>();
+  const priorBestByExercise = new Map<string, PriorExerciseBest>();
 
   for (const prev of earlierSessions) {
     for (const prevEx of prev.exercisesSnapshot || []) {
       const key = prevEx.name.trim().toLowerCase();
       if (!key) continue;
 
+      const mode = getExerciseTrackingMode(prevEx);
       let entry = priorBestByExercise.get(key);
       if (!entry) {
-        entry = { maxWeight: 0, maxE1RM: 0 };
+        entry = { maxWeight: 0, maxE1RM: 0, maxReps: 0, maxDuration: 0 };
         priorBestByExercise.set(key, entry);
       }
 
@@ -48,12 +62,14 @@ export function recalculateSessionMetrics(
         if (!set.completed || isWarmupSet(set)) continue;
         const weight = Number.isFinite(set.weight) ? set.weight : 0;
         const reps = Number.isFinite(set.reps) ? set.reps : 0;
-        if (weight > entry.maxWeight) {
-          entry.maxWeight = weight;
-        }
-        const e1rm = calculateEstimated1RM(weight, reps);
-        if (e1rm > entry.maxE1RM) {
-          entry.maxE1RM = e1rm;
+        const duration = Number.isFinite(set.duration) ? (set.duration ?? 0) : 0;
+
+        if (weight > entry.maxWeight) entry.maxWeight = weight;
+        if (reps > entry.maxReps) entry.maxReps = reps;
+        if (duration > entry.maxDuration) entry.maxDuration = duration;
+        if (mode === 'weight_reps') {
+          const e1rm = calculateEstimated1RM(weight, reps);
+          if (e1rm > entry.maxE1RM) entry.maxE1RM = e1rm;
         }
       }
     }
@@ -63,27 +79,83 @@ export function recalculateSessionMetrics(
   const detectedPRs: PR[] = [];
 
   for (const ex of editedSession.exercisesSnapshot || []) {
+    const mode = getExerciseTrackingMode(ex);
     let maxWeightThisSession = 0;
     let maxE1RMThisSession = 0;
+    let maxRepsThisSession = 0;
+    let maxDurationThisSession = 0;
 
     for (const set of ex.sets || []) {
       if (!set.completed || isWarmupSet(set)) continue;
       const weight = Number.isFinite(set.weight) ? Math.max(0, set.weight) : 0;
       const reps = Number.isFinite(set.reps) ? Math.max(0, set.reps) : 0;
-      totalVolume += weight * reps;
+      const duration = Number.isFinite(set.duration) ? Math.max(0, set.duration ?? 0) : 0;
 
-      if (weight > maxWeightThisSession) {
-        maxWeightThisSession = weight;
-      }
-      const e1rm = calculateEstimated1RM(weight, reps);
-      if (e1rm > maxE1RMThisSession) {
-        maxE1RMThisSession = e1rm;
+      totalVolume += calculateSetWorkingVolume({ ...set, weight, reps }, mode);
+
+      if (weight > maxWeightThisSession) maxWeightThisSession = weight;
+      if (reps > maxRepsThisSession) maxRepsThisSession = reps;
+      if (duration > maxDurationThisSession) maxDurationThisSession = duration;
+
+      if (mode === 'weight_reps') {
+        const e1rm = calculateEstimated1RM(weight, reps);
+        if (e1rm > maxE1RMThisSession) maxE1RMThisSession = e1rm;
       }
     }
 
     const prior = priorBestByExercise.get(ex.name.trim().toLowerCase());
     const previousMaxWeight = prior?.maxWeight ?? 0;
     const previousMaxE1RM = prior?.maxE1RM ?? 0;
+    const previousMaxReps = prior?.maxReps ?? 0;
+    const previousMaxDuration = prior?.maxDuration ?? 0;
+
+    if (mode === 'timed') {
+      if (maxDurationThisSession > previousMaxDuration && maxDurationThisSession > 0) {
+        detectedPRs.push({
+          exerciseId: ex.id,
+          exerciseName: ex.name,
+          type: 'duration',
+          value: maxDurationThisSession,
+          previousValue: previousMaxDuration,
+        });
+      }
+      continue;
+    }
+
+    if (mode === 'assisted_reps') {
+      if (maxRepsThisSession > previousMaxReps && maxRepsThisSession > 0) {
+        detectedPRs.push({
+          exerciseId: ex.id,
+          exerciseName: ex.name,
+          type: 'reps',
+          value: maxRepsThisSession,
+          previousValue: previousMaxReps,
+        });
+      }
+      continue;
+    }
+
+    if (mode === 'bodyweight_reps') {
+      if (maxWeightThisSession > previousMaxWeight && maxWeightThisSession > 0) {
+        detectedPRs.push({
+          exerciseId: ex.id,
+          exerciseName: ex.name,
+          type: 'weight',
+          value: maxWeightThisSession,
+          previousValue: previousMaxWeight,
+        });
+      }
+      if (maxRepsThisSession > previousMaxReps && maxRepsThisSession > 0) {
+        detectedPRs.push({
+          exerciseId: ex.id,
+          exerciseName: ex.name,
+          type: 'reps',
+          value: maxRepsThisSession,
+          previousValue: previousMaxReps,
+        });
+      }
+      continue;
+    }
 
     if (maxWeightThisSession > previousMaxWeight && maxWeightThisSession > 0) {
       detectedPRs.push({
@@ -163,6 +235,7 @@ export function formatSessionsToCSV(
 
     for (const ex of session.exercisesSnapshot || []) {
       const exerciseName = ex.name || '';
+      const trackingMode = getExerciseTrackingMode(ex);
       const sets: Set[] = ex.sets || [];
 
       sets.forEach((set, idx) => {
@@ -175,9 +248,13 @@ export function formatSessionsToCSV(
             : '';
         const completed = set.completed ? 'Yes' : 'No';
         const workingVolume =
-          set.completed && !isWarmupSet(set)
-            ? Math.round(Math.max(0, weight) * Math.max(0, reps) * 100) / 100
-            : 0;
+          Math.round(
+            calculateSetWorkingVolume({ ...set, weight, reps }, trackingMode) * 100,
+          ) / 100;
+        const durationSec =
+          typeof set.duration === 'number' && Number.isFinite(set.duration) && set.duration > 0
+            ? Math.round(set.duration)
+            : '';
 
         const row = [
           dateStr,
@@ -194,6 +271,8 @@ export function formatSessionsToCSV(
           rpe,
           completed,
           workingVolume,
+          trackingMode,
+          durationSec,
         ];
         lines.push(row.map(escapeCsvField).join(','));
       });

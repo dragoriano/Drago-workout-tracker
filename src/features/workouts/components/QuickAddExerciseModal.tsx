@@ -2,9 +2,14 @@ import { useEffect, useState } from 'react';
 import { Dumbbell, Plus, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AutocompleteInput } from '../../../components/ui/AutocompleteInput';
+import type { ExerciseTrackingMode } from '../../../types';
 import { getExerciseMetadata } from '../../../data/exercises';
 import { useAppStore } from '../../../store/useAppStore';
 import type { CatalogExerciseItem } from '../../../utils/customExercises';
+import {
+  EXERCISE_TRACKING_MODES,
+  inferTrackingModeFromName,
+} from '../../../utils/exerciseModes';
 import type { MuscleRecoveryStatus } from '../../../utils/muscleRecovery';
 import { cn } from '../../../utils/cn';
 import { CustomExerciseModal } from './CustomExerciseModal';
@@ -13,7 +18,12 @@ interface QuickAddExerciseModalProps {
   isOpen: boolean;
   onClose: () => void;
   readyMuscles: MuscleRecoveryStatus[];
-  onAddExercise: (meta: CatalogExerciseItem, setsCount: number, reps: number) => void;
+  onAddExercise: (
+    meta: CatalogExerciseItem,
+    setsCount: number,
+    repsOrDuration: number,
+    trackingMode?: ExerciseTrackingMode,
+  ) => void;
 }
 
 export function QuickAddExerciseModal({
@@ -26,6 +36,7 @@ export function QuickAddExerciseModal({
   const [query, setQuery] = useState('');
   const [selectedMeta, setSelectedMeta] = useState<CatalogExerciseItem | null>(null);
   const [filterMuscle, setFilterMuscle] = useState('');
+  const [trackingMode, setTrackingMode] = useState<ExerciseTrackingMode>('weight_reps');
   const [setsInput, setSetsInput] = useState('3');
   const [repsInput, setRepsInput] = useState('10');
   const [isCustomOpen, setIsCustomOpen] = useState(false);
@@ -36,6 +47,7 @@ export function QuickAddExerciseModal({
       setQuery('');
       setSelectedMeta(null);
       setFilterMuscle('');
+      setTrackingMode('weight_reps');
       setSetsInput('3');
       setRepsInput('10');
     }
@@ -62,6 +74,7 @@ export function QuickAddExerciseModal({
         isCustom: true,
         customId: customMatch.id,
         equipment: customMatch.equipment,
+        trackingMode: customMatch.trackingMode,
         defaultRestTimer: customMatch.defaultRestTimer,
         notes: customMatch.notes,
       };
@@ -82,9 +95,22 @@ export function QuickAddExerciseModal({
     const item = resolveExerciseItem();
     if (!item) return;
     const setsCount = Math.max(1, Math.min(12, Number(setsInput) || 3));
-    const reps = Math.max(1, Math.min(100, Number(repsInput) || 10));
-    onAddExercise(item, setsCount, reps);
+    const maxTarget = trackingMode === 'timed' ? 1800 : 100;
+    const targetVal = Math.max(
+      1,
+      Math.min(maxTarget, Number(repsInput) || (trackingMode === 'timed' ? 45 : 10)),
+    );
+    onAddExercise(item, setsCount, targetVal, trackingMode);
     onClose();
+  };
+
+  const handleModeSelect = (nextMode: ExerciseTrackingMode) => {
+    setTrackingMode(nextMode);
+    if (nextMode === 'timed' && repsInput === '10') {
+      setRepsInput('45');
+    } else if (nextMode !== 'timed' && repsInput === '45') {
+      setRepsInput('10');
+    }
   };
 
   return (
@@ -166,7 +192,12 @@ export function QuickAddExerciseModal({
                     setQuery(val);
                     setSelectedMeta(null);
                   }}
-                  onSelect={(ex) => setSelectedMeta(ex)}
+                  onSelect={(ex) => {
+                    setSelectedMeta(ex);
+                    const inferred =
+                      ex.trackingMode ?? inferTrackingModeFromName(ex.name, ex.equipment);
+                    handleModeSelect(inferred);
+                  }}
                   onCreateCustom={(initial) => {
                     setPendingCustomName(initial);
                     setIsCustomOpen(true);
@@ -178,6 +209,29 @@ export function QuickAddExerciseModal({
                       : 'Search built-in or custom exercises...'
                   }
                 />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-muted block mb-1.5">
+                  Tracking Mode
+                </label>
+                <div className="flex items-center gap-1 rounded-xl bg-surface border border-content/10 p-1">
+                  {EXERCISE_TRACKING_MODES.map((m) => (
+                    <button
+                      key={m.value}
+                      type="button"
+                      onClick={() => handleModeSelect(m.value)}
+                      className={cn(
+                        'flex-1 rounded-lg py-1.5 text-[11px] font-bold transition-all',
+                        trackingMode === m.value
+                          ? 'bg-primary-500 text-white shadow-sm'
+                          : 'text-muted hover:text-content',
+                      )}
+                    >
+                      {m.shortLabel}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -196,12 +250,12 @@ export function QuickAddExerciseModal({
                 </div>
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-wider text-muted block mb-1">
-                    Target Reps
+                    {trackingMode === 'timed' ? 'Target Sec' : 'Target Reps'}
                   </label>
                   <input
                     type="number"
                     min={1}
-                    max={100}
+                    max={trackingMode === 'timed' ? 1800 : 100}
                     value={repsInput}
                     onChange={(e) => setRepsInput(e.target.value)}
                     className="w-full rounded-xl bg-page/10 dark:bg-content/5 px-3 py-2.5 text-center text-sm font-bold text-content outline-none focus:ring-2 focus:ring-primary-500"
@@ -236,11 +290,19 @@ export function QuickAddExerciseModal({
               isCustom: true,
               customId: ce.id,
               equipment: ce.equipment,
+              trackingMode: ce.trackingMode,
               defaultRestTimer: ce.defaultRestTimer,
               notes: ce.notes,
             },
             Math.max(1, Math.min(12, Number(setsInput) || 3)),
-            Math.max(1, Math.min(100, Number(repsInput) || 10)),
+            Math.max(
+              1,
+              Math.min(
+                ce.trackingMode === 'timed' ? 1800 : 100,
+                Number(repsInput) || (ce.trackingMode === 'timed' ? 45 : 10),
+              ),
+            ),
+            ce.trackingMode,
           );
           setIsCustomOpen(false);
           onClose();

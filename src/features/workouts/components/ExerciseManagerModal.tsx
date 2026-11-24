@@ -1,8 +1,15 @@
 import React from 'react';
 import { Clock, Dumbbell, Edit2, Link, Trash2, Unlink, X, Youtube } from 'lucide-react';
 import { AnimatePresence, motion, Reorder, useDragControls } from 'framer-motion';
-import { Exercise, WorkoutDay } from '../../../types';
+import { Exercise, ExerciseTrackingMode, WorkoutDay } from '../../../types';
 import { cn } from '../../../utils/cn';
+import {
+  EXERCISE_TRACKING_MODES,
+  formatDurationCompact,
+  getExerciseTrackingMode,
+  inferTrackingModeFromName,
+} from '../../../utils/exerciseModes';
+import { computeSupersetMap, type SupersetMeta } from '../../../utils/supersets';
 import { AutocompleteInput } from '../../../components/ui/AutocompleteInput';
 
 export interface ExerciseFormData {
@@ -12,7 +19,9 @@ export interface ExerciseFormData {
   secondaryMuscles: string[];
   sets: string;
   reps: string;
+  duration: string;
   restTimer: string;
+  trackingMode: ExerciseTrackingMode;
   muscleGroups?: string[];
 }
 
@@ -23,7 +32,9 @@ export const emptyExerciseForm: ExerciseFormData = {
   secondaryMuscles: [],
   sets: '3',
   reps: '10',
+  duration: '45',
   restTimer: '90',
+  trackingMode: 'weight_reps',
 };
 
 export const MUSCLE_GROUP_OPTIONS = [
@@ -55,6 +66,7 @@ interface DraggableExerciseCardProps {
   ex: Exercise;
   i: number;
   day: WorkoutDay;
+  supersetMeta?: SupersetMeta | null;
   handleToggleSuperset: (index: number) => Promise<void>;
   openEditExercise: (ex: Exercise) => void;
   handleDeleteExercise: (id: string) => Promise<void>;
@@ -64,6 +76,7 @@ export function DraggableExerciseCard({
   ex,
   i,
   day,
+  supersetMeta,
   handleToggleSuperset,
   openEditExercise,
   handleDeleteExercise,
@@ -71,12 +84,13 @@ export function DraggableExerciseCard({
   const controls = useDragControls();
   const [isPressing, setIsPressing] = React.useState(false);
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mode = getExerciseTrackingMode(ex);
 
   const isSupersettedWithPrev =
-    i > 0 && Boolean(ex.supersetId) && ex.supersetId === day.exercises[i - 1].supersetId;
+    i > 0 && Boolean(supersetMeta) && ex.supersetId === day.exercises[i - 1].supersetId;
   const isSupersettedWithNext =
     i < day.exercises.length - 1 &&
-    Boolean(ex.supersetId) &&
+    Boolean(supersetMeta) &&
     ex.supersetId === day.exercises[i + 1].supersetId;
 
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -101,6 +115,11 @@ export function DraggableExerciseCard({
       timerRef.current = null;
     }
   };
+
+  const volumeBadgeText =
+    mode === 'timed'
+      ? `${ex.sets.length}S × ${formatDurationCompact(ex.sets[0]?.duration ?? 45)}`
+      : `${ex.sets.length}S × ${ex.sets[0]?.reps ?? 0}R`;
 
   return (
     <Reorder.Item
@@ -154,7 +173,7 @@ export function DraggableExerciseCard({
             )}
           >
             {isSupersettedWithPrev ? <Unlink size={10} /> : <Link size={10} />}
-            {isSupersettedWithPrev ? 'Superset' : 'Link'}
+            {isSupersettedWithPrev ? `${supersetMeta?.kindLabel || 'Superset'}` : 'Link'}
           </button>
         </div>
       )}
@@ -166,7 +185,7 @@ export function DraggableExerciseCard({
       <div
         className={cn(
           'flex flex-col gap-3 rounded-2xl px-4 py-4 relative z-[6] border transition-all',
-          ex.supersetId
+          supersetMeta
             ? 'bg-amber-500/[0.03] border-amber-500/20 shadow-[0_0_15px_-5px_rgba(245,158,11,0.1)]'
             : 'bg-page/5 dark:bg-content/5 border-transparent hover:border-white/5',
           isPressing && 'border-primary-500/50 shadow-xl shadow-primary-500/10 scale-[1.02]',
@@ -175,13 +194,13 @@ export function DraggableExerciseCard({
         <div className="flex items-start gap-3">
           <div
             className={cn(
-              'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl',
-              ex.supersetId
+              'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-black',
+              supersetMeta
                 ? 'bg-amber-500/20 text-amber-500 shadow-inner'
                 : 'bg-primary-500/20 text-primary-400 shadow-inner',
             )}
           >
-            <Dumbbell size={16} />
+            {supersetMeta ? supersetMeta.label : <Dumbbell size={16} />}
           </div>
 
           <div className="flex-1 min-w-0 pr-10">
@@ -189,6 +208,24 @@ export function DraggableExerciseCard({
               <h4 className="text-sm font-bold text-content uppercase tracking-tight leading-tight break-words">
                 {ex.name}
               </h4>
+              {mode !== 'weight_reps' && (
+                <span
+                  className={cn(
+                    'rounded px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider',
+                    mode === 'bodyweight_reps'
+                      ? 'bg-emerald-500/15 text-emerald-400'
+                      : mode === 'assisted_reps'
+                        ? 'bg-sky-500/15 text-sky-400'
+                        : 'bg-amber-500/15 text-amber-400',
+                  )}
+                >
+                  {mode === 'bodyweight_reps'
+                    ? 'BW'
+                    : mode === 'assisted_reps'
+                      ? 'Assist'
+                      : 'Timed'}
+                </span>
+              )}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -207,10 +244,10 @@ export function DraggableExerciseCard({
               <span
                 className={cn(
                   'text-[10px] font-bold px-1.5 py-0.5 rounded',
-                  ex.supersetId ? 'bg-amber-500/10 text-amber-500' : 'bg-primary-500/10 text-primary-400',
+                  supersetMeta ? 'bg-amber-500/10 text-amber-500' : 'bg-primary-500/10 text-primary-400',
                 )}
               >
-                {ex.sets.length}S × {ex.sets[0]?.reps ?? 0}R
+                {volumeBadgeText}
               </span>
               <span className="text-[10px] text-muted flex items-center gap-1">
                 <Clock size={10} /> {ex.restTimerConfig}s
@@ -270,6 +307,11 @@ export function ExerciseManagerModal({
   onCancelEdit,
   onSaveExercise,
 }: ExerciseManagerModalProps) {
+  const supersetMap = React.useMemo(
+    () => (day ? computeSupersetMap(day.exercises) : new Map()),
+    [day],
+  );
+
   return (
     <AnimatePresence>
       {isOpen && day && (
@@ -310,6 +352,7 @@ export function ExerciseManagerModal({
                     ex={ex}
                     i={i}
                     day={day}
+                    supersetMeta={supersetMap.get(ex.id) ?? null}
                     handleToggleSuperset={onToggleSuperset}
                     openEditExercise={onOpenEditExercise}
                     handleDeleteExercise={onDeleteExercise}
@@ -341,6 +384,8 @@ export function ExerciseManagerModal({
                         muscleGroup: ex.muscleGroups,
                         primaryMuscle: ex.primaryMuscle,
                         secondaryMuscles: ex.secondaryMuscles,
+                        trackingMode:
+                          ex.trackingMode ?? inferTrackingModeFromName(ex.name, ex.equipment),
                         restTimer: ex.defaultRestTimer ? String(ex.defaultRestTimer) : f.restTimer,
                       }))
                     }
@@ -348,11 +393,28 @@ export function ExerciseManagerModal({
                     filterByMuscle={exerciseForm.primaryMuscle}
                   />
                 </div>
+                <div className="col-span-2 flex items-center gap-1 rounded-xl bg-surface border border-content/10 p-1">
+                  {EXERCISE_TRACKING_MODES.map((m) => (
+                    <button
+                      key={m.value}
+                      type="button"
+                      onClick={() => onUpdateForm((f) => ({ ...f, trackingMode: m.value }))}
+                      className={cn(
+                        'flex-1 rounded-lg py-1 text-[10px] font-bold transition-all',
+                        exerciseForm.trackingMode === m.value
+                          ? 'bg-primary-500 text-white shadow-sm'
+                          : 'text-muted hover:text-content',
+                      )}
+                    >
+                      {m.shortLabel}
+                    </button>
+                  ))}
+                </div>
                 <div className="col-span-2 space-y-1">
                   <label className="text-[9px] font-bold text-muted uppercase tracking-wider block">
                     Muscle Groups
                   </label>
-                  <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-2 custom-scrollbar">
                     {MUSCLE_GROUP_OPTIONS.map((g) => {
                       const isPrimary = exerciseForm.primaryMuscle === g;
                       const isSecondary = exerciseForm.secondaryMuscles.includes(g);
@@ -435,17 +497,31 @@ export function ExerciseManagerModal({
                     className="w-full rounded-xl bg-page/5 dark:bg-content/5 px-3 py-2 text-sm text-content outline-none focus:ring-2 focus:ring-primary-500 transition-all text-center"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-muted uppercase tracking-wider block h-4">
-                    Reps
-                  </label>
-                  <input
-                    type="number"
-                    value={exerciseForm.reps}
-                    onChange={(e) => onUpdateForm((f) => ({ ...f, reps: e.target.value }))}
-                    className="w-full rounded-xl bg-page/5 dark:bg-content/5 px-3 py-2 text-sm text-content outline-none focus:ring-2 focus:ring-primary-500 transition-all text-center"
-                  />
-                </div>
+                {exerciseForm.trackingMode === 'timed' ? (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-muted uppercase tracking-wider block h-4">
+                      Sec
+                    </label>
+                    <input
+                      type="number"
+                      value={exerciseForm.duration}
+                      onChange={(e) => onUpdateForm((f) => ({ ...f, duration: e.target.value }))}
+                      className="w-full rounded-xl bg-page/5 dark:bg-content/5 px-3 py-2 text-sm text-content outline-none focus:ring-2 focus:ring-primary-500 transition-all text-center"
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-muted uppercase tracking-wider block h-4">
+                      Reps
+                    </label>
+                    <input
+                      type="number"
+                      value={exerciseForm.reps}
+                      onChange={(e) => onUpdateForm((f) => ({ ...f, reps: e.target.value }))}
+                      className="w-full rounded-xl bg-page/5 dark:bg-content/5 px-3 py-2 text-sm text-content outline-none focus:ring-2 focus:ring-primary-500 transition-all text-center"
+                    />
+                  </div>
+                )}
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-muted uppercase tracking-wider flex items-center gap-1 h-4">
                     <Clock size={9} className="shrink-0" />
