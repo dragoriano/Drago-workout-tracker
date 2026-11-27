@@ -1,11 +1,15 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  buildPostWorkoutCoachDebrief,
+  classifyLiftForProgression,
   computeOverloadSpikePercent,
   computeSmartSets,
+  computeSmartWeightIncrement,
   detectSessionPRs,
   estimateWorkoutDurationMinutes,
   evaluateExerciseCoach,
+  evaluateLiveSetAutoregulation,
 } from './workoutCoach.ts';
 import { AppSettings, Exercise, Set, WorkoutDay, WorkoutSession } from '../types/index.ts';
 
@@ -512,5 +516,166 @@ describe('computeOverloadSpikePercent', () => {
 
     // Most recent 3 average = 4000; 5200 is +30%
     assert.equal(computeOverloadSpikePercent(5200, sessions), 30);
+  });
+});
+
+describe('Smart Coach v2 — Double Progression, Context & Live Autoregulation', () => {
+  it('scales increments by lift class and unit (Barbell Squat +5kg/+10lbs, DB +1kg/+2kg)', () => {
+    assert.equal(classifyLiftForProgression('Barbell Back Squat'), 'compound_lower');
+    assert.equal(classifyLiftForProgression('Dumbbell Bicep Curl'), 'dumbbell_isolation');
+    assert.equal(classifyLiftForProgression('Barbell Flat Standard Bench Press'), 'compound_upper');
+
+    assert.equal(computeSmartWeightIncrement('Barbell Back Squat', BASE_SETTINGS, 120), 5);
+    assert.equal(
+      computeSmartWeightIncrement('Barbell Back Squat', { ...BASE_SETTINGS, weightUnit: 'lbs' }, 225),
+      10,
+    );
+    assert.equal(computeSmartWeightIncrement('Dumbbell Lateral Raise', BASE_SETTINGS, 10), 1);
+    assert.equal(computeSmartWeightIncrement('Dumbbell Incline Press', BASE_SETTINGS, 30), 2);
+  });
+
+  it('uses double progression for dumbbell/isolation lifts (climb reps -> 12, then bump weight & reset)', () => {
+    const curlClimbing = makeExercise({
+      name: 'Dumbbell Bicep Curl',
+      sets: makeSets(14, 10, false, 2),
+      history: [
+        { sessionId: 's1', date: 1000, sets: makeSets(14, 10, true, 2) },
+        { sessionId: 's2', date: 2000, sets: makeSets(14, 10, true, 2) },
+      ],
+    });
+    const climbEval = evaluateExerciseCoach(curlClimbing, false, BASE_SETTINGS);
+    const climbSets = computeSmartSets(curlClimbing, false, BASE_SETTINGS);
+    assert.equal(climbEval.progressionKind, 'double_reps');
+    assert.deepEqual(climbSets.map((s) => s.weight), [14, 14]);
+    assert.deepEqual(climbSets.map((s) => s.reps), [11, 11]);
+
+    const curlTop = makeExercise({
+      name: 'Dumbbell Bicep Curl',
+      sets: makeSets(14, 12, false, 2),
+      history: [
+        { sessionId: 's1', date: 1000, sets: makeSets(14, 12, true, 2) },
+        { sessionId: 's2', date: 2000, sets: makeSets(14, 12, true, 2) },
+      ],
+    });
+    const topEval = evaluateExerciseCoach(curlTop, false, BASE_SETTINGS);
+    const topSets = computeSmartSets(curlTop, false, BASE_SETTINGS);
+    assert.equal(topEval.progressionKind, 'double_weight_reset');
+    assert.deepEqual(topSets.map((s) => s.weight), [15, 15]);
+    assert.deepEqual(topSets.map((s) => s.reps), [8, 8]);
+  });
+
+  it('triggers layoff welcome-back ramp, RPE <= 7 fast-track, and fatigued muscle hold', () => {
+    const now = 1_750_000_000_000;
+    const day = 86_400_000;
+
+    const layoffEx = makeExercise({
+      name: 'Barbell Deadlift',
+      sets: makeSets(180, 5, false, 2),
+      history: [{ sessionId: 's1', date: now - 28 * day, sets: makeSets(180, 5, true, 2) }],
+    });
+    const layoffEval = evaluateExerciseCoach(layoffEx, false, BASE_SETTINGS, { now });
+    assert.equal(layoffEval.status, 'layoff_ramp');
+    assert.equal(layoffEval.deloadReductionPct, 10);
+    assert.deepEqual(
+      computeSmartSets(layoffEx, false, BASE_SETTINGS, { now }).map((s) => s.weight),
+      [162, 162],
+    );
+
+    const easySingle = makeExercise({
+      name: 'Barbell Back Squat',
+      sets: makeSets(120, 5, false, 2),
+      history: [
+        {
+          sessionId: 's1',
+          date: now - 3 * day,
+          sets: [
+            { id: '1', weight: 120, reps: 5, completed: true, rpe: 6.5 },
+            { id: '2', weight: 120, reps: 5, completed: true, rpe: 7.0 },
+          ],
+        },
+      ],
+    });
+    const fastEval = evaluateExerciseCoach(easySingle, false, BASE_SETTINGS, { now });
+    assert.equal(fastEval.status, 'overload');
+    assert.equal(fastEval.fastTracked, true);
+    assert.equal(fastEval.weightModifier, 5);
+
+    const fatiguedHold = evaluateExerciseCoach(easySingle, false, BASE_SETTINGS, {
+      now,
+      muscleReadiness: {
+        muscle: 'Legs',
+        color: '#22c55e',
+        directSets: 14,
+        effectiveSets: 14,
+        weeklyVolume: 4000,
+        minTarget: 10,
+        maxTarget: 20,
+        volumeZone: 'optimal',
+        lastTrainedAt: now - day,
+        hoursSinceTrained: 24,
+        neededRecoveryHours: 72,
+        recoveryPercent: 35,
+        readiness: 'fatigued',
+      },
+    });
+    assert.equal(fatiguedHold.status, 'fatigue_hold');
+  });
+
+  it('generates live set-by-set autoregulation nudges (-5% high RPE, +5% low RPE)', () => {
+    const hardEx = makeExercise({
+      name: 'Barbell Flat Standard Bench Press',
+      sets: [
+        { id: 's1', weight: 100, reps: 5, completed: true, rpe: 9.5 },
+        { id: 's2', weight: 100, reps: 5, completed: false },
+      ],
+    });
+    const dropNudge = evaluateLiveSetAutoregulation(hardEx, BASE_SETTINGS);
+    assert.ok(dropNudge);
+    assert.equal(dropNudge.direction, 'drop');
+    assert.equal(dropNudge.suggestedWeight, 95);
+
+    const easyEx = makeExercise({
+      name: 'Barbell Back Squat',
+      sets: [
+        { id: 's1', weight: 100, reps: 5, completed: true, rpe: 6.5 },
+        { id: 's2', weight: 100, reps: 5, completed: false },
+      ],
+    });
+    const bumpNudge = evaluateLiveSetAutoregulation(easyEx, BASE_SETTINGS);
+    assert.ok(bumpNudge);
+    assert.equal(bumpNudge.direction, 'bump');
+    assert.equal(bumpNudge.suggestedWeight, 105);
+  });
+
+  it('builds a post-workout Smart Coach Debrief projecting next-session targets', () => {
+    const session: WorkoutSession = {
+      id: 'sess-debrief',
+      programId: 'p1',
+      dayId: 'd1',
+      date: 1_750_000_000_000,
+      totalVolume: 3000,
+      PRs: [],
+      duration: 2400,
+      exercisesSnapshot: [
+        makeExercise({
+          id: 'ex-sq',
+          name: 'Barbell Back Squat',
+          sets: [{ id: 'a1', weight: 140, reps: 5, completed: true, rpe: 6.5 }],
+          history: [],
+        }),
+        makeExercise({
+          id: 'ex-ohp',
+          name: 'Overhead Press',
+          sets: [{ id: 'b1', weight: 60, reps: 4, completed: false, rpe: 9.5 }],
+          history: [],
+        }),
+      ],
+    };
+
+    const debrief = buildPostWorkoutCoachDebrief(session, BASE_SETTINGS);
+    assert.equal(debrief.avgSessionRpe, 6.5);
+    assert.equal(debrief.overloadReady.length, 1);
+    assert.equal(debrief.overloadReady[0].nextTargetSummary, '145 kg × 5');
+    assert.equal(debrief.deloadOrRetry.length, 1);
   });
 });

@@ -23,7 +23,9 @@ import {
   TrendingUp,
   Trophy,
   Unlink,
+  X,
   Youtube,
+  Zap,
 } from 'lucide-react';
 import { AnimatePresence, motion, Reorder, useDragControls } from 'framer-motion';
 import {
@@ -70,7 +72,11 @@ import {
   stepSetReps,
   stepSetWeight,
 } from '../../../utils/warmupGenerator';
-import { evaluateExerciseCoach } from '../../../utils/workoutCoach';
+import {
+  evaluateExerciseCoach,
+  evaluateLiveSetAutoregulation,
+} from '../../../utils/workoutCoach';
+import type { MesocycleProgressSummary } from '../../../utils/mesocycle';
 import {
   computeExerciseHistoricalBenchmarks,
   getRecentExerciseSessions,
@@ -159,6 +165,8 @@ interface ExerciseItemProps {
   settings: AppSettings | null;
   isDeloadDay?: boolean;
   muscleReadiness?: MuscleRecoveryStatus | null;
+  mesocycleProgress?: MesocycleProgressSummary | null;
+  todayReadinessScore?: number | null;
   livePRSetMap?: Map<string, LivePRHit>;
   onRemoveExercise?: (exId: string) => void;
   dragControls?: ReturnType<typeof useDragControls>;
@@ -188,6 +196,8 @@ export function DraggableExerciseItem({
   settings,
   isDeloadDay,
   muscleReadiness,
+  mesocycleProgress,
+  todayReadinessScore,
   livePRSetMap,
   onRemoveExercise,
   dragControls,
@@ -205,7 +215,17 @@ export function DraggableExerciseItem({
   const unit: WeightUnit = settings?.weightUnit === 'lbs' ? 'lbs' : 'kg';
   const weightStep = unit === 'lbs' ? 5 : 2.5;
   const effortScale: EffortScale = settings?.effortScale || 'rpe';
-  const coach = evaluateExerciseCoach(exercise, !!isDeloadDay, settings);
+  const coach = evaluateExerciseCoach(exercise, !!isDeloadDay, settings, {
+    mesocycle: mesocycleProgress,
+    muscleReadiness,
+    todayReadinessScore,
+  });
+  const liveNudge = evaluateLiveSetAutoregulation(exercise, settings);
+  const [dismissedNudgeKey, setDismissedNudgeKey] = React.useState<string | null>(null);
+  const activeNudgeKey = liveNudge
+    ? `${liveNudge.nextSetId}:${liveNudge.direction}:${liveNudge.suggestedWeight}`
+    : null;
+  const showLiveNudge = Boolean(liveNudge && activeNudgeKey !== dismissedNudgeKey);
   const quickTarget = getQuickAdjustTarget(exercise.sets);
   const firstWorkingWeight = workingSets[0]?.weight ?? 0;
   const canGenerateWarmup =
@@ -707,20 +727,36 @@ export function DraggableExerciseItem({
               )}
 
               {coach.status === 'deload_day' && (
-                <div className="mb-4 rounded-xl bg-sky-500/15 border border-sky-500/30 p-3 flex items-start gap-3 w-full min-w-0">
-                  <span className="text-sky-400 text-lg">❄️</span>
-                  <div>
-                    <p className="text-sm font-bold text-sky-300 leading-tight">
+                <div className="mb-4 rounded-xl bg-sky-500/12 border border-sky-500/25 p-3 flex items-start gap-3 w-full min-w-0">
+                  <span className="text-sky-600 dark:text-sky-400 text-lg shrink-0">❄️</span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-sky-700 dark:text-sky-300 leading-tight">
                       {mode === 'timed'
                         ? `Deload Day — ${formatDurationCompact(coach.targetDuration)}`
                         : mode === 'assisted_reps'
                           ? `Deload Day — -${coach.targetWeight}${unit} × ${coach.targetReps}`
                           : `Deload Day — ${coach.targetWeight}${unit} × ${coach.targetReps}`}
                     </p>
-                    <p className="text-[10px] font-bold text-sky-500/70 mt-1 uppercase tracking-wider">
-                      {mode === 'assisted_reps'
-                        ? '+20% assistance · Focus on form & recovery'
-                        : '60% of last session • Focus on form & recovery'}
+                    <p className="text-[11px] font-semibold text-sky-700/85 dark:text-sky-400/90 mt-1 leading-snug">
+                      {coach.rationale}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {coach.status === 'layoff_ramp' && (
+                <div className="mb-4 rounded-xl bg-sky-500/12 border border-sky-500/25 p-3 flex items-start gap-3 w-full min-w-0">
+                  <RotateCcw className="text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" size={17} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-sky-700 dark:text-sky-300 leading-tight">
+                      {mode === 'timed'
+                        ? `Welcome Back Ramp — ${formatDurationCompact(coach.targetDuration)}`
+                        : mode === 'assisted_reps'
+                          ? `Welcome Back Ramp — -${coach.targetWeight}${unit} × ${coach.targetReps}`
+                          : `Welcome Back Ramp — ${coach.targetWeight}${unit} × ${coach.targetReps}`}
+                    </p>
+                    <p className="text-[11px] font-semibold text-sky-700/85 dark:text-sky-400/90 mt-1 leading-snug">
+                      {coach.rationale}
                     </p>
                   </div>
                 </div>
@@ -728,8 +764,8 @@ export function DraggableExerciseItem({
 
               {coach.status === 'first_session' && (
                 <div className="mb-4 rounded-xl bg-primary-500/10 border border-primary-500/20 p-3 flex items-start gap-3 w-full min-w-0">
-                  <Sparkles className="text-primary-400 shrink-0" size={18} />
-                  <div>
+                  <Sparkles className="text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" size={18} />
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold text-content leading-tight">
                       {mode === 'timed'
                         ? `First session! Aim for ${formatDurationCompact(coach.targetDuration)}`
@@ -739,92 +775,98 @@ export function DraggableExerciseItem({
                             ? `First session! Aim for ${coach.targetReps} reps (-${coach.targetWeight}${unit} assist)`
                             : `First session! Aim for ${coach.targetReps} reps at ${coach.targetWeight}${unit}`}
                     </p>
-                    <p className="text-[10px] font-bold text-muted mt-1 uppercase tracking-wider">
-                      First Session · Build the baseline
+                    <p className="text-[11px] font-semibold text-muted mt-1 leading-snug">
+                      {coach.rationale}
                     </p>
                   </div>
                 </div>
               )}
 
               {coach.status === 'auto_deload' && (
-                <div className="mb-4 rounded-xl bg-red-500/10 border border-red-500/20 p-3 flex items-start gap-3 w-full min-w-0">
-                  <span className="text-red-400 text-base shrink-0">📉</span>
-                  <div>
-                    <p className="text-sm font-bold text-red-300 leading-tight">
+                <div className="mb-4 rounded-xl bg-red-500/10 border border-red-500/25 p-3 flex items-start gap-3 w-full min-w-0">
+                  <span className="text-red-600 dark:text-red-400 text-base shrink-0">📉</span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-red-700 dark:text-red-300 leading-tight">
                       {mode === 'timed'
                         ? `Auto-Deload — ${formatDurationCompact(coach.targetDuration)}`
                         : mode === 'assisted_reps'
                           ? `More Assistance — -${coach.targetWeight}${unit} × ${coach.targetReps}`
                           : `Auto-Deload — ${coach.targetWeight}${unit} × ${coach.targetReps}`}
                     </p>
-                    <p className="text-[10px] font-bold text-red-500/60 mt-1 uppercase tracking-wider">
-                      {coach.consecutiveFails} consecutive fails ·{' '}
+                    <p className="text-[11px] font-semibold text-red-700/85 dark:text-red-400/90 mt-1 leading-snug">
+                      {coach.rationale}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {coach.status === 'fatigue_hold' && (
+                <div className="mb-4 rounded-xl bg-amber-500/12 border border-amber-500/25 p-3 flex items-start gap-3 w-full min-w-0">
+                  <Zap className="text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" size={17} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-amber-800 dark:text-amber-300 leading-tight">
                       {mode === 'timed'
-                        ? `Hold reduced ${coach.deloadReductionPct}%`
-                        : mode === 'assisted_reps'
-                          ? `Assistance increased ${coach.deloadReductionPct}%`
-                          : `Weight reduced ${coach.deloadReductionPct}%`}
+                        ? `Fatigue Guard — ${formatDurationCompact(coach.targetDuration)}`
+                        : `Fatigue Guard — ${coach.targetWeight}${unit} × ${coach.targetReps}`}
+                    </p>
+                    <p className="text-[11px] font-semibold text-amber-800/85 dark:text-amber-400/90 mt-1 leading-snug">
+                      {coach.rationale}
                     </p>
                   </div>
                 </div>
               )}
 
               {coach.status === 'retry' && (
-                <div className="mb-4 rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 flex items-start gap-3 w-full min-w-0">
-                  <span className="text-amber-400 text-base shrink-0">⚡</span>
-                  <div>
-                    <p className="text-sm font-bold text-amber-300 leading-tight">
+                <div className="mb-4 rounded-xl bg-amber-500/12 border border-amber-500/25 p-3 flex items-start gap-3 w-full min-w-0">
+                  <span className="text-amber-700 dark:text-amber-400 text-base shrink-0">⚡</span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-amber-800 dark:text-amber-300 leading-tight">
                       {mode === 'timed'
                         ? `Try again — ${formatDurationCompact(coach.targetDuration)}`
                         : `Try again — ${coach.targetWeight}${unit} × ${coach.targetReps}`}
                     </p>
-                    <p className="text-[10px] font-bold text-amber-500/60 mt-1 uppercase tracking-wider">
-                      {coach.consecutiveFails === 1
-                        ? '1 failed session'
-                        : `${coach.consecutiveFails} consecutive fails`}{' '}
-                      · Consolidate target before progressing
+                    <p className="text-[11px] font-semibold text-amber-800/85 dark:text-amber-400/90 mt-1 leading-snug">
+                      {coach.rationale}
                     </p>
                   </div>
                 </div>
               )}
 
               {coach.status === 'rpe_hold' && (
-                <div className="mb-4 rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 flex items-start gap-3 w-full min-w-0">
-                  <span className="text-amber-400 text-base shrink-0">⚖️</span>
-                  <div>
-                    <p className="text-sm font-bold text-amber-300 leading-tight">
+                <div className="mb-4 rounded-xl bg-amber-500/12 border border-amber-500/25 p-3 flex items-start gap-3 w-full min-w-0">
+                  <span className="text-amber-700 dark:text-amber-400 text-base shrink-0">⚖️</span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-amber-800 dark:text-amber-300 leading-tight">
                       {mode === 'timed'
                         ? `Consolidate — ${formatDurationCompact(coach.targetDuration)}`
                         : `Consolidate — ${coach.targetWeight}${unit} × ${coach.targetReps}`}
                     </p>
-                    <p className="text-[10px] font-bold text-amber-500/70 mt-1 uppercase tracking-wider">
-                      Last avg {formatEffortLabel(coach.avgRecentRpe ?? undefined, effortScale)} · Hold before overloading
+                    <p className="text-[11px] font-semibold text-amber-800/85 dark:text-amber-400/90 mt-1 leading-snug">
+                      {coach.rationale}
                     </p>
                   </div>
                 </div>
               )}
 
               {coach.status === 'overload' && (
-                <div className="mb-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 flex items-start gap-3 w-full min-w-0">
-                  <span className="text-emerald-400 text-base shrink-0">🚀</span>
-                  <div>
-                    <p className="text-sm font-bold text-emerald-300 leading-tight">
+                <div className="mb-4 rounded-xl bg-emerald-500/12 border border-emerald-500/25 p-3 flex items-start gap-3 w-full min-w-0">
+                  <TrendingUp className="text-emerald-700 dark:text-emerald-400 shrink-0 mt-0.5" size={18} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300 leading-tight">
                       {mode === 'timed'
                         ? `Overload! Aim for ${formatDurationCompact(coach.targetDuration)}`
                         : mode === 'assisted_reps'
                           ? `Progress! Reduce assist to -${coach.targetWeight}${unit} × ${coach.targetReps}`
                           : mode === 'bodyweight_reps' && coach.targetWeight === 0
                             ? `Progress! Aim for ${coach.targetReps} bodyweight reps`
-                            : `Overload! Aim for ${coach.targetWeight}${unit} × ${coach.targetReps}`}
+                            : coach.progressionKind === 'double_reps'
+                              ? `Double Progression — Aim for ${coach.targetWeight}${unit} × ${coach.targetReps}`
+                              : coach.progressionKind === 'double_weight_reset'
+                                ? `Step Up! Bump to ${coach.targetWeight}${unit} × ${coach.targetReps}`
+                                : `Overload! Aim for ${coach.targetWeight}${unit} × ${coach.targetReps}`}
                     </p>
-                    <p className="text-[10px] font-bold text-emerald-500/60 mt-1 uppercase tracking-wider">
-                      {mode === 'timed'
-                        ? '2 sessions done · +5s hold progression'
-                        : mode === 'assisted_reps'
-                          ? '2 sessions done · -2.5' + unit + ' less assistance'
-                          : mode === 'bodyweight_reps' && coach.repsModifier > 0
-                            ? '2 sessions done · +1 rep progression'
-                            : `2 sessions done · +2.5${unit} progressive overload`}
+                    <p className="text-[11px] font-semibold text-emerald-700/85 dark:text-emerald-400/90 mt-1 leading-snug">
+                      {coach.rationale}
                     </p>
                   </div>
                 </div>
@@ -832,16 +874,69 @@ export function DraggableExerciseItem({
 
               {coach.status === 'maintain' && (
                 <div className="mb-4 rounded-xl bg-primary-500/10 border border-primary-500/20 p-3 flex items-start gap-3 w-full min-w-0">
-                  <Sparkles className="text-primary-400 shrink-0" size={18} />
-                  <div>
+                  <Sparkles className="text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" size={18} />
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold text-content leading-tight">
                       {mode === 'timed'
                         ? `Maintain — ${formatDurationCompact(coach.targetDuration)}`
                         : `Maintain — ${coach.targetWeight}${unit} × ${coach.targetReps}`}
                     </p>
-                    <p className="text-[10px] font-bold text-muted mt-1 uppercase tracking-wider">
-                      1 success · Hold target, aim for 2 before overloading
+                    <p className="text-[11px] font-semibold text-muted mt-1 leading-snug">
+                      {coach.rationale}
                     </p>
+                  </div>
+                </div>
+              )}
+
+              {showLiveNudge && liveNudge && (
+                <div
+                  role="status"
+                  className={cn(
+                    'mb-4 rounded-xl border p-3 flex items-center justify-between gap-2.5 w-full min-w-0',
+                    liveNudge.direction === 'bump'
+                      ? 'bg-emerald-500/10 border-emerald-500/30'
+                      : 'bg-amber-500/12 border-amber-500/30',
+                  )}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className={cn(
+                        'text-[10px] font-black uppercase tracking-wider',
+                        liveNudge.direction === 'bump'
+                          ? 'text-emerald-700 dark:text-emerald-400'
+                          : 'text-amber-800 dark:text-amber-300',
+                      )}
+                    >
+                      Live Autoregulation · Next Working Set
+                    </p>
+                    <p className="text-xs font-semibold text-content leading-snug mt-0.5">
+                      {liveNudge.reason}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSetUpdate(exercise.id, liveNudge.nextSetId, 'weight', liveNudge.suggestedWeight);
+                        setDismissedNudgeKey(activeNudgeKey);
+                      }}
+                      className={cn(
+                        'rounded-lg px-2.5 py-1.5 text-xs font-black whitespace-nowrap active:scale-95 transition-transform cursor-pointer',
+                        liveNudge.direction === 'bump'
+                          ? 'bg-emerald-500 text-zinc-950 hover:bg-emerald-400'
+                          : 'bg-amber-500 text-zinc-950 hover:bg-amber-400',
+                      )}
+                    >
+                      Apply {liveNudge.suggestedWeight}{unit}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDismissedNudgeKey(activeNudgeKey)}
+                      aria-label="Dismiss autoregulation suggestion"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-muted hover:text-content hover:bg-content/10 transition-colors cursor-pointer"
+                    >
+                      <X size={14} />
+                    </button>
                   </div>
                 </div>
               )}
@@ -1339,6 +1434,8 @@ interface WorkoutBlockProps {
   settings: AppSettings | null;
   isDeloadDay?: boolean;
   muscleReadinessMap?: Record<string, MuscleRecoveryStatus>;
+  mesocycleProgress?: MesocycleProgressSummary | null;
+  todayReadinessScore?: number | null;
   livePRMapsByExercise?: Record<string, Map<string, LivePRHit>>;
   onRemoveExercise?: (exId: string) => void;
   onDragStart: () => void;
@@ -1368,6 +1465,8 @@ export function WorkoutBlock({
   settings,
   isDeloadDay,
   muscleReadinessMap,
+  mesocycleProgress,
+  todayReadinessScore,
   livePRMapsByExercise,
   onRemoveExercise,
   onDragStart,
@@ -1487,6 +1586,8 @@ export function WorkoutBlock({
             dragControls={controls}
             isDeloadDay={isDeloadDay}
             muscleReadiness={muscleReadinessMap?.[exercise.id] ?? null}
+            mesocycleProgress={mesocycleProgress}
+            todayReadinessScore={todayReadinessScore}
             livePRSetMap={livePRMapsByExercise?.[exercise.id]}
             onRemoveExercise={onRemoveExercise}
           />

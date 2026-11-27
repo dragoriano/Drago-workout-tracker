@@ -283,6 +283,12 @@ export function WorkoutSessionPage() {
     // 2. Normal Initialization (Apply Smart Suggestions & Auto Deload)
     const isDeload = !!day.isDeloadDay;
     setIsDeloadDay(isDeload);
+    const initMeso = computeMesocycleProgress(program, sessions);
+    const initReadiness = getTodayReadinessCheckin(readinessCheckins);
+    const initRecovery = computeMuscleRecovery(sessions, {
+      customExercises,
+      resolveFallbackMuscles: getExerciseMuscleGroups,
+    });
 
     const processedExercises = day.exercises.map(ex => {
       const globalHistory = sessions
@@ -297,7 +303,22 @@ export function WorkoutSessionPage() {
         })
         .sort((a, b) => a.date - b.date);
       const exWithHistory = { ...ex, history: globalHistory };
-      return { ...exWithHistory, sets: computeSmartSets(exWithHistory, isDeload, settings) };
+      const { primary } = resolveExerciseBroadMuscles(
+        exWithHistory,
+        customExercises,
+        getExerciseMuscleGroups,
+      );
+      const muscleStatus = primary
+        ? initRecovery.find((r) => r.muscle === primary) ?? null
+        : null;
+      return {
+        ...exWithHistory,
+        sets: computeSmartSets(exWithHistory, isDeload, settings, {
+          mesocycle: initMeso,
+          muscleReadiness: muscleStatus,
+          todayReadinessScore: initReadiness?.score ?? null,
+        }),
+      };
     });
 
     setExercises(processedExercises);
@@ -715,7 +736,11 @@ export function WorkoutSessionPage() {
     // Process new sets through smart coach
     // Since swapConfig.exercise already has template sets (e.g., 4 sets defined previously),
     // mockEx will receive exactly that number of generated sets!
-    const newSets = computeSmartSets(mockEx, isDeloadDay, settings);
+    const newSets = computeSmartSets(mockEx, isDeloadDay, settings, {
+      mesocycle: mesocycleProgress,
+      muscleReadiness: muscleReadinessMap[swapConfig.exercise.id] ?? null,
+      todayReadinessScore: todayReadiness?.score ?? null,
+    });
 
     setExercises(prev => prev.map(ex => 
       ex.id === swapConfig.exercise.id 
@@ -1237,6 +1262,8 @@ export function WorkoutSessionPage() {
                   settings={settings}
                   isDeloadDay={isDeloadDay}
                   muscleReadinessMap={muscleReadinessMap}
+                  mesocycleProgress={mesocycleProgress}
+                  todayReadinessScore={todayReadiness?.score ?? null}
                   livePRMapsByExercise={livePRMapsByExercise}
                   onRemoveExercise={isFreestyle ? handleRemoveExercise : undefined}
                   onDragStart={collapseAll}

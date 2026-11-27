@@ -30,6 +30,10 @@ import { isWarmupSet } from '../../utils/strength';
 import { computeSupersetMap } from '../../utils/supersets';
 import { cn } from '../../utils/cn';
 import { SessionCompareModal } from '../analytics/SessionCompareModal';
+import { getExerciseMuscleGroups } from '../../data/exercises';
+import { computeMuscleRecovery } from '../../utils/muscleRecovery';
+import { buildPostWorkoutCoachDebrief } from '../../utils/workoutCoach';
+import { WorkoutCoachDebriefCard } from '../../components/ui/WorkoutCoachDebriefCard';
 
 type CardRatio = 'story' | 'post' | 'square';
 type CardThemeId = 'obsidian' | 'ember' | 'emerald' | 'steel';
@@ -82,6 +86,7 @@ export function WorkoutSummaryPage() {
 
   const sessions = useAppStore((s) => s.sessions);
   const programs = useAppStore((s) => s.programs);
+  const customExercises = useAppStore((s) => s.customExercises);
   const settings = useAppStore((s) => s.settings);
   const isHydrated = useAppStore((s) => s.isHydrated);
 
@@ -216,6 +221,11 @@ export function WorkoutSummaryPage() {
   const unit = settings?.weightUnit || 'kg';
   const previousSession = findPreviousComparableSession(session, sessions);
   const comparison = compareSessions(session, previousSession);
+  const muscleRecovery = computeMuscleRecovery(sessions, {
+    customExercises,
+    resolveFallbackMuscles: getExerciseMuscleGroups,
+  });
+  const coachDebrief = buildPostWorkoutCoachDebrief(session, settings, muscleRecovery);
   const ratioSpec = CARD_RATIOS.find((r) => r.id === cardRatio) || CARD_RATIOS[0];
   const themeSpec = CARD_THEMES.find((t) => t.id === cardTheme) || CARD_THEMES[0];
   const maxVisibleExercises = session.PRs.length > 0 ? ratioSpec.maxExWithPR : ratioSpec.maxExNoPR;
@@ -497,6 +507,11 @@ export function WorkoutSummaryPage() {
               </button>
             </div>
           )}
+
+          <WorkoutCoachDebriefCard
+            debrief={coachDebrief}
+            effortScale={settings?.effortScale || 'rpe'}
+          />
 
           {isFreestyle && session.exercisesSnapshot?.length > 0 && (
             <button

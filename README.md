@@ -1,4 +1,4 @@
-# Dragoriano Workout Tracker (`v2.1.0`)
+# Dragoriano Workout Tracker (`v2.2.0`)
 
 Offline-first gym workout tracker built with React 19, TypeScript, Vite 6, Tailwind CSS v4, Three.js, Framer Motion, Zustand, and IndexedDB v5 (`idb`), with optional Supabase cloud backup, GitHub Pages PWA deployment, and Capacitor 8 Android packaging.
 
@@ -19,7 +19,7 @@ Offline-first gym workout tracker built with React 19, TypeScript, Vite 6, Tailw
 - **Offline-first IndexedDB v4 storage**: Programs, sessions, PRs, custom exercises, goals, and body measurements persisted locally with JSON backup import/export, RFC-4180 CSV history export, gzipped QR/share-code program sharing, and optional Supabase cloud sync.
 - **Supersets & Giant Sets (`A1` / `A2` / `A3`)**: Link 2+ exercises into contiguous Superset or Giant Set blocks with round progress counters, automatic advance across exercises without prematurely starting rest, and a shared round rest timer (`45s–180s`).
 - **Timed, Bodyweight & Assisted Set Modes**: Track Timed Holds (`45s` targets with an in-card stopwatch + `-5s/+5s` steppers and duration PRs), Bodyweight reps (with optional `+added` weight and `+1 rep` progression), and Assisted machine/band lifts (less assistance = overload), alongside standard Weighted exercises.
-- **Smart Coach progression**: Mode-aware progressive overload (`+2.5` load, `+1 rep` for bodyweight, `-2.5` reduced assistance, `+5s` timed holds), RPE-aware consolidation holds (`RPE >= 9.5`), failure retries, auto-deloads (`10–15%`), scheduled deload days (`60%`), and volume-spike warnings (`>20%`).
+- **Smart Coach v2 (Autoregulated Double Progression & Debrief)**: Equipment-aware double progression (`+5kg/+10lbs` lower compounds, `+2.5kg/+5lbs` upper compounds, rep-climbing `+1/+2kg` dumbbell/isolation), live set-by-set autoregulation nudges (`-5%`/`+5%` on high/low RPE), detraining layoff ramps (`21–42+` days away), fatigued-muscle & mesocycle guards, easy-RPE fast-tracking, transparent 1-line rationales inside active exercise banners, scheduled deloads (`60%`), volume-spike warnings (`>20%`), and a **Post-Workout Smart Coach Debrief** card projecting next-session targets.
 - **Set types & effort logging**: Tag sets as Working, Warmup (`W`), Drop (`D`), or Failure (`F`) with per-set RPE (`6–10`) or RIR (`0–4`) logging; warmups automatically exclude from PRs, estimated 1RM, and progressive overload.
 - **Strength tools & one-handed gym controls**: Live Epley Estimated 1RM tracking, training percentage tables, customizable barbell plate calculator, one-tap plate-rounded Warm-Up Set Ramp Generator, `±` weight/rep/duration steppers, and live per-exercise rest timer presets (`45s–180s`).
 - **495-exercise database, Custom Library & Quick Freestyle**: Built-in catalog + custom exercise creator/editor synced to IndexedDB/backups, AI-guided split wizard, drag-and-drop reordering, mid-session swaps, and ad-hoc `/quick-workout` mode with one-tap "Save as Program".
@@ -56,7 +56,7 @@ Offline-first gym workout tracker built with React 19, TypeScript, Vite 6, Tailw
 | :--- | :--- |
 | `npm run dev` | Start Vite dev server on port `3000` |
 | `npm run lint` | Run TypeScript type check (`tsc --noEmit`) |
-| `npm test` | Run unit tests via `tsx --test` (150 tests across 68 suites) |
+| `npm test` | Run unit tests via `tsx --test` (155 tests across 69 suites) |
 | `npm run build` | Build production web PWA bundle into `dist/` |
 | `npm run build:android` | Build Android web assets (`--mode android`) and run `npx cap sync` |
 | `npm run preview` | Preview the built `dist/` bundle locally |

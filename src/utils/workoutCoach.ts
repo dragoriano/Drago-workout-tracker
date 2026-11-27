@@ -11,6 +11,13 @@ import {
   calculateSetWorkingVolume,
   getExerciseTrackingMode,
 } from './exerciseModes';
+import type { MesocycleProgressSummary } from './mesocycle';
+import { getEstimatedReadyLabel } from './anatomicalRecovery';
+import {
+  resolveExerciseBroadMuscles,
+  type BroadMuscleGroup,
+  type MuscleRecoveryStatus,
+} from './muscleRecovery';
 import { calculateEstimated1RM, isWarmupSet, isWorkingSet } from './strength';
 import { computeSupersetMap } from './supersets';
 import { generateId } from './uuid';
@@ -18,15 +25,40 @@ import { generateId } from './uuid';
 export type CoachStatus =
   | 'deload_day'
   | 'first_session'
+  | 'layoff_ramp'
   | 'auto_deload'
   | 'retry'
+  | 'fatigue_hold'
   | 'rpe_hold'
   | 'overload'
   | 'maintain';
 
+export type LiftProgressionClass =
+  | 'compound_lower'
+  | 'compound_upper'
+  | 'dumbbell_isolation';
+
+export type ProgressionKind =
+  | 'load'
+  | 'double_reps'
+  | 'double_weight_reset'
+  | 'duration'
+  | 'hold'
+  | 'deload'
+  | 'ramp_in';
+
+export interface SmartCoachContext {
+  now?: number;
+  mesocycle?: MesocycleProgressSummary | null;
+  muscleReadiness?: MuscleRecoveryStatus | null;
+  todayReadinessScore?: number | null;
+}
+
 export interface CoachEvaluation {
   status: CoachStatus;
   trackingMode: ExerciseTrackingMode;
+  liftClass: LiftProgressionClass;
+  progressionKind: ProgressionKind;
   targetWeight: number;
   targetReps: number;
   targetDuration: number;
@@ -37,6 +69,74 @@ export interface CoachEvaluation {
   consecutiveFails: number;
   deloadReductionPct: number;
   avgRecentRpe: number | null;
+  fastTracked: boolean;
+  daysSinceLastSession: number | null;
+  rationale: string;
+}
+
+export interface LiveSetAutoregulation {
+  direction: 'drop' | 'bump';
+  nextSetId: string;
+  nextSetIndex: number;
+  currentWeight: number;
+  suggestedWeight: number;
+  deltaWeight: number;
+  reason: string;
+}
+
+export interface DebriefExerciseProjection {
+  exerciseName: string;
+  trackingMode: ExerciseTrackingMode;
+  status: CoachStatus;
+  nextTargetSummary: string;
+  rationale: string;
+}
+
+export interface PostWorkoutCoachDebrief {
+  avgSessionRpe: number | null;
+  overloadReady: DebriefExerciseProjection[];
+  holdOrConsolidate: DebriefExerciseProjection[];
+  deloadOrRetry: DebriefExerciseProjection[];
+  recoveryNote: string | null;
+}
+
+export function classifyLiftForProgression(exerciseName: string): LiftProgressionClass {
+  const lower = exerciseName.toLowerCase();
+  if (
+    /\b(dumbbell|db|cable|curl|raise|fly|flies|pushdown|extension|kickback|face\s*pull|shrug|calf|calves|pec\s*deck|crossover|preacher|hammer)\b/.test(
+      lower,
+    )
+  ) {
+    return 'dumbbell_isolation';
+  }
+  if (
+    /\b(barbell.*squat|back\s*squat|front\s*squat|deadlift|sumo\s*deadlift|trap\s*bar\s*deadlift|hack\s*squat|leg\s*press)\b/.test(
+      lower,
+    )
+  ) {
+    return 'compound_lower';
+  }
+  return 'compound_upper';
+}
+
+export function computeSmartWeightIncrement(
+  exerciseName: string,
+  settings: AppSettings | null,
+  currentWeight = 0,
+): number {
+  const unit = settings?.weightUnit === 'lbs' ? 'lbs' : 'kg';
+  const liftClass = classifyLiftForProgression(exerciseName);
+
+  if (liftClass === 'compound_lower') {
+    return unit === 'lbs' ? 10 : 5;
+  }
+  if (liftClass === 'dumbbell_isolation') {
+    if (unit === 'lbs') {
+      return currentWeight > 0 && currentWeight < 25 ? 2.5 : 5;
+    }
+    return currentWeight > 0 && currentWeight < 15 ? 1 : 2;
+  }
+  return unit === 'lbs' ? 5 : 2.5;
 }
 
 function getRelevantSetsForCoach(sets: Set[]): Set[] {
@@ -57,6 +157,15 @@ function getAverageWorkingRpe(sets: Set[]): number | null {
   return count > 0 ? Math.round((sum / count) * 10) / 10 : null;
 }
 
+function getMedianWorkingReps(sets: Set[]): number {
+  const working = getRelevantSetsForCoach(sets)
+    .map((s) => s.reps)
+    .filter((r) => Number.isFinite(r) && r > 0)
+    .sort((a, b) => a - b);
+  if (working.length === 0) return 8;
+  return working[Math.floor(working.length / 2)];
+}
+
 function roundToHalf(value: number): number {
   return Math.max(0, Math.round(value * 2) / 2);
 }
@@ -69,8 +178,11 @@ export function evaluateExerciseCoach(
   ex: Exercise,
   isDeload: boolean,
   settings: AppSettings | null,
+  context?: SmartCoachContext,
 ): CoachEvaluation {
   const trackingMode = getExerciseTrackingMode(ex);
+  const liftClass = classifyLiftForProgression(ex.name);
+  const unitLabel = settings?.weightUnit === 'lbs' ? 'lbs' : 'kg';
   const targetSet = ex.sets.find(isWorkingSet) ?? ex.sets[0];
   const targetWeight = targetSet?.weight || 0;
   const targetReps = targetSet?.reps || 8;
@@ -79,24 +191,44 @@ export function evaluateExerciseCoach(
   const lastSession = history[history.length - 1];
   const secondLastSession = history[history.length - 2];
 
+  const mesocycleDeload = Boolean(
+    context?.mesocycle &&
+      !context.mesocycle.isCompleted &&
+      context.mesocycle.currentWeekSpec.isDeload,
+  );
+  const effectiveDeload = isDeload || mesocycleDeload;
+
+  const now = context?.now ?? Date.now();
+  const daysSinceLastSession =
+    lastSession && lastSession.date > 1_000_000_000_000 && now >= lastSession.date
+      ? Math.floor((now - lastSession.date) / (24 * 60 * 60 * 1000))
+      : null;
+
   const baseFields = {
     trackingMode,
+    liftClass,
     targetWeight,
     targetReps,
     targetDuration,
     repsModifier: 0,
     durationModifier: 0,
+    fastTracked: false,
+    daysSinceLastSession,
   };
 
-  if (isDeload) {
+  if (effectiveDeload) {
     return {
       ...baseFields,
       status: 'deload_day',
+      progressionKind: 'deload',
       weightMultiplier: trackingMode === 'assisted_reps' ? 1.2 : 0.6,
       weightModifier: 0,
       consecutiveFails: 0,
       deloadReductionPct: 40,
       avgRecentRpe: null,
+      rationale: mesocycleDeload
+        ? `Week ${context!.mesocycle!.currentWeek} Deload — submaximal recovery loads.`
+        : 'Scheduled deload day — 60% load to clear accumulated fatigue.',
     };
   }
 
@@ -104,11 +236,34 @@ export function evaluateExerciseCoach(
     return {
       ...baseFields,
       status: 'first_session',
+      progressionKind: 'hold',
       weightMultiplier: 1,
       weightModifier: 0,
       consecutiveFails: 0,
       deloadReductionPct: 0,
       avgRecentRpe: null,
+      rationale: 'No prior logs yet — build a clean technical baseline.',
+    };
+  }
+
+  // Layoff / Detraining Guard (3+ weeks away on real epoch timestamps)
+  if (
+    daysSinceLastSession !== null &&
+    daysSinceLastSession >= 21 &&
+    trackingMode === 'weight_reps'
+  ) {
+    const pct = daysSinceLastSession >= 42 ? 15 : 10;
+    const multiplier = daysSinceLastSession >= 42 ? 0.85 : 0.9;
+    return {
+      ...baseFields,
+      status: 'layoff_ramp',
+      progressionKind: 'ramp_in',
+      weightMultiplier: multiplier,
+      weightModifier: 0,
+      consecutiveFails: 0,
+      deloadReductionPct: pct,
+      avgRecentRpe: getAverageWorkingRpe(lastSession.sets),
+      rationale: `${daysSinceLastSession}d since last logged — -${pct}% welcome-back ramp to guard joints & DOMS.`,
     };
   }
 
@@ -140,22 +295,26 @@ export function evaluateExerciseCoach(
       return {
         ...baseFields,
         status: 'auto_deload',
+        progressionKind: 'deload',
         weightMultiplier,
         weightModifier: 0,
         consecutiveFails,
         deloadReductionPct: reductionPct,
         avgRecentRpe,
+        rationale: `${consecutiveFails} consecutive misses — Auto-Deload ${reductionPct}% to rebuild momentum.`,
       };
     }
 
     return {
       ...baseFields,
       status: 'retry',
+      progressionKind: 'hold',
       weightMultiplier: 1,
       weightModifier: 0,
       consecutiveFails,
       deloadReductionPct: 0,
       avgRecentRpe,
+      rationale: `${consecutiveFails} consecutive misses — hold target until every working set lands.`,
     };
   }
 
@@ -163,24 +322,73 @@ export function evaluateExerciseCoach(
     return {
       ...baseFields,
       status: 'retry',
+      progressionKind: 'hold',
       weightMultiplier: 1,
       weightModifier: 0,
       consecutiveFails,
       deloadReductionPct: 0,
       avgRecentRpe,
+      rationale: 'Missed reps last session — repeat load & finish every working set cleanly.',
     };
   }
 
-  if (lastAllCompleted && prevAllCompleted && settings?.smartSuggestions) {
+  // Easy-Session Fast-Track: RPE <= 7.0 unlocks progression after 1 clean session
+  const fastTracked = Boolean(
+    lastAllCompleted &&
+      !prevAllCompleted &&
+      avgRecentRpe !== null &&
+      avgRecentRpe <= 7.0,
+  );
+  const eligibleToOverload = Boolean(
+    settings?.smartSuggestions && lastAllCompleted && (prevAllCompleted || fastTracked),
+  );
+
+  if (eligibleToOverload) {
     if (avgRecentRpe !== null && avgRecentRpe >= 9.5) {
       return {
         ...baseFields,
         status: 'rpe_hold',
+        progressionKind: 'hold',
         weightMultiplier: 1,
         weightModifier: 0,
         consecutiveFails: 0,
         deloadReductionPct: 0,
         avgRecentRpe,
+        rationale: `Last session averaged RPE ${avgRecentRpe} — consolidate load before jumping weight.`,
+      };
+    }
+
+    if (
+      context?.mesocycle &&
+      !context.mesocycle.isCompleted &&
+      context.mesocycle.currentWeekSpec.phase === 'accumulation' &&
+      avgRecentRpe !== null &&
+      avgRecentRpe >= 9.0
+    ) {
+      return {
+        ...baseFields,
+        status: 'rpe_hold',
+        progressionKind: 'hold',
+        weightMultiplier: 1,
+        weightModifier: 0,
+        consecutiveFails: 0,
+        deloadReductionPct: 0,
+        avgRecentRpe,
+        rationale: `Accumulation cap (${context.mesocycle.currentWeekSpec.targetRpeRange}) reached at RPE ${avgRecentRpe} — hold load.`,
+      };
+    }
+
+    if (context?.muscleReadiness?.readiness === 'fatigued') {
+      return {
+        ...baseFields,
+        status: 'fatigue_hold',
+        progressionKind: 'hold',
+        weightMultiplier: 1,
+        weightModifier: 0,
+        consecutiveFails: 0,
+        deloadReductionPct: 0,
+        avgRecentRpe,
+        rationale: `${context.muscleReadiness.muscle} still fatigued (${context.muscleReadiness.recoveryPercent}% ready) — holding target to protect recovery.`,
       };
     }
 
@@ -188,12 +396,17 @@ export function evaluateExerciseCoach(
       return {
         ...baseFields,
         status: 'overload',
+        progressionKind: 'duration',
         weightMultiplier: 1,
         weightModifier: 0,
         durationModifier: 5,
         consecutiveFails: 0,
         deloadReductionPct: 0,
         avgRecentRpe,
+        fastTracked,
+        rationale: fastTracked
+          ? 'Easy timed hold (low RPE) — fast-tracked +5s target.'
+          : '2 clean hold sessions — adding +5s duration overload.',
       };
     }
 
@@ -201,11 +414,16 @@ export function evaluateExerciseCoach(
       return {
         ...baseFields,
         status: 'overload',
+        progressionKind: 'load',
         weightMultiplier: 1,
         weightModifier: -2.5,
         consecutiveFails: 0,
         deloadReductionPct: 0,
         avgRecentRpe,
+        fastTracked,
+        rationale: fastTracked
+          ? `Low RPE ${avgRecentRpe} — fast-tracked -2.5 ${unitLabel} less assistance.`
+          : `2 clean sessions — reducing assistance by 2.5 ${unitLabel}.`,
       };
     }
 
@@ -215,34 +433,88 @@ export function evaluateExerciseCoach(
       return {
         ...baseFields,
         status: 'overload',
+        progressionKind: usesAddedLoad ? 'load' : 'double_reps',
         weightMultiplier: 1,
         weightModifier: usesAddedLoad ? 2.5 : 0,
         repsModifier: usesAddedLoad ? 0 : 1,
         consecutiveFails: 0,
         deloadReductionPct: 0,
         avgRecentRpe,
+        fastTracked,
+        rationale: usesAddedLoad
+          ? `Clean weighted bodyweight work — adding +2.5 ${unitLabel}.`
+          : 'Clean bodyweight sets — +1 rep progression across working sets.',
       };
     }
 
+    // Standard weighted lift: Equipment-Aware Double Progression
+    const lastWeightRef =
+      getRelevantSetsForCoach(lastSession.sets)[0]?.weight ?? targetWeight;
+    const inc = computeSmartWeightIncrement(ex.name, settings, lastWeightRef);
+    const lastMedianReps = getMedianWorkingReps(lastSession.sets);
+
+    if (liftClass === 'dumbbell_isolation' && lastMedianReps >= 5) {
+      if (lastMedianReps < 12) {
+        const nextRepGoal = lastMedianReps + 1;
+        return {
+          ...baseFields,
+          status: 'overload',
+          progressionKind: 'double_reps',
+          weightMultiplier: 1,
+          weightModifier: 0,
+          repsModifier: 1,
+          consecutiveFails: 0,
+          deloadReductionPct: 0,
+          avgRecentRpe,
+          fastTracked,
+          rationale: `Double progression: keep ${lastWeightRef} ${unitLabel} and climb ${lastMedianReps} → ${nextRepGoal} reps (bump weight at 12).`,
+        };
+      }
+
+      // Hit top of 12-rep range -> bump load + reset toward 8 reps
+      const resetDelta = -Math.min(4, Math.max(2, lastMedianReps - 8));
+      return {
+        ...baseFields,
+        status: 'overload',
+        progressionKind: 'double_weight_reset',
+        weightMultiplier: 1,
+        weightModifier: inc,
+        repsModifier: resetDelta,
+        consecutiveFails: 0,
+        deloadReductionPct: 0,
+        avgRecentRpe,
+        fastTracked,
+        rationale: `Hit ${lastMedianReps} reps top-of-range! Bumping +${inc} ${unitLabel} and resetting to ${lastMedianReps + resetDelta} reps.`,
+      };
+    }
+
+    const rpeText = avgRecentRpe !== null ? ` at avg RPE ${avgRecentRpe}` : '';
     return {
       ...baseFields,
       status: 'overload',
+      progressionKind: 'load',
       weightMultiplier: 1,
-      weightModifier: 2.5,
+      weightModifier: inc,
       consecutiveFails: 0,
       deloadReductionPct: 0,
       avgRecentRpe,
+      fastTracked,
+      rationale: fastTracked
+        ? `Fast-tracked (RPE ${avgRecentRpe} ≤ 7.0) — stepping +${inc} ${unitLabel}.`
+        : `2 clean sessions${rpeText} — +${inc} ${unitLabel} progressive overload.`,
     };
   }
 
   return {
     ...baseFields,
     status: 'maintain',
+    progressionKind: 'hold',
     weightMultiplier: 1,
     weightModifier: 0,
     consecutiveFails: 0,
     deloadReductionPct: 0,
     avgRecentRpe,
+    rationale: '1 clean session banked — repeat load once more (or hit RPE ≤ 7) to unlock overload.',
   };
 }
 
@@ -250,14 +522,15 @@ export function computeSmartSets(
   ex: Exercise,
   isDeload: boolean,
   settings: AppSettings | null,
+  context?: SmartCoachContext,
 ): Set[] {
   let newSets = [...ex.sets];
   const history = ex.history;
   const lastSession = history[history.length - 1];
-  const evaluation = evaluateExerciseCoach(ex, isDeload, settings);
+  const evaluation = evaluateExerciseCoach(ex, isDeload, settings, context);
   const mode = evaluation.trackingMode;
 
-  if (isDeload) {
+  if (evaluation.status === 'deload_day') {
     const baseSession = lastSession || null;
     if (baseSession && baseSession.sets.length > 0) {
       newSets = newSets.map((s, i) => {
@@ -352,7 +625,7 @@ export function computeSmartSets(
       );
       const nextReps =
         evaluation.repsModifier !== 0
-          ? Math.max(1, (ls.reps || s.reps || 8) + evaluation.repsModifier)
+          ? Math.max(6, (ls.reps || s.reps || 8) + evaluation.repsModifier)
           : s.reps;
 
       return {
@@ -374,6 +647,167 @@ export function computeSmartSets(
   }
 
   return newSets;
+}
+
+/**
+ * Evaluates the most recently completed working set vs the next pending working set
+ * to suggest real-time mid-session autoregulation (-5% when near failure, +5% when easy).
+ */
+export function evaluateLiveSetAutoregulation(
+  exercise: Exercise,
+  settings: AppSettings | null,
+): LiveSetAutoregulation | null {
+  const mode = getExerciseTrackingMode(exercise);
+  if (mode !== 'weight_reps' || !settings?.smartSuggestions) return null;
+
+  const workingPairs = exercise.sets
+    .map((set, index) => ({ set, index }))
+    .filter(({ set }) => !isWarmupSet(set));
+
+  let lastDoneIdx = -1;
+  for (let i = 0; i < workingPairs.length; i++) {
+    if (workingPairs[i].set.completed) lastDoneIdx = i;
+  }
+  if (lastDoneIdx === -1) return null;
+
+  const nextPending = workingPairs.slice(lastDoneIdx + 1).find(({ set }) => !set.completed);
+  if (!nextPending || nextPending.set.weight <= 0) return null;
+
+  const lastDone = workingPairs[lastDoneIdx].set;
+  const currentWeight = nextPending.set.weight;
+  const rpe = typeof lastDone.rpe === 'number' && Number.isFinite(lastDone.rpe) ? lastDone.rpe : null;
+
+  let factor = 1;
+  let direction: 'drop' | 'bump' | null = null;
+  let reason = '';
+
+  if (rpe !== null && rpe >= 9.5) {
+    factor = 0.95;
+    direction = 'drop';
+    reason = `Set ${lastDoneIdx + 1} hit RPE ${rpe} — trim -5% to stay in target reps cleanly.`;
+  } else if (lastDone.reps > 0 && lastDone.reps <= nextPending.set.reps - 2) {
+    factor = 0.95;
+    direction = 'drop';
+    reason = `Reps dipped on Set ${lastDoneIdx + 1} — drop -5% on next set for quality volume.`;
+  } else if (rpe !== null && rpe <= 6.5) {
+    factor = 1.05;
+    direction = 'bump';
+    reason = `Set ${lastDoneIdx + 1} felt light (RPE ${rpe}) — bump +5% on next set.`;
+  } else if (lastDone.reps >= nextPending.set.reps + 3) {
+    factor = 1.05;
+    direction = 'bump';
+    reason = `Crushed +${lastDone.reps - nextPending.set.reps} extra reps — nudge +5% on next set.`;
+  }
+
+  if (!direction) return null;
+  const suggestedWeight = roundToHalf(currentWeight * factor);
+  const deltaWeight = Math.round((suggestedWeight - currentWeight) * 10) / 10;
+  if (deltaWeight === 0) return null;
+
+  return {
+    direction,
+    nextSetId: nextPending.set.id,
+    nextSetIndex: nextPending.index,
+    currentWeight,
+    suggestedWeight,
+    deltaWeight,
+    reason,
+  };
+}
+
+/**
+ * Generates a post-workout debrief projecting next-session targets across every exercise trained.
+ */
+export function buildPostWorkoutCoachDebrief(
+  session: WorkoutSession,
+  settings: AppSettings | null,
+  muscleRecovery: MuscleRecoveryStatus[] = [],
+): PostWorkoutCoachDebrief {
+  const unitLabel = settings?.weightUnit === 'lbs' ? 'lbs' : 'kg';
+  const overloadReady: DebriefExerciseProjection[] = [];
+  const holdOrConsolidate: DebriefExerciseProjection[] = [];
+  const deloadOrRetry: DebriefExerciseProjection[] = [];
+
+  let rpeSum = 0;
+  let rpeCount = 0;
+  const trainedMuscles = new Set<BroadMuscleGroup>();
+
+  for (const ex of session.exercisesSnapshot || []) {
+    const mode = getExerciseTrackingMode(ex);
+    const { primary } = resolveExerciseBroadMuscles(ex);
+    if (primary) trainedMuscles.add(primary);
+
+    for (const s of ex.sets || []) {
+      if (s.completed && !isWarmupSet(s) && typeof s.rpe === 'number' && s.rpe > 0) {
+        rpeSum += s.rpe;
+        rpeCount++;
+      }
+    }
+
+    // Append current session into exercise history to evaluate NEXT session's recommendation
+    const simulatedEx: Exercise = {
+      ...ex,
+      history: [
+        ...(ex.history || []),
+        { sessionId: session.id, date: session.date, sets: ex.sets },
+      ],
+    };
+
+    const nextEval = evaluateExerciseCoach(simulatedEx, false, settings, {
+      now: session.date,
+    });
+    const nextSets = computeSmartSets(simulatedEx, false, settings, {
+      now: session.date,
+    });
+    const nextWorking = nextSets.find(isWorkingSet) ?? nextSets[0];
+
+    let nextTargetSummary = 'Keep building';
+    if (nextWorking) {
+      if (mode === 'timed') {
+        nextTargetSummary = `${nextWorking.duration ?? 45}s`;
+      } else if (mode === 'assisted_reps') {
+        nextTargetSummary = `-${nextWorking.weight}${unitLabel} × ${nextWorking.reps}`;
+      } else if (mode === 'bodyweight_reps' && nextWorking.weight === 0) {
+        nextTargetSummary = `BW × ${nextWorking.reps}`;
+      } else {
+        nextTargetSummary = `${nextWorking.weight} ${unitLabel} × ${nextWorking.reps}`;
+      }
+    }
+
+    const projection: DebriefExerciseProjection = {
+      exerciseName: ex.name,
+      trackingMode: mode,
+      status: nextEval.status,
+      nextTargetSummary,
+      rationale: nextEval.rationale,
+    };
+
+    if (nextEval.status === 'overload') {
+      overloadReady.push(projection);
+    } else if (nextEval.status === 'auto_deload' || nextEval.status === 'retry') {
+      deloadOrRetry.push(projection);
+    } else {
+      holdOrConsolidate.push(projection);
+    }
+  }
+
+  let recoveryNote: string | null = null;
+  if (muscleRecovery.length > 0 && trainedMuscles.size > 0) {
+    const lowest = muscleRecovery
+      .filter((m) => trainedMuscles.has(m.muscle))
+      .sort((a, b) => a.recoveryPercent - b.recoveryPercent)[0];
+    if (lowest) {
+      recoveryNote = `${lowest.muscle} (${lowest.recoveryPercent}%) — ${getEstimatedReadyLabel(lowest)}`;
+    }
+  }
+
+  return {
+    avgSessionRpe: rpeCount > 0 ? Math.round((rpeSum / rpeCount) * 10) / 10 : null,
+    overloadReady,
+    holdOrConsolidate,
+    deloadOrRetry,
+    recoveryNote,
+  };
 }
 
 export function estimateWorkoutDurationMinutes(

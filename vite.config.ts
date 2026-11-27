@@ -18,7 +18,7 @@ export default defineConfig(({mode}) => {
               injectRegister: 'auto',
               includeAssets: ['favicon.ico', 'icon-192x192.png', 'icon-512x512.png'],
               workbox: {
-                cacheId: 'dragotracker-v2.1.0',
+                cacheId: 'dragotracker-v2.2.0',
               },
               manifest: {
                 name: 'Dragoriano Workout Tracker',
