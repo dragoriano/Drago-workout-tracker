@@ -6,7 +6,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Tabs, TabsList, TabsTrigger } from '../../components/ui/Tabs';
 import { format, subDays, startOfDay, formatISO } from 'date-fns';
-import { Flame, TrendingUp, Activity, Trophy, ArrowUp, Zap, Ruler, Calendar, Dumbbell, Gauge, Download } from 'lucide-react';
+import { Flame, TrendingUp, Activity, Trophy, ArrowUp, Zap, Ruler, Calendar, Dumbbell, Gauge, Download, Share2 } from 'lucide-react';
 import { PremiumIcon, FilledIcon } from '../../components/ui/PremiumIcon';
 import { WorkoutHeatmap } from '../../components/ui/WorkoutHeatmap';
 import { MuscleGroupChart, mapToMuscleGroup, getMuscleColor } from '../../components/ui/MuscleGroupChart';
@@ -39,6 +39,10 @@ import type { WorkoutSession } from '../../types';
 import { SessionCompareModal } from './SessionCompareModal';
 import { SessionEditorModal } from './SessionEditorModal';
 import { SessionHistoryCard } from './SessionHistoryCard';
+
+const WeeklyDigestModal = React.lazy(() =>
+  import('../../components/ui/WeeklyDigestModal').then((m) => ({ default: m.WeeklyDigestModal })),
+);
 
 export { computeStreaks, flattenPRs };
 
@@ -74,6 +78,7 @@ export function AnalyticsPage() {
     baseline: WorkoutSession | null;
   }>({ isOpen: false, session: null, baseline: null });
   const [editingSession, setEditingSession] = useState<WorkoutSession | null>(null);
+  const [isWeeklyDigestOpen, setIsWeeklyDigestOpen] = useState(false);
 
   useEffect(() => { if (!isHydrated) hydrate(); }, [hydrate, isHydrated]);
 
@@ -187,6 +192,16 @@ export function AnalyticsPage() {
           </p>
           <h1 className="text-2xl font-extrabold tracking-tight text-content">Stats &amp; History</h1>
         </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          onClick={() => setIsWeeklyDigestOpen(true)}
+          className="shrink-0"
+        >
+          <Share2 size={14} />
+          Weekly Recap
+        </Button>
       </div>
 
       {/* Tab Switcher */}
@@ -751,6 +766,19 @@ export function AnalyticsPage() {
         effortScale={effortScale}
         onClose={() => setEditingSession(null)}
       />
+
+      {isWeeklyDigestOpen && (
+        <React.Suspense fallback={null}>
+          <WeeklyDigestModal
+            isOpen={isWeeklyDigestOpen}
+            onClose={() => setIsWeeklyDigestOpen(false)}
+            sessions={sessions}
+            measurements={measurements}
+            customExercises={customExercises}
+            unit={unit}
+          />
+        </React.Suspense>
+      )}
     </PullToRefresh>
   );
 }

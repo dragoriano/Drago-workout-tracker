@@ -1,9 +1,20 @@
-import React, { useState } from 'react';
-import { X, ArrowRightLeft, Youtube } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { X, ArrowRightLeft, Youtube, Sparkles, History } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MUSCLE_REGION_MAPPING, getExerciseMuscleGroups, getExerciseMetadata } from '../../data/exercises';
+import {
+  EXERCISE_DATABASE,
+  getExerciseMuscleGroups,
+  getExerciseMetadata,
+} from '../../data/exercises';
+import type { ExerciseEquipment } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
+import { mergeExerciseCatalog } from '../../utils/customExercises';
+import {
+  findSmartEquipmentSwaps,
+  SWAP_EQUIPMENT_FILTERS,
+} from '../../utils/exerciseTechnique';
 import { AutocompleteInput } from './AutocompleteInput';
+import { cn } from '../../utils/cn';
 
 interface SwapModalProps {
   isOpen: boolean;
@@ -15,51 +26,66 @@ interface SwapModalProps {
   onClose: () => void;
 }
 
-export function SwapModal({ 
-  isOpen, 
-  exerciseName, 
-  muscleGroup = [], 
+export function SwapModal({
+  isOpen,
+  exerciseName,
+  muscleGroup = [],
   primaryMuscle,
   secondaryMuscles = [],
-  onSwap, 
-  onClose 
+  onSwap,
+  onClose,
 }: SwapModalProps) {
   const customExercises = useAppStore((s) => s.customExercises);
+  const sessions = useAppStore((s) => s.sessions);
+  const settings = useAppStore((s) => s.settings);
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Defensive check for legacy data or unexpected types
-  const initialGroups = Array.isArray(muscleGroup) && muscleGroup.length > 0 
-    ? muscleGroup 
+  const [equipmentFilter, setEquipmentFilter] = useState<ExerciseEquipment | 'All'>('All');
+
+  const unit = settings?.weightUnit || 'kg';
+
+  const initialGroups = Array.isArray(muscleGroup) && muscleGroup.length > 0
+    ? muscleGroup
     : (typeof muscleGroup === 'string' && muscleGroup ? [muscleGroup] : []);
 
-  // Fallback: if no muscle groups, look them up in the database by name
-  const safeMuscleGroups = initialGroups.length > 0 
-    ? initialGroups 
+  const safeMuscleGroups = initialGroups.length > 0
+    ? initialGroups
     : getExerciseMuscleGroups(exerciseName);
 
-  const safeGroupsLower = safeMuscleGroups.map((g) => g.toLowerCase());
-  const customMatches = customExercises.filter(
-    (ce) =>
-      ce.name.toLowerCase() !== exerciseName.toLowerCase() &&
-      (safeGroupsLower.length === 0 ||
-        safeGroupsLower.includes(ce.primaryMuscle.toLowerCase()) ||
-        ce.muscleGroups.some((g) => safeGroupsLower.includes(g.toLowerCase()))),
+  const catalog = useMemo(
+    () => mergeExerciseCatalog(EXERCISE_DATABASE, customExercises),
+    [customExercises],
   );
-  const customNamesSet = new Set(customMatches.map((c) => c.name.toLowerCase()));
 
-  // Combine custom recommendations + built-in recommendations (case-insensitive dedupe)
-  const builtInRecs = safeMuscleGroups.flatMap(group => {
-    const key = Object.keys(MUSCLE_REGION_MAPPING).find(k => k.toLowerCase() === group.toLowerCase());
-    return key ? (MUSCLE_REGION_MAPPING as Record<string, string[]>)[key] : [];
-  });
-  const seenNames = new Set<string>([exerciseName.toLowerCase()]);
-  const recommendations: string[] = [];
-  for (const name of [...customMatches.map((c) => c.name), ...builtInRecs]) {
-    const lower = name.toLowerCase();
-    if (seenNames.has(lower)) continue;
-    seenNames.add(lower);
-    recommendations.push(name);
-  }
+  const recommendations = useMemo(
+    () =>
+      findSmartEquipmentSwaps(
+        {
+          name: exerciseName,
+          primaryMuscle,
+          secondaryMuscles,
+          muscleGroups: safeMuscleGroups,
+        },
+        catalog,
+        {
+          equipmentFilter,
+          sessions,
+          customExercises,
+          weightUnit: unit,
+          limit: 24,
+        },
+      ),
+    [
+      exerciseName,
+      primaryMuscle,
+      secondaryMuscles,
+      safeMuscleGroups,
+      catalog,
+      equipmentFilter,
+      sessions,
+      customExercises,
+      unit,
+    ],
+  );
 
   const resolveAndSwap = (name: string) => {
     const customMatch = customExercises.find((c) => c.name.toLowerCase() === name.toLowerCase());
@@ -84,98 +110,176 @@ export function SwapModal({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="liquid-glass-strong w-full max-w-[460px] overflow-hidden rounded-3xl flex flex-col max-h-[82dvh]"
+            className="liquid-glass-strong w-full max-w-[460px] overflow-hidden rounded-3xl flex flex-col max-h-[84dvh]"
           >
             <div className="flex items-center justify-between border-b border-content/5 px-6 py-4 shrink-0">
-              <h3 className="font-bold text-content text-lg">Swap Exercise</h3>
+              <div>
+                <h3 className="font-bold text-content text-lg">Smart Swap Exercise</h3>
+                <p className="text-[11px] font-semibold text-muted">
+                  Preserves target muscles &amp; Smart Coach history
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-full bg-page/5 dark:bg-content/5 p-2 text-muted hover:bg-page/10 dark:bg-content/10 hover:text-content transition-colors"
+                aria-label="Close swap modal"
+                className="rounded-full bg-page/5 dark:bg-content/5 p-2 text-muted hover:bg-page/10 dark:bg-content/10 hover:text-content transition-colors cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
-            
-            <div className="px-6 py-4 border-b border-content/5 shrink-0 bg-content/[0.02]">
-              <p className="text-xs text-muted uppercase font-bold tracking-wider mb-1">Current</p>
-              <p className="text-sm font-semibold text-content ">{exerciseName}</p>
+
+            <div className="px-6 py-3.5 border-b border-content/5 shrink-0 bg-content/[0.02]">
+              <p className="text-[10px] text-muted uppercase font-bold tracking-wider mb-0.5">
+                Current
+              </p>
+              <p className="text-sm font-bold text-content truncate">{exerciseName}</p>
               {(primaryMuscle || secondaryMuscles.length > 0) ? (
-                <p className="text-[10px] font-medium mt-1">
-                  {primaryMuscle && <span className="text-primary-400">Primary: {primaryMuscle}</span>}
+                <p className="text-[11px] font-medium mt-1">
+                  {primaryMuscle && (
+                    <span className="text-primary-700 dark:text-primary-400 font-semibold">
+                      Primary: {primaryMuscle}
+                    </span>
+                  )}
                   {secondaryMuscles.length > 0 && (
                     <>
-                      <span className="mx-1 opacity-20 text-content ">•</span>
-                      <span className="text-amber-400/80">Sec: {secondaryMuscles.join(', ')}</span>
+                      <span className="mx-1.5 opacity-25 text-content">•</span>
+                      <span className="text-amber-800 dark:text-amber-400">
+                        Sec: {secondaryMuscles.join(', ')}
+                      </span>
                     </>
                   )}
                 </p>
-              ) : muscleGroup.length > 0 && (
-                <p className="text-xs text-primary-400 font-medium mt-1">
-                  {muscleGroup.join(', ')}
-                </p>
+              ) : (
+                safeMuscleGroups.length > 0 && (
+                  <p className="text-xs text-primary-700 dark:text-primary-400 font-medium mt-1">
+                    {safeMuscleGroups.join(', ')}
+                  </p>
+                )
               )}
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-4">
-              <div className="mb-4">
-                <AutocompleteInput
-                  value={searchQuery}
-                  onChange={setSearchQuery}
-                  onSelect={(ex) => onSwap(ex.name, ex.muscleGroups, ex.primaryMuscle, ex.secondaryMuscles)}
-                  placeholder="Search any exercise..."
-                />
+            <div className="flex-1 overflow-y-auto overflow-x-hidden px-5 py-4 space-y-3.5 min-w-0">
+              <AutocompleteInput
+                value={searchQuery}
+                onChange={setSearchQuery}
+                onSelect={(ex) =>
+                  onSwap(ex.name, ex.muscleGroups, ex.primaryMuscle, ex.secondaryMuscles)
+                }
+                placeholder="Search any exercise..."
+              />
+
+              {/* Equipment Filter Chips */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+                {SWAP_EQUIPMENT_FILTERS.map((eq) => {
+                  const active = equipmentFilter === eq;
+                  return (
+                    <button
+                      key={eq}
+                      type="button"
+                      onClick={() => setEquipmentFilter(eq)}
+                      className={cn(
+                        'whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-bold border transition-colors cursor-pointer min-h-[32px]',
+                        active
+                          ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
+                          : 'bg-surface/70 text-muted border-content/10 hover:text-content',
+                      )}
+                    >
+                      {eq}
+                    </button>
+                  );
+                })}
               </div>
 
-              <p className="text-xs text-muted uppercase font-bold tracking-wider mb-3">
-                {safeMuscleGroups.length > 0 ? `Recommended for ${safeMuscleGroups.join(', ')}` : 'No Recommendations Available'}
-              </p>
-              
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] text-muted uppercase font-bold tracking-wider truncate">
+                  {safeMuscleGroups.length > 0
+                    ? `Matches for ${safeMuscleGroups.slice(0, 2).join(', ')}`
+                    : 'Equipment Alternatives'}
+                </p>
+                <span className="text-[10px] font-semibold text-muted tabular-nums shrink-0">
+                  {recommendations.length} options
+                </span>
+              </div>
+
               {recommendations.length > 0 ? (
-                <div className="grid gap-2">
+                <div className="grid grid-cols-1 gap-2 min-w-0">
                   {recommendations.map((rec) => (
                     <div
-                      key={rec}
-                      className="flex items-center justify-between w-full rounded-xl bg-page/5 dark:bg-content/5 px-4 py-3 hover:bg-page/10 dark:bg-content/10 transition-colors group"
+                      key={rec.name}
+                      className="flex items-center justify-between gap-2 w-full min-w-0 rounded-2xl border border-content/10 bg-page/25 px-3 py-2.5 hover:border-primary-500/35 transition-colors group"
                     >
                       <button
-                        onClick={() => resolveAndSwap(rec)}
-                        className="flex-1 text-left text-sm font-medium text-content group-hover:text-primary-300 transition-colors flex items-center gap-2 min-w-0"
+                        type="button"
+                        onClick={() => resolveAndSwap(rec.name)}
+                        className="flex-1 text-left min-w-0 overflow-hidden cursor-pointer"
                       >
-                        <span className="truncate">{rec}</span>
-                        {customNamesSet.has(rec.toLowerCase()) && (
-                          <span className="shrink-0 rounded bg-sky-500/15 border border-sky-500/30 px-1.5 py-0.5 text-[9px] font-black uppercase text-sky-400">
-                            Custom
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-bold text-content group-hover:text-primary-700 dark:group-hover:text-primary-300 truncate">
+                            {rec.name}
                           </span>
-                        )}
+                          {rec.isCustom && (
+                            <span className="shrink-0 rounded bg-sky-500/15 border border-sky-500/30 px-1.5 py-0.5 text-[9px] font-black uppercase text-sky-700 dark:text-sky-400">
+                              Custom
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] font-bold">
+                          <span className="rounded-md bg-content/10 px-1.5 py-0.5 text-muted">
+                            {rec.equipment}
+                          </span>
+                          <span
+                            className={cn(
+                              'inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 border',
+                              rec.matchReason === 'Exact Match'
+                                ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+                                : 'bg-sky-500/12 border-sky-500/25 text-sky-700 dark:text-sky-400',
+                            )}
+                          >
+                            {rec.matchReason === 'Exact Match' && <Sparkles size={9} />}
+                            {rec.matchReason}
+                          </span>
+                          {rec.lastBestLabel && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/12 border border-amber-500/25 px-1.5 py-0.5 text-amber-800 dark:text-amber-300 tabular-nums">
+                              <History size={9} />
+                              Last: {rec.lastBestLabel}
+                            </span>
+                          )}
+                        </div>
                       </button>
-                      <div className="flex items-center gap-3 ml-2">
+
+                      <div className="flex items-center gap-1.5 ml-2 shrink-0">
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            window.open(`https://www.youtube.com/results?search_query=how+to+do+${encodeURIComponent(rec)}+exercise`, '_blank');
+                            window.open(
+                              `https://www.youtube.com/results?search_query=how+to+do+${encodeURIComponent(rec.name)}+exercise`,
+                              '_blank',
+                            );
                           }}
-                          className="text-red-500/60 hover:text-red-500 transition-colors p-1"
+                          className="text-red-500/70 hover:text-red-500 transition-colors p-1.5 cursor-pointer"
                           title="Watch Tutorial"
+                          aria-label={`Watch tutorial for ${rec.name}`}
                         >
-                          <Youtube size={16}/>
+                          <Youtube size={16} />
                         </button>
                         <button
-                          onClick={() => resolveAndSwap(rec)}
-                          className="text-muted hover:text-primary-400 transition-colors p-1"
+                          type="button"
+                          onClick={() => resolveAndSwap(rec.name)}
+                          className="rounded-xl bg-primary-500/12 p-2 text-primary-700 dark:text-primary-400 hover:bg-primary-500/20 transition-colors cursor-pointer"
                           title="Swap"
+                          aria-label={`Swap to ${rec.name}`}
                         >
-                          <ArrowRightLeft size={14}/>
+                          <ArrowRightLeft size={14} />
                         </button>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted mt-2">
-                  {!muscleGroup 
-                    ? "This exercise doesn't have a specific muscle group assigned, so we can't recommend swaps." 
-                    : "No specific alternative recommendations found for this muscle group."}
+                <p className="text-sm text-muted py-4 text-center">
+                  No exercises matched this equipment filter for the current muscle group. Try another chip or search above.
                 </p>
               )}
             </div>

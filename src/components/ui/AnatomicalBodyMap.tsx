@@ -12,6 +12,7 @@ interface AnatomicalBodyMapProps {
   selectedMuscle: BroadMuscleGroup | null;
   onSelectMuscle: (muscle: BroadMuscleGroup) => void;
   isLightMode?: boolean;
+  hideLegend?: boolean;
 }
 
 const BODY_CHASSIS_FRONT =
@@ -309,6 +310,7 @@ export function AnatomicalBodyMap({
   selectedMuscle,
   onSelectMuscle,
   isLightMode = false,
+  hideLegend = false,
 }: AnatomicalBodyMapProps) {
   const uid = useId().replace(/:/g, '');
   const statusByMuscle = new Map<BroadMuscleGroup, MuscleRecoveryStatus>(
@@ -421,14 +423,16 @@ export function AnatomicalBodyMap({
       )}
 
       {/* Adaptive Heatmap Legend */}
-      <div className="flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1.5 pt-1 text-[10px] font-semibold text-muted">
-        {legendItems.map((leg) => (
-          <span key={leg.label} className="inline-flex items-center gap-1.5">
-            <span className={cn('h-2 w-2 rounded-full', leg.colorClass)} />
-            <span>{leg.label}</span>
-          </span>
-        ))}
-      </div>
+      {!hideLegend && (
+        <div className="flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1.5 pt-1 text-[10px] font-semibold text-muted">
+          {legendItems.map((leg) => (
+            <span key={leg.label} className="inline-flex items-center gap-1.5">
+              <span className={cn('h-2 w-2 rounded-full', leg.colorClass)} />
+              <span>{leg.label}</span>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

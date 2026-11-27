@@ -52,6 +52,7 @@ import {
   getExerciseLivePRSetMap,
   type LivePRHit,
 } from '../../utils/liveSessionPR';
+import { computeMesocycleProgress } from '../../utils/mesocycle';
 import {
   playCountdownTick,
   playPRFanfare,
@@ -74,6 +75,11 @@ export { computeSmartSets };
 
 const ExerciseChartModal = React.lazy(() =>
   import('../../components/ui/ExerciseChartModal').then((m) => ({ default: m.ExerciseChartModal })),
+);
+const ExerciseTechniqueModal = React.lazy(() =>
+  import('../../components/ui/ExerciseTechniqueModal').then((m) => ({
+    default: m.ExerciseTechniqueModal,
+  })),
 );
 
 export function WorkoutSessionPage() {
@@ -124,6 +130,7 @@ export function WorkoutSessionPage() {
   const [expandedExercises, setExpandedExercises] = useState<Record<string, boolean>>({});
 
   const [noteConfig, setNoteConfig] = useState<{isOpen: boolean, exerciseId: string, initialValue: string} | null>(null);
+  const [techniqueExerciseId, setTechniqueExerciseId] = useState<string | null>(null);
   const [swapConfig, setSwapConfig] = useState<{isOpen: boolean, exercise: Exercise} | null>(null);
   const [chartConfig, setChartConfig] = useState<{isOpen: boolean, exercise: Exercise | null}>({isOpen: false, exercise: null});
   const [plateCalcConfig, setPlateCalcConfig] = useState<{
@@ -604,6 +611,17 @@ export function WorkoutSessionPage() {
     setSwapConfig({ isOpen: true, exercise: { ...ex, muscleGroup } });
   };
 
+  const handleOpenTechnique = (e: React.MouseEvent, ex: Exercise) => {
+    e.stopPropagation();
+    setTechniqueExerciseId(ex.id);
+  };
+
+  const handleSaveInlineNotes = (exerciseId: string, notes: string) => {
+    setExercises((prev) =>
+      prev.map((ex) => (ex.id === exerciseId ? { ...ex, notes } : ex)),
+    );
+  };
+
   const handleOpenPlateCalc = (e: React.MouseEvent, ex: Exercise) => {
     e.stopPropagation();
     const nextWorking = ex.sets.find((s) => !s.completed && !isWarmupSet(s) && s.weight > 0);
@@ -884,6 +902,10 @@ export function WorkoutSessionPage() {
 
   const totalSets = exercises.reduce((acc, ex) => acc + ex.sets.length, 0);
   const completedSets = exercises.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed).length, 0);
+  const mesocycleProgress = React.useMemo(
+    () => computeMesocycleProgress(program, sessions),
+    [program, sessions],
+  );
   const totalVolume = exercises.reduce(
     (acc, ex) => {
       const mode = getExerciseTrackingMode(ex);
@@ -974,13 +996,33 @@ export function WorkoutSessionPage() {
           <Progress value={progressPercent} className="h-[3px] rounded-none border-0 bg-content/10" />
         </header>
 
-        {isDeloadDay && (
+        {isDeloadDay ? (
           <div className="border-b border-sky-500/20 bg-sky-500/12 px-4 py-2 text-center backdrop-blur-md">
             <p className="text-xs font-bold text-sky-400">
               Deload Day — Lighter targets focused on form &amp; recovery
             </p>
           </div>
-        )}
+        ) : mesocycleProgress && !mesocycleProgress.isCompleted ? (
+          <div
+            className={
+              mesocycleProgress.currentWeekSpec.isDeload
+                ? 'border-b border-amber-500/25 bg-amber-500/12 px-4 py-1.5 text-center backdrop-blur-md'
+                : 'border-b border-primary-500/20 bg-primary-500/10 px-4 py-1.5 text-center backdrop-blur-md'
+            }
+          >
+            <p
+              className={
+                mesocycleProgress.currentWeekSpec.isDeload
+                  ? 'text-[11px] font-bold text-amber-800 dark:text-amber-300 tabular-nums'
+                  : 'text-[11px] font-bold text-primary-700 dark:text-primary-300 tabular-nums'
+              }
+            >
+              W{mesocycleProgress.currentWeek}/{mesocycleProgress.config.totalWeeks} ·{' '}
+              {mesocycleProgress.currentWeekSpec.phaseLabel} ·{' '}
+              {mesocycleProgress.currentWeekSpec.targetRpeRange}
+            </p>
+          </div>
+        ) : null}
 
         <main className="w-full flex-1 overflow-y-auto overscroll-y-contain overflow-x-hidden p-4 pb-44">
         {isFreestyle && exercises.length === 0 ? (
@@ -1105,6 +1147,7 @@ export function WorkoutSessionPage() {
                   handleUpdateTrackingMode={handleUpdateTrackingMode}
                   handleGenerateWarmup={handleGenerateWarmup}
                   handleOpenNotes={handleOpenNotes}
+                  handleOpenTechnique={handleOpenTechnique}
                   handleOpenSwap={handleOpenSwap}
                   handleOpenPlateCalc={handleOpenPlateCalc}
                   setChartConfig={setChartConfig}
@@ -1298,6 +1341,23 @@ export function WorkoutSessionPage() {
       {chartConfig.isOpen && (
         <React.Suspense fallback={null}>
           <ExerciseChartModal isOpen={chartConfig.isOpen} exercise={chartConfig.exercise} onClose={() => setChartConfig({ isOpen: false, exercise: null })} />
+        </React.Suspense>
+      )}
+      {techniqueExerciseId && (
+        <React.Suspense fallback={null}>
+          <ExerciseTechniqueModal
+            isOpen={Boolean(techniqueExerciseId)}
+            exercise={exercises.find((ex) => ex.id === techniqueExerciseId) || null}
+            onClose={() => setTechniqueExerciseId(null)}
+            onSaveNotes={handleSaveInlineNotes}
+            onOpenSwap={(ex) => {
+              const muscleGroup =
+                ex.muscleGroup && ex.muscleGroup.length > 0
+                  ? ex.muscleGroup
+                  : getExerciseMuscleGroups(ex.name);
+              setSwapConfig({ isOpen: true, exercise: { ...ex, muscleGroup } });
+            }}
+          />
         </React.Suspense>
       )}
       {swapConfig && <SwapModal isOpen={swapConfig.isOpen} exerciseName={swapConfig.exercise.name} muscleGroup={swapConfig.exercise.muscleGroup} primaryMuscle={swapConfig.exercise.primaryMuscle} secondaryMuscles={swapConfig.exercise.secondaryMuscles} onSwap={handleApplySwap} onClose={() => setSwapConfig(null)} />}

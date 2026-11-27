@@ -1,9 +1,12 @@
-# Dragoriano Workout Tracker (`v1.9.0`)
+# Dragoriano Workout Tracker (`v2.0.0`)
 
 Offline-first gym workout tracker built with React 19, TypeScript, Vite 6, Tailwind CSS v4, Three.js, Framer Motion, Zustand, and IndexedDB (`idb`), with optional Supabase cloud backup and Capacitor 8 Android packaging.
 
 ## Features
 
+- **Mesocycle & Periodization Planner**: Structure any program into 4–8 week training blocks (`Accumulation → Intensification → Peak → Deload`) with automatic weekly target RPE ranges, interactive week-by-week timeline & volume recap, Home progress banner, and live active-session phase indicators.
+- **Smart Equipment Swaps & Exercise Technique Hub**: Mid-workout equipment-aware exercise substitutions (`All | Dumbbell | Machine | Cable | Barbell | Bodyweight`) ranked by primary muscle + movement pattern + prior logged performance, paired with an interactive **Form & Cues** modal featuring an anatomical target preview and pinned seat/setup notes.
+- **Shareable Weekly Training Digest**: Generate `4:5` or `9:16` studio-grade PNG weekly recap cards combining 7-day volume/workout deltas, PRs, streak, unlocked milestones, and an anatomical volume heatmap.
 - **Three.js 3D Studio Splash Screen**: Real-time extruded 3D title with studio PBR lighting, bloom, theme-synced accents from Settings, responsive mobile/desktop framing, 5-second auto-dismiss with tap-anywhere-to-skip, and automatic fallback when WebGL is unavailable or `prefers-reduced-motion` is enabled.
 - **Interactive Anatomical Muscle Recovery Map**: Interactive front/back body silhouette across Home, Analytics, and Quick-Add with a **Readiness** vs. **Weekly Volume Heatmap** toggle, tap-to-inspect muscle recovery countdown & recent exercises drawer, and one-tap **Start Recommended Freestyle**.
 - **Live In-Session PR Celebrations & History Peek**: Instant mid-session Weight, Est. 1RM, and Duration PR detection with animated celebration banners, confetti bursts, sound/haptics, and a collapsible **Last-3-Sessions History Peek** inside every exercise card.
@@ -48,7 +51,7 @@ Offline-first gym workout tracker built with React 19, TypeScript, Vite 6, Tailw
 | :--- | :--- |
 | `npm run dev` | Start Vite dev server on port `3000` |
 | `npm run lint` | Run TypeScript type check (`tsc --noEmit`) |
-| `npm test` | Run unit tests via `tsx --test` (126 tests across 55 suites) |
+| `npm test` | Run unit tests via `tsx --test` (138 tests across 61 suites) |
 | `npm run build` | Build production web PWA bundle into `dist/` |
 | `npm run build:android` | Build Android web assets (`--mode android`) and run `npx cap sync` |
 | `npm run preview` | Preview the built `dist/` bundle locally |

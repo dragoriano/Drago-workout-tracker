@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Dumbbell, Flame, Trophy, ArrowRight, Clock, BarChart3, Ruler, Zap, Target } from 'lucide-react';
+import { Dumbbell, Flame, Trophy, ArrowRight, Clock, BarChart3, Ruler, Zap, Target, Share2 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -10,13 +10,19 @@ import { MeasurementModal } from '../../components/ui/MeasurementModal';
 import { computeStreaks, flattenPRs } from '../../utils/analytics';
 import { computeMeasurementTrend } from '../../utils/bodyTrends';
 import { computeGoalProgressPercent } from '../../utils/goalsSync';
+import { computeMesocycleProgress } from '../../utils/mesocycle';
 import { computeMuscleRecovery, evaluateDayReadiness } from '../../utils/muscleRecovery';
 import { estimateWorkoutDurationMinutes } from '../../utils/workoutCoach';
+import { MesocycleCard } from '../../components/ui/MesocycleCard';
 import { ProgressRing } from '../../components/ui/ProgressRing';
 import { OnboardingWizard } from './OnboardingWizard';
 import { PullToRefresh } from '../../components/ui/PullToRefresh';
 import { useAppStore } from '../../store/useAppStore';
 import { PremiumIcon } from '../../components/ui/PremiumIcon';
+
+const WeeklyDigestModal = React.lazy(() =>
+  import('../../components/ui/WeeklyDigestModal').then((m) => ({ default: m.WeeklyDigestModal })),
+);
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -35,6 +41,7 @@ export function HomePage() {
   const [quote, setQuote] = useState('');
   const [selectedDayId, setSelectedDayId] = useState<string | null>(null);
   const [isMeasurementModalOpen, setIsMeasurementModalOpen] = useState(false);
+  const [isWeeklyDigestOpen, setIsWeeklyDigestOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   const activePrograms = programs.filter((p) => p.status === 'active');
@@ -125,6 +132,10 @@ export function HomePage() {
   const nextDayReadiness = React.useMemo(
     () => (nextDay ? evaluateDayReadiness(nextDay.exercises, muscleRecovery, customExercises) : null),
     [nextDay, muscleRecovery, customExercises],
+  );
+  const mesocycleProgress = React.useMemo(
+    () => computeMesocycleProgress(nextProgram, sessions),
+    [nextProgram, sessions],
   );
 
   const unit = settings?.weightUnit || 'kg';
@@ -303,20 +314,41 @@ export function HomePage() {
           </button>
         </section>
 
+        {/* Active Mesocycle Progress Banner */}
+        {nextProgram && mesocycleProgress && (
+          <MesocycleCard
+            variant="compact"
+            programName={nextProgram.name}
+            progress={mesocycleProgress}
+            weightUnit={unit}
+            onOpenProgram={() => navigate(`/workout/${nextProgram.id}`)}
+          />
+        )}
+
         {/* Unified This Week Summary */}
         <Card className="p-4">
-          <div className="mb-3.5 flex items-center justify-between">
+          <div className="mb-3.5 flex items-center justify-between gap-2">
             <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted">
               <BarChart3 size={14} className="text-primary-400" />
               This Week
             </h3>
-            <button
-              type="button"
-              onClick={() => navigate('/stats')}
-              className="text-xs font-bold text-primary-400 hover:text-primary-300 cursor-pointer"
-            >
-              View Analytics →
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsWeeklyDigestOpen(true)}
+                className="inline-flex items-center gap-1 rounded-lg border border-primary-500/25 bg-primary-500/10 px-2 py-1 text-[11px] font-bold text-primary-700 dark:text-primary-300 hover:bg-primary-500/18 transition-colors cursor-pointer"
+              >
+                <Share2 size={11} />
+                <span>Recap</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/stats')}
+                className="text-xs font-bold text-primary-400 hover:text-primary-300 cursor-pointer"
+              >
+                View Analytics →
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-4 gap-1.5">
             <ProgressRing
@@ -500,6 +532,19 @@ export function HomePage() {
           hydrate();
         }}
       />
+
+      {isWeeklyDigestOpen && (
+        <React.Suspense fallback={null}>
+          <WeeklyDigestModal
+            isOpen={isWeeklyDigestOpen}
+            onClose={() => setIsWeeklyDigestOpen(false)}
+            sessions={sessions}
+            measurements={measurements}
+            customExercises={customExercises}
+            unit={unit}
+          />
+        </React.Suspense>
+      )}
     </>
   );
 }

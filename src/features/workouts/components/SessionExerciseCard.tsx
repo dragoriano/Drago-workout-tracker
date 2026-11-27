@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import {
   AlignLeft,
   ArrowRightLeft,
+  BookOpen,
   Calculator,
   CheckCircle2,
   ChevronDown,
@@ -146,6 +147,7 @@ interface ExerciseItemProps {
   onUpdateTrackingMode: (exId: string, mode: ExerciseTrackingMode) => void;
   onGenerateWarmup: (exId: string) => void;
   onOpenNotes: (e: React.MouseEvent, ex: Exercise) => void;
+  onOpenTechnique?: (e: React.MouseEvent, ex: Exercise) => void;
   onOpenSwap: (e: React.MouseEvent, ex: Exercise) => void;
   onOpenChart: (e: React.MouseEvent, ex: Exercise) => void;
   onOpenPlateCalc: (e: React.MouseEvent, ex: Exercise) => void;
@@ -175,6 +177,7 @@ export function DraggableExerciseItem({
   onUpdateTrackingMode,
   onGenerateWarmup,
   onOpenNotes,
+  onOpenTechnique,
   onOpenSwap,
   onOpenChart,
   onOpenPlateCalc,
@@ -469,6 +472,12 @@ export function DraggableExerciseItem({
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    {onOpenTechnique && (
+                      <DropdownMenuItem onClick={(e) => onOpenTechnique(e as unknown as React.MouseEvent, exercise)}>
+                        <BookOpen size={14} className="text-sky-600 dark:text-sky-400" />
+                        <span>Form &amp; Cues</span>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={(e) => onOpenSwap(e as unknown as React.MouseEvent, exercise)}>
                       <ArrowRightLeft size={14} className="text-muted" />
                       <span>Swap Exercise</span>
@@ -1322,6 +1331,7 @@ interface WorkoutBlockProps {
   handleUpdateTrackingMode: (exId: string, mode: ExerciseTrackingMode) => void;
   handleGenerateWarmup: (exId: string) => void;
   handleOpenNotes: (e: React.MouseEvent, ex: Exercise) => void;
+  handleOpenTechnique?: (e: React.MouseEvent, ex: Exercise) => void;
   handleOpenSwap: (e: React.MouseEvent, ex: Exercise) => void;
   handleOpenPlateCalc: (e: React.MouseEvent, ex: Exercise) => void;
   setChartConfig: React.Dispatch<React.SetStateAction<{ isOpen: boolean; exercise: Exercise | null }>>;
@@ -1350,6 +1360,7 @@ export function WorkoutBlock({
   handleUpdateTrackingMode,
   handleGenerateWarmup,
   handleOpenNotes,
+  handleOpenTechnique,
   handleOpenSwap,
   handleOpenPlateCalc,
   setChartConfig,
@@ -1460,6 +1471,7 @@ export function WorkoutBlock({
             onUpdateTrackingMode={handleUpdateTrackingMode}
             onGenerateWarmup={handleGenerateWarmup}
             onOpenNotes={handleOpenNotes}
+            onOpenTechnique={handleOpenTechnique}
             onOpenSwap={handleOpenSwap}
             onOpenPlateCalc={handleOpenPlateCalc}
             onOpenChart={(e, ex) => {

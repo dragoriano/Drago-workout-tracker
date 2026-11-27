@@ -7,7 +7,9 @@ import { cn } from '../../utils/cn';
 import { PromptModal } from '../../components/ui/PromptModal';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { useAppStore } from '../../store/useAppStore';
+import { MesocycleCard } from '../../components/ui/MesocycleCard';
 import { getExerciseTrackingMode } from '../../utils/exerciseModes';
+import { computeMesocycleProgress } from '../../utils/mesocycle';
 import { cleanupOrphanSupersets, toggleSupersetLink } from '../../utils/supersets';
 import { generateId } from '../../utils/uuid';
 import { PullToRefresh } from '../../components/ui/PullToRefresh';
@@ -468,6 +470,23 @@ export function ProgramDetailsPage() {
               );
             })}
           </div>
+        </div>
+
+        {/* Mesocycle Periodization Planner */}
+        <div className="px-4 mb-5">
+          <MesocycleCard
+            variant="full"
+            programName={program.name}
+            progress={computeMesocycleProgress(program, sessions)}
+            weightUnit={settings?.weightUnit || 'kg'}
+            onSaveMesocycle={async (mesocycle) => {
+              await saveProgram({
+                ...program,
+                mesocycle,
+                updatedAt: Date.now(),
+              });
+            }}
+          />
         </div>
 
         {/* Day list */}

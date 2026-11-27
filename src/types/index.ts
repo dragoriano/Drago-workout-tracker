@@ -1,3 +1,15 @@
+export type MesocyclePhase = 'accumulation' | 'intensification' | 'peak' | 'deload';
+export type MesocycleFocus = 'hypertrophy' | 'strength' | 'recomp';
+
+export type MesocycleConfig = {
+ name: string;
+ totalWeeks: 4 | 5 | 6 | 8;
+ startDate: number;
+ includeDeloadWeek: boolean;
+ goalFocus: MesocycleFocus;
+ completedAt?: number;
+};
+
 export type WorkoutProgram = {
  id: string;
  name: string;
@@ -7,6 +19,7 @@ export type WorkoutProgram = {
  createdAt: number;
  updatedAt: number;
  days: WorkoutDay[];
+ mesocycle?: MesocycleConfig;
 };
 
 export type WorkoutDay = {
