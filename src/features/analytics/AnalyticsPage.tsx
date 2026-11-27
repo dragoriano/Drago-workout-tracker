@@ -11,12 +11,17 @@ import { PremiumIcon, FilledIcon } from '../../components/ui/PremiumIcon';
 import { WorkoutHeatmap } from '../../components/ui/WorkoutHeatmap';
 import { MuscleGroupChart, mapToMuscleGroup, getMuscleColor } from '../../components/ui/MuscleGroupChart';
 import { MuscleRecoveryCard } from '../../components/ui/MuscleRecoveryCard';
+import { CoachingInsightsCard } from '../../components/ui/CoachingInsightsCard';
 import { StrengthStandardsCard } from '../../components/ui/StrengthStandardsCard';
 import { getExerciseMuscleGroups } from '../../data/exercises';
 import { PullToRefresh } from '../../components/ui/PullToRefresh';
 import { useAppStore } from '../../store/useAppStore';
 import { computeEffortSummary, computeStreaks, computeTopEstimated1RMs, flattenPRs } from '../../utils/analytics';
 import { computeMeasurementTrend } from '../../utils/bodyTrends';
+import {
+  detectLiftPlateaus,
+  forecastStrengthGoals,
+} from '../../utils/coachingInsights';
 import {
   computeMuscleRecovery,
   isTrackedMuscleGroup,
@@ -43,6 +48,9 @@ import { SessionHistoryCard } from './SessionHistoryCard';
 const WeeklyDigestModal = React.lazy(() =>
   import('../../components/ui/WeeklyDigestModal').then((m) => ({ default: m.WeeklyDigestModal })),
 );
+const BodyCompositionCard = React.lazy(() =>
+  import('../../components/ui/BodyCompositionCard').then((m) => ({ default: m.BodyCompositionCard })),
+);
 
 export { computeStreaks, flattenPRs };
 
@@ -52,6 +60,8 @@ export function AnalyticsPage() {
   const programs = useAppStore((s) => s.programs);
   const measurements = useAppStore((s) => s.measurements);
   const customExercises = useAppStore((s) => s.customExercises);
+  const goals = useAppStore((s) => s.goals);
+  const progressPhotos = useAppStore((s) => s.progressPhotos);
   const settings = useAppStore((s) => s.settings);
   const hydrate = useAppStore((s) => s.hydrate);
   const isHydrated = useAppStore((s) => s.isHydrated);
@@ -139,6 +149,14 @@ export function AnalyticsPage() {
   const milestonesSummary = useMemo(
     () => computeTrainingMilestones(sessions, measurements, unit),
     [sessions, measurements, unit],
+  );
+  const plateaus = useMemo(
+    () => detectLiftPlateaus(sessions, { unit }),
+    [sessions, unit],
+  );
+  const strengthForecasts = useMemo(
+    () => forecastStrengthGoals(sessions, goals, strengthStandards, { unit }),
+    [sessions, goals, strengthStandards, unit],
   );
 
   const handleQuickSaveBodyweight = async (value: number) => {
@@ -489,6 +507,19 @@ export function AnalyticsPage() {
             )}
           </Card>
 
+          {/* Body Composition (Navy BF%, Lean Mass, FFMI & Before/After Progress Photos) */}
+          <React.Suspense fallback={null}>
+            <BodyCompositionCard
+              measurements={measurements}
+              photos={progressPhotos}
+              settings={settings}
+              onUpdateSettings={(patch) => useAppStore.getState().updateSettings(patch)}
+              onSaveMeasurement={(m) => useAppStore.getState().saveMeasurement(m)}
+              onSavePhoto={(p) => useAppStore.getState().saveProgressPhoto(p)}
+              onDeletePhoto={(id) => useAppStore.getState().deleteProgressPhoto(id)}
+            />
+          </React.Suspense>
+
           {/* Strength Standards & 30-Day Training Balance */}
           <StrengthStandardsCard
             standards={strengthStandards}
@@ -498,6 +529,13 @@ export function AnalyticsPage() {
             milestonesTotal={milestonesSummary.totalCount}
             onLogBodyweight={handleQuickSaveBodyweight}
             onViewMilestones={() => navigate('/goals?tab=milestones')}
+          />
+
+          {/* Plateau Detector & Strength Goal ETA Forecasts */}
+          <CoachingInsightsCard
+            plateaus={plateaus}
+            forecasts={strengthForecasts}
+            unit={unit}
           />
 
           {/* Strength Benchmarks (Est. 1RM) */}

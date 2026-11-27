@@ -5,6 +5,8 @@ import {
   CustomExercise,
   Goal,
   Measurement,
+  ProgressPhoto,
+  ReadinessCheckin,
   WorkoutProgram,
   WorkoutSession,
 } from '../types';
@@ -24,6 +26,8 @@ interface AppState {
   goals: Goal[];
   measurements: Measurement[];
   customExercises: CustomExercise[];
+  readinessCheckins: ReadinessCheckin[];
+  progressPhotos: ProgressPhoto[];
   isLoading: boolean;
   isHydrated: boolean;
 
@@ -59,6 +63,12 @@ interface AppState {
   loadCustomExercises: () => Promise<void>;
   saveCustomExercise: (ex: CustomExercise) => Promise<void>;
   deleteCustomExercise: (id: string) => Promise<void>;
+
+  // ── Readiness & Progress Photo actions ───────────────────────────
+  saveReadinessCheckin: (checkin: ReadinessCheckin) => Promise<void>;
+  deleteReadinessCheckin: (id: string) => Promise<void>;
+  saveProgressPhoto: (photo: ProgressPhoto) => Promise<void>;
+  deleteProgressPhoto: (id: string) => Promise<void>;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -70,6 +80,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   soundEnabled: true,
   vibrateOnComplete: true,
   voiceCountdownEnabled: false,
+  keepAwakeDuringWorkout: true,
+  restNotificationsEnabled: false,
+  biologicalSex: 'male',
   syncEnabled: false,
   weightUnit: 'kg',
   effortScale: 'rpe',
@@ -84,6 +97,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   goals: [],
   measurements: [],
   customExercises: [],
+  readinessCheckins: [],
+  progressPhotos: [],
   isLoading: false,
   isHydrated: false,
 
@@ -110,11 +125,13 @@ export const useAppStore = create<AppState>((set, get) => ({
           db.getGoals().then(res => { console.debug('[Store] Goals loaded'); return res; }).catch(() => [] as Goal[]),
           db.getMeasurements().then(res => { console.debug('[Store] Measurements loaded'); return res; }).catch(() => [] as Measurement[]),
           db.getCustomExercises().then(res => { console.debug('[Store] Custom exercises loaded'); return res; }).catch(() => [] as CustomExercise[]),
+          db.getReadinessCheckins().then(res => { console.debug('[Store] Readiness loaded'); return res; }).catch(() => [] as ReadinessCheckin[]),
+          db.getProgressPhotos().then(res => { console.debug('[Store] Progress photos loaded'); return res; }).catch(() => [] as ProgressPhoto[]),
         ]),
         timeoutPromise
-      ]) as [WorkoutProgram[], WorkoutSession[], AppSettings | null, Goal[], Measurement[], CustomExercise[]];
+      ]) as [WorkoutProgram[], WorkoutSession[], AppSettings | null, Goal[], Measurement[], CustomExercise[], ReadinessCheckin[], ProgressPhoto[]];
 
-      const [programs, sessions, settings, goals, measurements, customExercises] = result;
+      const [programs, sessions, settings, goals, measurements, customExercises, readinessCheckins, progressPhotos] = result;
 
       set({
         programs,
@@ -123,6 +140,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         goals,
         measurements: measurements.sort((a, b) => a.date - b.date),
         customExercises: [...customExercises].sort((a, b) => b.createdAt - a.createdAt),
+        readinessCheckins: [...readinessCheckins].sort((a, b) => a.date - b.date),
+        progressPhotos: [...progressPhotos].sort((a, b) => b.date - a.date),
       });
       await get().syncAutoGoals();
       console.log('[Store] Hydration complete');
@@ -251,5 +270,31 @@ export const useAppStore = create<AppState>((set, get) => ({
   deleteCustomExercise: async (id) => {
     await db.deleteCustomExercise(id);
     set((s) => ({ customExercises: s.customExercises.filter((c) => c.id !== id) }));
+  },
+
+  // ── Readiness & Progress Photos ──────────────────────────────────
+  saveReadinessCheckin: async (checkin) => {
+    await db.saveReadinessCheckin(checkin);
+    set((s) => ({
+      readinessCheckins: s.readinessCheckins.some((r) => r.id === checkin.id)
+        ? s.readinessCheckins.map((r) => (r.id === checkin.id ? checkin : r))
+        : [...s.readinessCheckins, checkin].sort((a, b) => a.date - b.date),
+    }));
+  },
+  deleteReadinessCheckin: async (id) => {
+    await db.deleteReadinessCheckin(id);
+    set((s) => ({ readinessCheckins: s.readinessCheckins.filter((r) => r.id !== id) }));
+  },
+  saveProgressPhoto: async (photo) => {
+    await db.saveProgressPhoto(photo);
+    set((s) => ({
+      progressPhotos: s.progressPhotos.some((p) => p.id === photo.id)
+        ? s.progressPhotos.map((p) => (p.id === photo.id ? photo : p))
+        : [photo, ...s.progressPhotos].sort((a, b) => b.date - a.date),
+    }));
+  },
+  deleteProgressPhoto: async (id) => {
+    await db.deleteProgressPhoto(id);
+    set((s) => ({ progressPhotos: s.progressPhotos.filter((p) => p.id !== id) }));
   },
 }));

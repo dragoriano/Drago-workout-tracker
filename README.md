@@ -1,9 +1,13 @@
-# Dragoriano Workout Tracker (`v2.0.0`)
+# Dragoriano Workout Tracker (`v2.1.0`)
 
-Offline-first gym workout tracker built with React 19, TypeScript, Vite 6, Tailwind CSS v4, Three.js, Framer Motion, Zustand, and IndexedDB (`idb`), with optional Supabase cloud backup and Capacitor 8 Android packaging.
+Offline-first gym workout tracker built with React 19, TypeScript, Vite 6, Tailwind CSS v4, Three.js, Framer Motion, Zustand, and IndexedDB v5 (`idb`), with optional Supabase cloud backup, GitHub Pages PWA deployment, and Capacitor 8 Android packaging.
 
 ## Features
 
+- **Native Android & Hardware Upgrades**: Active-workout Screen Wake Lock (**Keep Screen Awake**), background rest timer **Local/Web Notifications**, Capacitor native **Haptics** + Web Audio cues, and CI support for signed Android Release APKs & `.aab` bundles alongside Debug APKs.
+- **Daily Readiness Check-In & Auto-Regulated Coaching**: 5-second Home readiness check-in (Sleep, Energy, Freshness, Calmness → `0–100` score + 7-day average) paired with 1-tap **Auto-Tune Sets** inside active sessions to scale working loads (`+2.5%` on peak days, `-5%/-10%` & set trimming on fatigue days).
+- **Body Composition, Progress Photos & Daily Fuel Targets**: U.S. Navy tape **Body Fat %**, **Lean Mass**, and normalized **FFMI** calculator, client-compressed Front/Side/Back **Progress Photo Timeline** with an interactive **Before/After slider** in IndexedDB, and Home **Daily Fuel Targets** (kcal, protein, carbs, fats) synced to body weight & active Mesocycle focus.
+- **Plateau Detector, Strength ETAs & GitHub Pages PWA**: Automatic **Plateau Watch** flagging stalled lifts (`3+` flat sessions with rep-range/deload/swap fixes), linear-regression **Strength Goal & Tier ETAs**, plus automated live PWA deployment via GitHub Pages.
 - **Mesocycle & Periodization Planner**: Structure any program into 4–8 week training blocks (`Accumulation → Intensification → Peak → Deload`) with automatic weekly target RPE ranges, interactive week-by-week timeline & volume recap, Home progress banner, and live active-session phase indicators.
 - **Smart Equipment Swaps & Exercise Technique Hub**: Mid-workout equipment-aware exercise substitutions (`All | Dumbbell | Machine | Cable | Barbell | Bodyweight`) ranked by primary muscle + movement pattern + prior logged performance, paired with an interactive **Form & Cues** modal featuring an anatomical target preview and pinned seat/setup notes.
 - **Shareable Weekly Training Digest**: Generate `4:5` or `9:16` studio-grade PNG weekly recap cards combining 7-day volume/workout deltas, PRs, streak, unlocked milestones, and an anatomical volume heatmap.
@@ -42,8 +46,9 @@ Offline-first gym workout tracker built with React 19, TypeScript, Vite 6, Tailw
 ## GitHub Actions CI & Android APK Releases
 
 - **CI Verification (`.github/workflows/ci.yml`)**: Runs `npm ci`, `npm run lint`, `npm test`, `npm run build`, and `npm run build:android` on pushes/PRs to `main` and verifies Android assets exclude `sw.js` and `.mp4` files.
-- **Android Debug APK Release (`.github/workflows/android-release.yml`)**: On `v*` tag pushes or manual dispatch, builds `app-debug.apk` cleanly on Ubuntu with Java 21 + Android SDK, uploads the APK artifact, and attaches it to the corresponding GitHub Release.
-  - To enable Supabase Cloud Sync inside CI-built APKs, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` under **GitHub Repository Settings → Secrets and variables → Actions** (both are optional; offline tracking works without them).
+- **Live PWA Deploy (`.github/workflows/deploy-pages.yml`)**: Deploys the production Vite PWA automatically to GitHub Pages on pushes to `main`.
+- **Android APK / AAB Release (`.github/workflows/android-release.yml`)**: On `v*` tag pushes or manual dispatch, builds `app-debug.apk` (plus signed `.apk` & `.aab` when keystore secrets are configured) on Ubuntu with Java 21 + Android SDK, uploads workflow artifacts, and publishes the GitHub Release.
+  - Optional GitHub Actions secrets: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD`.
 
 ## Scripts
 
@@ -51,7 +56,7 @@ Offline-first gym workout tracker built with React 19, TypeScript, Vite 6, Tailw
 | :--- | :--- |
 | `npm run dev` | Start Vite dev server on port `3000` |
 | `npm run lint` | Run TypeScript type check (`tsc --noEmit`) |
-| `npm test` | Run unit tests via `tsx --test` (138 tests across 61 suites) |
+| `npm test` | Run unit tests via `tsx --test` (150 tests across 68 suites) |
 | `npm run build` | Build production web PWA bundle into `dist/` |
 | `npm run build:android` | Build Android web assets (`--mode android`) and run `npx cap sync` |
 | `npm run preview` | Preview the built `dist/` bundle locally |

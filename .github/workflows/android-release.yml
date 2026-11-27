@@ -52,7 +52,22 @@ jobs:
           cd android
           ./gradlew assembleDebug --no-daemon
 
-      - name: Package APK asset
+      - name: Build Signed Release APK & AAB (when keystore secret configured)
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/release.keystore
+          export ANDROID_KEYSTORE_PATH="$(pwd)/android/release.keystore"
+          cd android
+          ./gradlew assembleRelease bundleRelease --no-daemon
+          rm -f release.keystore
+
+      - name: Package APK & Release assets
         shell: bash
         run: |
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
@@ -61,13 +76,20 @@ jobs:
             RELEASE_TAG="manual-${{ github.run_number }}"
           fi
           echo "RELEASE_TAG=${RELEASE_TAG}" >> "$GITHUB_ENV"
-          cp android/app/build/outputs/apk/debug/app-debug.apk "dragoriano-workout-tracker-${RELEASE_TAG}-debug.apk"
+          mkdir -p release-assets
+          cp android/app/build/outputs/apk/debug/app-debug.apk "release-assets/dragoriano-workout-tracker-${RELEASE_TAG}-debug.apk"
+          if [[ -f android/app/build/outputs/apk/release/app-release.apk ]]; then
+            cp android/app/build/outputs/apk/release/app-release.apk "release-assets/dragoriano-workout-tracker-${RELEASE_TAG}-release.apk"
+          fi
+          if [[ -f android/app/build/outputs/bundle/release/app-release.aab ]]; then
+            cp android/app/build/outputs/bundle/release/app-release.aab "release-assets/dragoriano-workout-tracker-${RELEASE_TAG}-release.aab"
+          fi
 
       - name: Upload APK workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dragoriano-workout-tracker-${{ env.RELEASE_TAG }}-debug-apk
-          path: dragoriano-workout-tracker-${{ env.RELEASE_TAG }}-debug.apk
+          name: dragoriano-workout-tracker-${{ env.RELEASE_TAG }}-android
+          path: release-assets/*
           retention-days: 30
 
       - name: Publish GitHub Release
@@ -77,4 +99,4 @@ jobs:
           name: Dragoriano Workout Tracker ${{ env.RELEASE_TAG }}
           generate_release_notes: true
           fail_on_unmatched_files: true
-          files: dragoriano-workout-tracker-${{ env.RELEASE_TAG }}-debug.apk
+          files: release-assets/*

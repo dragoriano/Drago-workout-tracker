@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  ArrowLeft, Cloud, Moon, Palette, Sparkles, AlertTriangle, 
+  ArrowLeft, BellRing, Cloud, Moon, Palette, Sparkles, AlertTriangle, 
   TrendingDown, Download, RefreshCw, Trash2, ChevronRight, X, QrCode, Upload, Camera, ScanLine, Volume2, ShieldAlert, Activity,
-  CloudUpload, CloudDownload, Mic, Calculator, Gauge, FileSpreadsheet
+  CloudUpload, CloudDownload, Mic, Calculator, Gauge, FileSpreadsheet, Smartphone
 } from 'lucide-react';
+import { requestRestNotificationPermission } from '../../utils/nativeHardware';
 import { PremiumIcon, FilledIcon } from '../../components/ui/PremiumIcon';
 import { QRCodeSVG } from 'qrcode.react';
 import { useNavigate } from 'react-router-dom';
@@ -563,6 +564,43 @@ export function SettingsPage() {
                 <Switch 
                   checked={!!settings.voiceCountdownEnabled} 
                   onChange={(c) => updateSetting('voiceCountdownEnabled', c)} 
+                />
+              </div>
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <PremiumIcon icon={Smartphone} color="sky" variant="soft" size="sm" />
+                  <div>
+                    <h3 className="font-bold text-content">Keep Screen Awake</h3>
+                    <p className="text-xs text-muted">Prevent screen dim during active workouts</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={settings.keepAwakeDuringWorkout !== false}
+                  onChange={(c) => updateSetting('keepAwakeDuringWorkout', c)}
+                />
+              </div>
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <PremiumIcon icon={BellRing} color="amber" variant="soft" size="sm" />
+                  <div>
+                    <h3 className="font-bold text-content">Background Rest Alerts</h3>
+                    <p className="text-xs text-muted">Notify when rest finishes in background</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={!!settings.restNotificationsEnabled}
+                  onChange={async (c) => {
+                    if (c) {
+                      const granted = await requestRestNotificationPermission();
+                      if (!granted) {
+                        toast.error('Notification permission denied in browser/device settings');
+                        await updateSetting('restNotificationsEnabled', false);
+                        return;
+                      }
+                      toast.success('Background rest notifications enabled');
+                    }
+                    await updateSetting('restNotificationsEnabled', c);
+                  }}
                 />
               </div>
             </div>

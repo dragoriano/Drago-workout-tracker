@@ -54,12 +54,23 @@ import {
 } from '../../utils/liveSessionPR';
 import { computeMesocycleProgress } from '../../utils/mesocycle';
 import {
+  evaluateReadinessPrescription,
+  getTodayReadinessCheckin,
+  scaleExerciseSetsForReadiness,
+} from '../../utils/readinessCoach';
+import {
   playCountdownTick,
   playPRFanfare,
   playRestFinishChime,
   playSetCompleteCue,
   triggerHaptic,
 } from '../../utils/workoutAudio';
+import {
+  acquireWorkoutWakeLock,
+  cancelBackgroundRestAlert,
+  releaseWorkoutWakeLock,
+  scheduleBackgroundRestAlert,
+} from '../../utils/nativeHardware';
 import {
   DEFAULT_PLATES,
   isWarmupSet,
@@ -100,6 +111,7 @@ export function WorkoutSessionPage() {
   const programs = useAppStore(s => s.programs);
   const sessions = useAppStore(s => s.sessions);
   const customExercises = useAppStore(s => s.customExercises);
+  const readinessCheckins = useAppStore(s => s.readinessCheckins);
   const settings = useAppStore(s => s.settings);
   const isHydrated = useAppStore(s => s.isHydrated);
 
@@ -160,6 +172,42 @@ export function WorkoutSessionPage() {
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+  const [readinessApplied, setReadinessApplied] = useState(false);
+
+  useEffect(() => {
+    if (settings?.keepAwakeDuringWorkout === false) {
+      releaseWorkoutWakeLock();
+      return;
+    }
+
+    acquireWorkoutWakeLock();
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        acquireWorkoutWakeLock();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      releaseWorkoutWakeLock();
+    };
+  }, [settings?.keepAwakeDuringWorkout]);
+
+  useEffect(() => {
+    if (isRestPaused || restEndTime === null || !settings?.restNotificationsEnabled) {
+      cancelBackgroundRestAlert();
+      return;
+    }
+
+    scheduleBackgroundRestAlert(
+      restEndTime,
+      'Rest Complete — Dragoriano',
+      restSubtitle ? `Time for ${restSubtitle}` : 'Time to hit your next set.',
+    );
+    return () => {
+      cancelBackgroundRestAlert();
+    };
+  }, [restEndTime, isRestPaused, restSubtitle, settings?.restNotificationsEnabled]);
 
   useEffect(() => {
     return () => {
@@ -169,6 +217,7 @@ export function WorkoutSessionPage() {
       if (prToastTimeoutRef.current) {
         clearTimeout(prToastTimeoutRef.current);
       }
+      cancelBackgroundRestAlert();
     };
   }, []);
 
@@ -906,6 +955,14 @@ export function WorkoutSessionPage() {
     () => computeMesocycleProgress(program, sessions),
     [program, sessions],
   );
+  const todayReadiness = React.useMemo(
+    () => getTodayReadinessCheckin(readinessCheckins),
+    [readinessCheckins],
+  );
+  const readinessPrescription = React.useMemo(
+    () => evaluateReadinessPrescription(todayReadiness, mesocycleProgress),
+    [todayReadiness, mesocycleProgress],
+  );
   const totalVolume = exercises.reduce(
     (acc, ex) => {
       const mode = getExerciseTrackingMode(ex);
@@ -1023,6 +1080,31 @@ export function WorkoutSessionPage() {
             </p>
           </div>
         ) : null}
+
+        {todayReadiness && readinessPrescription && readinessPrescription.loadAdjustmentPct !== 0 && !readinessApplied && exercises.length > 0 && (
+          <div className="border-b border-amber-500/20 bg-amber-500/10 px-4 py-1.5 flex items-center justify-between gap-2 backdrop-blur-md">
+            <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 truncate">
+              Readiness {todayReadiness.score}/100 · {readinessPrescription.headline}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setExercises((prev) =>
+                  scaleExerciseSetsForReadiness(
+                    prev,
+                    readinessPrescription.loadAdjustmentPct,
+                    readinessPrescription.setAdjustment,
+                  ),
+                );
+                setReadinessApplied(true);
+                toast.success(`Scaled uncompleted loads (${readinessPrescription.loadAdjustmentPct > 0 ? '+' : ''}${readinessPrescription.loadAdjustmentPct}%)`);
+              }}
+              className="shrink-0 rounded-lg border border-amber-500/35 bg-amber-500/20 px-2.5 py-1 text-[10px] font-black uppercase text-amber-800 dark:text-amber-300 hover:bg-amber-500/30 transition-colors cursor-pointer"
+            >
+              Auto-Tune Sets
+            </button>
+          </div>
+        )}
 
         <main className="w-full flex-1 overflow-y-auto overscroll-y-contain overflow-x-hidden p-4 pb-44">
         {isFreestyle && exercises.length === 0 ? (

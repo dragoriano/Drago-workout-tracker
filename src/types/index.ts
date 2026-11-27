@@ -135,12 +135,38 @@ export type AppSettings = {
  soundEnabled: boolean;
  vibrateOnComplete?: boolean;
  voiceCountdownEnabled: boolean;
+ keepAwakeDuringWorkout?: boolean;
+ restNotificationsEnabled?: boolean;
+ heightCm?: number;
+ biologicalSex?: 'male' | 'female';
  syncEnabled: boolean;
  weightUnit?: 'kg' | 'lbs';
  effortScale?: EffortScale;
  barbellWeight?: number;
  availablePlates?: number[];
  hasSeenOnboarding?: boolean;
+};
+
+export type ReadinessCheckin = {
+  id: string;
+  date: number;
+  sleep: number; // 1-5
+  energy: number; // 1-5
+  soreness: number; // 1-5 (5 = fresh / low soreness)
+  stress: number; // 1-5 (5 = calm / low stress)
+  score: number; // 0-100
+  note?: string;
+};
+
+export type ProgressPhotoPose = 'front' | 'side' | 'back';
+
+export type ProgressPhoto = {
+  id: string;
+  date: number;
+  pose: ProgressPhotoPose;
+  dataUrl: string;
+  weight?: number;
+  note?: string;
 };
 
 export type GoalTrackingType =

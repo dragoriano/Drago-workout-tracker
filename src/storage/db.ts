@@ -5,6 +5,8 @@ import {
   CustomExercise,
   Goal,
   Measurement,
+  ProgressPhoto,
+  ReadinessCheckin,
   WorkoutProgram,
   WorkoutSession,
 } from '../types';
@@ -45,10 +47,24 @@ interface WorkoutDB extends DBSchema {
     key: string;
     value: CustomExercise;
   };
+  readinessCheckins: {
+    key: string;
+    value: ReadinessCheckin;
+    indexes: {
+      'by-date': number;
+    };
+  };
+  progressPhotos: {
+    key: string;
+    value: ProgressPhoto;
+    indexes: {
+      'by-date': number;
+    };
+  };
 }
 
 const DB_NAME = 'dragoriano-workout-tracker';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 let dbPromise: Promise<IDBPDatabase<WorkoutDB>> | undefined;
 
@@ -98,6 +114,16 @@ export const initDB = () => {
 
         if (!db.objectStoreNames.contains('customExercises')) {
           db.createObjectStore('customExercises', { keyPath: 'id' });
+        }
+
+        if (!db.objectStoreNames.contains('readinessCheckins')) {
+          const rStore = db.createObjectStore('readinessCheckins', { keyPath: 'id' });
+          rStore.createIndex('by-date', 'date');
+        }
+
+        if (!db.objectStoreNames.contains('progressPhotos')) {
+          const pStore = db.createObjectStore('progressPhotos', { keyPath: 'id' });
+          pStore.createIndex('by-date', 'date');
         }
       },
     });
@@ -218,6 +244,32 @@ export const db = {
   async deleteCustomExercise(id: string) {
     const db = await initDB();
     await db.delete('customExercises', id);
+  },
+
+  async getReadinessCheckins() {
+    const db = await initDB();
+    return db.getAll('readinessCheckins');
+  },
+  async saveReadinessCheckin(checkin: ReadinessCheckin) {
+    const db = await initDB();
+    await db.put('readinessCheckins', checkin);
+  },
+  async deleteReadinessCheckin(id: string) {
+    const db = await initDB();
+    await db.delete('readinessCheckins', id);
+  },
+
+  async getProgressPhotos() {
+    const db = await initDB();
+    return db.getAll('progressPhotos');
+  },
+  async saveProgressPhoto(photo: ProgressPhoto) {
+    const db = await initDB();
+    await db.put('progressPhotos', photo);
+  },
+  async deleteProgressPhoto(id: string) {
+    const db = await initDB();
+    await db.delete('progressPhotos', id);
   },
 
   async clearAll() {

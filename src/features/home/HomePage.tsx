@@ -10,11 +10,22 @@ import { MeasurementModal } from '../../components/ui/MeasurementModal';
 import { computeStreaks, flattenPRs } from '../../utils/analytics';
 import { computeMeasurementTrend } from '../../utils/bodyTrends';
 import { computeGoalProgressPercent } from '../../utils/goalsSync';
+import {
+  computeDailyNutritionTargets,
+  extractLatestBodyweightKg,
+} from '../../utils/bodyComposition';
 import { computeMesocycleProgress } from '../../utils/mesocycle';
 import { computeMuscleRecovery, evaluateDayReadiness } from '../../utils/muscleRecovery';
+import {
+  computeReadiness7dAverage,
+  getTodayReadinessCheckin,
+} from '../../utils/readinessCoach';
 import { estimateWorkoutDurationMinutes } from '../../utils/workoutCoach';
 import { MesocycleCard } from '../../components/ui/MesocycleCard';
+import { NutritionTargetsCard } from '../../components/ui/NutritionTargetsCard';
 import { ProgressRing } from '../../components/ui/ProgressRing';
+import { ReadinessCheckinCard } from '../../components/ui/ReadinessCheckinCard';
+import { generateId } from '../../utils/uuid';
 import { OnboardingWizard } from './OnboardingWizard';
 import { PullToRefresh } from '../../components/ui/PullToRefresh';
 import { useAppStore } from '../../store/useAppStore';
@@ -34,6 +45,7 @@ export function HomePage() {
   const measurements = useAppStore((s) => s.measurements);
   const goals = useAppStore((s) => s.goals);
   const customExercises = useAppStore((s) => s.customExercises);
+  const readinessCheckins = useAppStore((s) => s.readinessCheckins);
   const isHydrated = useAppStore((s) => s.isHydrated);
   const hydrate = useAppStore((s) => s.hydrate);
 
@@ -136,6 +148,29 @@ export function HomePage() {
   const mesocycleProgress = React.useMemo(
     () => computeMesocycleProgress(nextProgram, sessions),
     [nextProgram, sessions],
+  );
+  const todayReadiness = React.useMemo(
+    () => getTodayReadinessCheckin(readinessCheckins),
+    [readinessCheckins],
+  );
+  const avg7dReadiness = React.useMemo(
+    () => computeReadiness7dAverage(readinessCheckins),
+    [readinessCheckins],
+  );
+  const bwKg = React.useMemo(
+    () => extractLatestBodyweightKg(measurements),
+    [measurements],
+  );
+  const nutritionTargets = React.useMemo(
+    () =>
+      bwKg
+        ? computeDailyNutritionTargets({
+            bodyweightKg: bwKg.kg,
+            goalFocus: mesocycleProgress?.config.goalFocus ?? null,
+            weeklySessionsCount: weeklySessions.length,
+          })
+        : null,
+    [bwKg, mesocycleProgress?.config.goalFocus, weeklySessions.length],
   );
 
   const unit = settings?.weightUnit || 'kg';
@@ -325,6 +360,24 @@ export function HomePage() {
           />
         )}
 
+        {/* Daily Readiness Check-In */}
+        <ReadinessCheckinCard
+          todayCheckin={todayReadiness}
+          avg7dScore={avg7dReadiness}
+          mesocycle={mesocycleProgress}
+          onSaveCheckin={async (input) => {
+            await useAppStore.getState().saveReadinessCheckin({
+              id: input.id || generateId(),
+              date: Date.now(),
+              sleep: input.sleep,
+              energy: input.energy,
+              soreness: input.soreness,
+              stress: input.stress,
+              score: input.score,
+            });
+          }}
+        />
+
         {/* Unified This Week Summary */}
         <Card className="p-4">
           <div className="mb-3.5 flex items-center justify-between gap-2">
@@ -475,6 +528,12 @@ export function HomePage() {
               Log
             </Button>
           </Card>
+
+          <NutritionTargetsCard
+            targets={nutritionTargets}
+            bodyweightLabel={bwKg ? `${bwKg.rawValue} ${bwKg.rawUnit}` : null}
+            onLogWeight={() => setIsMeasurementModalOpen(true)}
+          />
 
           {topGoal ? (
             <Card

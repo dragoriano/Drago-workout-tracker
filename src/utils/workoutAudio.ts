@@ -104,6 +104,8 @@ export function playPRFanfare(enabled: boolean): void {
   }
 }
 
+import { triggerNativeHaptic } from './nativeHardware';
+
 export type HapticKind = 'set' | 'tick' | 'rest_done' | 'pr';
 
 const HAPTIC_PATTERNS: Record<HapticKind, number | number[]> = {
@@ -114,13 +116,25 @@ const HAPTIC_PATTERNS: Record<HapticKind, number | number[]> = {
 };
 
 /**
- * Safe navigator.vibrate wrapper for mobile tactile feedback.
+ * Native Capacitor Haptics + Web navigator.vibrate wrapper for tactile gym feedback.
  */
 export function triggerHaptic(kind: HapticKind, enabled: boolean): void {
   if (!enabled || typeof window === 'undefined') return;
-  try {
-    window.navigator.vibrate?.(HAPTIC_PATTERNS[kind]);
-  } catch {
-    // Ignore unsupported platforms
-  }
+  const pattern = kind === 'pr' ? 'pr' : kind === 'rest_done' ? 'rest_done' : 'tap';
+  triggerNativeHaptic(pattern)
+    .then((handled) => {
+      if (handled) return;
+      try {
+        window.navigator.vibrate?.(HAPTIC_PATTERNS[kind]);
+      } catch {
+        // Ignore unsupported platforms
+      }
+    })
+    .catch(() => {
+      try {
+        window.navigator.vibrate?.(HAPTIC_PATTERNS[kind]);
+      } catch {
+        // Ignore unsupported platforms
+      }
+    });
 }
