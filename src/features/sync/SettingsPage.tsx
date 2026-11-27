@@ -695,7 +695,7 @@ export function SettingsPage() {
             <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">About</h2>
             <div className="liquid-glass rounded-3xl p-6 text-center">
               <h3 className="font-black text-primary-400 tracking-widest uppercase">Dragoriano</h3>
-              <p className="text-sm text-muted mt-1">Workout Tracker v1.9.0</p>
+              <p className="text-sm text-muted mt-1">Workout Tracker v{__APP_VERSION__}</p>
             </div>
           </section>
         </div>

@@ -1,12 +1,20 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import fs from 'fs';
 import path from 'path';
 import {defineConfig, loadEnv} from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const appVersion = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf8'),
+).version as string;
+
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
   return {
+    define: {
+      __APP_VERSION__: JSON.stringify(appVersion),
+    },
     plugins: [
       react(),
       tailwindcss(),
@@ -18,7 +26,10 @@ export default defineConfig(({mode}) => {
               injectRegister: 'auto',
               includeAssets: ['favicon.ico', 'icon-192x192.png', 'icon-512x512.png'],
               workbox: {
-                cacheId: 'dragotracker-v2.2.0',
+                cacheId: `dragotracker-v${appVersion}`,
+                cleanupOutdatedCaches: true,
+                clientsClaim: true,
+                skipWaiting: true,
               },
               manifest: {
                 name: 'Dragoriano Workout Tracker',
