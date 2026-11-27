@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Calculator, ChevronLeft, RotateCcw, Dumbbell, CheckCircle2, Trophy, X, Edit2, Plus, Zap } from 'lucide-react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { Calculator, ChevronLeft, RotateCcw, Dumbbell, CheckCircle2, Trophy, X, Edit2, Plus, Zap, Sparkles, Timer } from 'lucide-react';
 import type { Exercise, ExerciseTrackingMode, Set, WorkoutSession } from '../../types';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -11,7 +11,7 @@ import { Button } from '../../components/ui/Button';
 import { Progress } from '../../components/ui/Progress';
 import { SwapModal } from '../../components/ui/SwapModal';
 import { PlateCalculatorModal } from '../../components/ui/PlateCalculatorModal';
-import { getExerciseMuscleGroups } from '../../data/exercises';
+import { EXERCISE_DATABASE, getExerciseMuscleGroups } from '../../data/exercises';
 import { generateId } from '../../utils/uuid';
 import { useAppStore } from '../../store/useAppStore';
 import {
@@ -38,9 +38,27 @@ import {
 } from '../../utils/customExercises';
 import {
   computeMuscleRecovery,
+  isTrackedMuscleGroup,
   MuscleRecoveryStatus,
   resolveExerciseBroadMuscles,
+  type BroadMuscleGroup,
 } from '../../utils/muscleRecovery';
+import {
+  getSuggestedFreestyleTitle,
+  pickRecommendedExercisesForMuscles,
+} from '../../utils/anatomicalRecovery';
+import {
+  evaluateLiveSetPR,
+  getExerciseLivePRSetMap,
+  type LivePRHit,
+} from '../../utils/liveSessionPR';
+import {
+  playCountdownTick,
+  playPRFanfare,
+  playRestFinishChime,
+  playSetCompleteCue,
+  triggerHaptic,
+} from '../../utils/workoutAudio';
 import {
   DEFAULT_PLATES,
   isWarmupSet,
@@ -60,8 +78,18 @@ const ExerciseChartModal = React.lazy(() =>
 
 export function WorkoutSessionPage() {
   const { programId, dayId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const isFreestyle = !programId && !dayId;
+
+  const targetMuscles = React.useMemo<BroadMuscleGroup[]>(() => {
+    const raw = searchParams.get('muscles');
+    if (!raw) return [];
+    return raw
+      .split(',')
+      .map((m) => m.trim())
+      .filter((m): m is BroadMuscleGroup => isTrackedMuscleGroup(m));
+  }, [searchParams]);
 
   const programs = useAppStore(s => s.programs);
   const sessions = useAppStore(s => s.sessions);
@@ -105,14 +133,23 @@ export function WorkoutSessionPage() {
     weight: number;
   }>({ isOpen: false, weight: 0 });
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
-  const [achievedPRs, setAchievedPRs] = useState<string[]>([]);
-  const [prNotification, setPrNotification] = useState<{ exerciseName: string, valueLabel: string } | null>(null);
+  const [prNotification, setPrNotification] = useState<{
+    exerciseName: string;
+    headline: string;
+    valueLabel: string;
+    deltaLabel: string | null;
+    secondaryTags: string[];
+  } | null>(null);
+  const prToastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSessionId = useRef<string | null>(null);
   const isFinishingRef = useRef(false);
   const initializedSessionKeyRef = useRef<string | null>(null);
   const finishNavTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [restEndTime, setRestEndTime] = useState<number | null>(null);
+  const [isRestPaused, setIsRestPaused] = useState(false);
+  const [pausedRestRemaining, setPausedRestRemaining] = useState<number | null>(null);
   const lastSpokenSecondRef = useRef<number | null>(null);
+  const lastTickedSecondRef = useRef<number | null>(null);
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
@@ -122,13 +159,16 @@ export function WorkoutSessionPage() {
       if (finishNavTimeoutRef.current) {
         clearTimeout(finishNavTimeoutRef.current);
       }
+      if (prToastTimeoutRef.current) {
+        clearTimeout(prToastTimeoutRef.current);
+      }
     };
   }, []);
 
   useEffect(() => {
     if (!isHydrated || (!isFreestyle && (!program || !day)) || isFinishingRef.current) return;
 
-    const sessionKey = isFreestyle ? 'freestyle' : `${programId}_${dayId}`;
+    const sessionKey = isFreestyle ? `freestyle_${targetMuscles.join(',')}` : `${programId}_${dayId}`;
     if (initializedSessionKeyRef.current === sessionKey) return;
     initializedSessionKeyRef.current = sessionKey;
 
@@ -178,6 +218,9 @@ export function WorkoutSessionPage() {
     if (isFreestyle || !day) {
       setIsDeloadDay(false);
       setExercises([]);
+      if (isFreestyle && targetMuscles.length > 0) {
+        setFreestyleName(getSuggestedFreestyleTitle(targetMuscles));
+      }
       return;
     }
 
@@ -379,29 +422,8 @@ export function WorkoutSessionPage() {
 
     if (!willComplete) return;
 
-    if (settings?.vibrateOnComplete) {
-      try {
-        window.navigator.vibrate(50);
-      } catch {}
-    }
-    if (settings?.soundEnabled) {
-      try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(600, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0, ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.1);
-        osc.onended = () => ctx.close();
-      } catch {}
-    }
+    triggerHaptic('set', Boolean(settings?.vibrateOnComplete));
+    playSetCompleteCue(Boolean(settings?.soundEnabled));
 
     const updatedEx = nextExercises.find((ex) => ex.id === exerciseId)!;
     const toggledSet = updatedEx.sets.find((s) => s.id === setId)!;
@@ -440,50 +462,32 @@ export function WorkoutSessionPage() {
       }, 120);
     }
 
-    // Live PR Toast Detection (working sets only, mode-aware)
-    if (!isWarmup && !achievedPRs.includes(updatedEx.id)) {
-      const mode = getExerciseTrackingMode(updatedEx);
-      const unitLabel = settings?.weightUnit || 'kg';
-      let isNewPR = false;
-      let prLabel = '';
-
-      if (mode === 'timed') {
-        const curDur = toggledSet.duration ?? 0;
-        let prevMaxDur = 0;
-        updatedEx.history.forEach((hist) => {
-          hist.sets.forEach((hs) => {
-            if (hs.completed && !isWarmupSet(hs) && (hs.duration ?? 0) > prevMaxDur) {
-              prevMaxDur = hs.duration ?? 0;
-            }
-          });
+    // Live Multi-Metric PR Detection (Weight / Est. 1RM / Set Volume / Reps / Hold)
+    if (!isWarmup) {
+      const unitLabel: WeightUnit = settings?.weightUnit === 'lbs' ? 'lbs' : 'kg';
+      const liveHit = evaluateLiveSetPR(updatedEx, toggledSet, unitLabel);
+      if (liveHit) {
+        setPrNotification({
+          exerciseName: updatedEx.name,
+          headline: liveHit.headline,
+          valueLabel: liveHit.valueLabel,
+          deltaLabel: liveHit.deltaLabel,
+          secondaryTags: liveHit.secondaryTags,
         });
-        if (curDur > prevMaxDur && curDur > 0) {
-          isNewPR = true;
-          prLabel = `${formatDurationCompact(curDur)} Hold`;
+        playPRFanfare(Boolean(settings?.soundEnabled));
+        triggerHaptic('pr', Boolean(settings?.vibrateOnComplete));
+        const prefersReducedMotion =
+          typeof window !== 'undefined' &&
+          window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!prefersReducedMotion) {
+          confetti({ particleCount: 95, spread: 72, origin: { y: 0.28 }, zIndex: 100 });
         }
-      } else if (mode === 'weight_reps' || (mode === 'bodyweight_reps' && toggledSet.weight > 0)) {
-        const currentWeight = toggledSet.weight || 0;
-        let previousMaxWeight = 0;
-        updatedEx.history.forEach((hist) => {
-          hist.sets.forEach((hs) => {
-            if (hs.completed && !isWarmupSet(hs) && hs.weight > previousMaxWeight) {
-              previousMaxWeight = hs.weight;
-            }
-          });
-        });
-        if (currentWeight > previousMaxWeight && currentWeight > 0) {
-          isNewPR = true;
-          prLabel = `${currentWeight} ${unitLabel}`;
+        if (prToastTimeoutRef.current) {
+          clearTimeout(prToastTimeoutRef.current);
         }
-      }
-
-      if (isNewPR) {
-        setAchievedPRs((prev) => [...prev, updatedEx.id]);
-        setPrNotification({ exerciseName: updatedEx.name, valueLabel: prLabel });
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.3 }, zIndex: 100 });
-        setTimeout(() => {
+        prToastTimeoutRef.current = setTimeout(() => {
           setPrNotification(null);
-        }, 4000);
+        }, 4500);
       }
     }
   };
@@ -492,47 +496,75 @@ export function WorkoutSessionPage() {
     if (seconds <= 0) return;
     const end = Date.now() + seconds * 1000;
     lastSpokenSecondRef.current = null;
+    lastTickedSecondRef.current = null;
+    setIsRestPaused(false);
+    setPausedRestRemaining(null);
     setRestSubtitle(label);
     setInitialRestTimer(seconds);
     setRestEndTime(end);
     setRestTimer(seconds);
   };
 
+  const handleToggleRestPause = () => {
+    if (isRestPaused) {
+      const resumeSec = Math.max(1, pausedRestRemaining ?? restTimer ?? 1);
+      lastSpokenSecondRef.current = null;
+      lastTickedSecondRef.current = null;
+      setRestEndTime(Date.now() + resumeSec * 1000);
+      setPausedRestRemaining(null);
+      setIsRestPaused(false);
+    } else {
+      const remaining =
+        restEndTime !== null
+          ? Math.max(1, Math.ceil((restEndTime - Date.now()) / 1000))
+          : Math.max(1, restTimer ?? 1);
+      setRestEndTime(null);
+      setPausedRestRemaining(remaining);
+      setRestTimer(remaining);
+      setIsRestPaused(true);
+    }
+  };
+
+  const handleToggleRestSound = () => {
+    const current = settingsRef.current;
+    const nextVal = !(current?.soundEnabled ?? true);
+    if (current) {
+      useAppStore.getState().updateSettings({ soundEnabled: nextVal }).catch(() => {});
+    }
+  };
+
   useEffect(() => {
-    if (restEndTime === null) return;
+    if (isRestPaused || restEndTime === null) return;
 
     let completed = false;
     const tick = () => {
       if (completed) return;
       const remaining = Math.max(0, Math.ceil((restEndTime - Date.now()) / 1000));
+      const currentSettings = settingsRef.current;
+
       if (remaining <= 0) {
         completed = true;
         clearInterval(interval);
-        const currentSettings = settingsRef.current;
-        if (currentSettings?.soundEnabled) {
-          try {
-            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            osc.connect(ctx.destination);
-            osc.frequency.setValueAtTime(800, ctx.currentTime);
-            osc.start();
-            osc.onended = () => ctx.close();
-            setTimeout(() => osc.stop(), 300);
-          } catch (e) {}
-        }
-        if (currentSettings?.vibrateOnComplete) {
-          try { window.navigator.vibrate([200, 100, 200]); } catch (e) {}
-        }
+        playRestFinishChime(Boolean(currentSettings?.soundEnabled));
+        triggerHaptic('rest_done', Boolean(currentSettings?.vibrateOnComplete));
         lastSpokenSecondRef.current = null;
+        lastTickedSecondRef.current = null;
         setRestEndTime(null);
         setRestTimer(null);
         setInitialRestTimer(null);
+        setIsRestPaused(false);
+        setPausedRestRemaining(null);
         return;
       }
 
       setRestTimer((prev) => (prev === remaining ? prev : remaining));
 
-      const currentSettings = settingsRef.current;
+      if (remaining >= 1 && remaining <= 3 && lastTickedSecondRef.current !== remaining) {
+        lastTickedSecondRef.current = remaining;
+        playCountdownTick(remaining, Boolean(currentSettings?.soundEnabled));
+        triggerHaptic('tick', Boolean(currentSettings?.vibrateOnComplete));
+      }
+
       if (currentSettings?.voiceCountdownEnabled && remaining >= 1 && remaining <= 5 && lastSpokenSecondRef.current !== remaining) {
         lastSpokenSecondRef.current = remaining;
         try {
@@ -540,18 +572,20 @@ export function WorkoutSessionPage() {
           utterance.rate = 1.5;
           utterance.pitch = 1.2;
           window.speechSynthesis.speak(utterance);
-        } catch (e) {}
+        } catch {}
       }
     };
 
     const interval = setInterval(tick, 250);
     tick();
     document.addEventListener('visibilitychange', tick);
+    window.addEventListener('focus', tick);
     return () => {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', tick);
+      window.removeEventListener('focus', tick);
     };
-  }, [restEndTime]);
+  }, [restEndTime, isRestPaused]);
 
   const handleOpenNotes = (e: React.MouseEvent, ex: Exercise) => {
     e.stopPropagation();
@@ -694,27 +728,8 @@ export function WorkoutSessionPage() {
   };
 
   const finishAndNavigate = (sessionId?: string) => {
-    if (settings?.vibrateOnComplete) {
-      try { window.navigator.vibrate([200, 100, 200, 100, 400]); } catch(e) {}
-    }
-    if (settings?.soundEnabled) {
-      try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.setValueAtTime(400, ctx.currentTime);
-        osc.frequency.setValueAtTime(500, ctx.currentTime + 0.15);
-        osc.frequency.setValueAtTime(600, ctx.currentTime + 0.3);
-        osc.frequency.setValueAtTime(800, ctx.currentTime + 0.45);
-        gain.gain.setValueAtTime(0.5, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.6);
-        osc.onended = () => ctx.close();
-      } catch(e) {}
-    }
+    triggerHaptic('rest_done', Boolean(settings?.vibrateOnComplete));
+    playPRFanfare(Boolean(settings?.soundEnabled));
 
     // Removed unconditional confetti to only trigger when actual PR is achieved during the workout
 
@@ -784,6 +799,32 @@ export function WorkoutSessionPage() {
     setExpandedExercises((prev) => ({ ...prev, [newEx.id]: true }));
   };
 
+  const handleAutoPopulateTargetedMuscles = () => {
+    if (targetMuscles.length === 0) return;
+    const perMuscle = targetMuscles.length === 1 ? 3 : 2;
+    const recs = pickRecommendedExercisesForMuscles(
+      targetMuscles,
+      EXERCISE_DATABASE,
+      customExercises,
+      perMuscle,
+    );
+    if (recs.length === 0) {
+      setIsAddExerciseOpen(true);
+      return;
+    }
+    const built = recs.map((meta) =>
+      buildFreestyleExercise(meta, sessions, settings, {
+        setsCount: 3,
+        defaultReps: meta.trackingMode === 'timed' ? 1 : 10,
+        defaultDuration: 45,
+        trackingMode: meta.trackingMode,
+        isDeload: isDeloadDay,
+      }),
+    );
+    setExercises(built);
+    setExpandedExercises({ [built[0].id]: true });
+  };
+
   const handleRemoveExercise = (exId: string) => {
     setExercises((prev) => cleanupOrphanSupersets(prev.filter((ex) => ex.id !== exId)));
   };
@@ -831,6 +872,15 @@ export function WorkoutSessionPage() {
       </div>
     );
   }
+
+  const livePRMapsByExercise = React.useMemo(() => {
+    const unitLabel: WeightUnit = settings?.weightUnit === 'lbs' ? 'lbs' : 'kg';
+    const out: Record<string, Map<string, LivePRHit>> = {};
+    for (const ex of exercises) {
+      out[ex.id] = getExerciseLivePRSetMap(ex, unitLabel);
+    }
+    return out;
+  }, [exercises, settings?.weightUnit]);
 
   const totalSets = exercises.reduce((acc, ex) => acc + ex.sets.length, 0);
   const completedSets = exercises.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed).length, 0);
@@ -887,24 +937,36 @@ export function WorkoutSessionPage() {
                 {exercises.length} exercises · {completedSets}/{totalSets} sets
               </p>
             </div>
-            <div className="flex shrink-0 items-center justify-end gap-1.5">
+            <div className="flex shrink-0 items-center justify-end gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  const activeEx = exercises.find((e) => expandedExercises[e.id]) ?? exercises[0];
+                  startRestTimer(activeEx?.restTimerConfig || 90, activeEx?.name || 'Rest Timer');
+                }}
+                className="liquid-btn-glass flex h-9 w-9 items-center justify-center rounded-xl text-muted hover:text-primary-400 transition-colors cursor-pointer"
+                title="Start Rest Timer"
+                aria-label="Start Rest Timer"
+              >
+                <Timer size={16} />
+              </button>
               <button
                 onClick={() => setPlateCalcConfig({ isOpen: true, weight: 0 })}
-                className="liquid-btn-glass flex h-10 w-10 items-center justify-center rounded-xl text-muted hover:text-primary-400 transition-colors cursor-pointer"
+                className="liquid-btn-glass flex h-9 w-9 items-center justify-center rounded-xl text-muted hover:text-primary-400 transition-colors cursor-pointer"
                 title="Plate Calculator"
                 aria-label="Plate Calculator"
               >
-                <Calculator size={17} />
+                <Calculator size={16} />
               </button>
               <button
                 onClick={() => setShowRestartConfirm(true)}
-                className="liquid-btn-danger flex h-10 w-10 items-center justify-center rounded-xl transition-colors cursor-pointer"
+                className="liquid-btn-danger flex h-9 w-9 items-center justify-center rounded-xl transition-colors cursor-pointer"
                 title="Restart Workout"
                 aria-label="Restart Workout"
               >
-                <RotateCcw size={16} />
+                <RotateCcw size={15} />
               </button>
-              <div className="liquid-glass rounded-xl px-2.5 py-2 font-mono text-xs font-bold text-primary-400 tabular-nums">
+              <div className="liquid-glass rounded-xl px-2 py-2 font-mono text-xs font-bold text-primary-400 tabular-nums">
                 {formatTime(elapsedTime)}
               </div>
             </div>
@@ -922,40 +984,101 @@ export function WorkoutSessionPage() {
 
         <main className="w-full flex-1 overflow-y-auto overscroll-y-contain overflow-x-hidden p-4 pb-44">
         {isFreestyle && exercises.length === 0 ? (
-          <div className="rounded-3xl bg-card border border-content/10 p-6 text-center space-y-4 mt-4">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400">
-              <Zap size={26} />
+          targetMuscles.length > 0 ? (
+            <div className="liquid-glass-strong rounded-3xl border border-primary-500/25 p-6 text-center space-y-4 mt-4">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-500/15 text-primary-400">
+                <Sparkles size={26} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary-400">
+                  Targeted Freestyle
+                </p>
+                <h2 className="mt-1 text-xl font-black text-content">
+                  {getSuggestedFreestyleTitle(targetMuscles)}
+                </h2>
+                <p className="mt-1 text-xs text-muted">
+                  Auto-fill balanced staples or pick exercises filtered for your target muscles:
+                </p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-1.5">
+                {targetMuscles.map((target) => {
+                  const st = muscleRecovery.find((m) => m.muscle === target);
+                  const isReady = !st || st.readiness === 'ready';
+                  const isRecovering = st?.readiness === 'recovering';
+                  const badgeStyle = isReady
+                    ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                    : isRecovering
+                      ? 'bg-amber-500/15 border-amber-500/30 text-amber-400'
+                      : 'bg-red-500/15 border-red-500/30 text-red-400';
+                  const dotStyle = isReady
+                    ? 'bg-emerald-400'
+                    : isRecovering
+                      ? 'bg-amber-400'
+                      : 'bg-red-400';
+                  return (
+                    <span
+                      key={target}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold ${badgeStyle}`}
+                    >
+                      <span className={`h-2 w-2 rounded-full ${dotStyle}`} />
+                      {target} · {st ? `${st.recoveryPercent}%` : 'Ready'}
+                    </span>
+                  );
+                })}
+              </div>
+              <div className="space-y-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={handleAutoPopulateTargetedMuscles}
+                  className="liquid-btn-primary w-full flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-black text-white active:scale-95 transition-all cursor-pointer"
+                >
+                  <Sparkles size={17} /> Auto-Add Recommended
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAddExerciseOpen(true)}
+                  className="liquid-btn-glass w-full flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold text-content active:scale-95 transition-all cursor-pointer"
+                >
+                  <Plus size={17} /> Pick Exercises Manually
+                </button>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-black text-content">Quick Freestyle Workout</h2>
-              <p className="text-xs text-muted mt-1">
-                Build your session on the fly. Recovered muscles ready to train:
-              </p>
+          ) : (
+            <div className="rounded-3xl bg-card border border-content/10 p-6 text-center space-y-4 mt-4">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400">
+                <Zap size={26} />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-content">Quick Freestyle Workout</h2>
+                <p className="text-xs text-muted mt-1">
+                  Build your session on the fly. Recovered muscles ready to train:
+                </p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-1.5">
+                {muscleRecovery
+                  .filter((m) => m.readiness === 'ready')
+                  .slice(0, 5)
+                  .map((m) => (
+                    <button
+                      key={m.muscle}
+                      type="button"
+                      onClick={() => setIsAddExerciseOpen(true)}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-3 py-1 text-xs font-bold text-emerald-400"
+                    >
+                      <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                      {m.muscle} · {m.recoveryPercent}%
+                    </button>
+                  ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddExerciseOpen(true)}
+                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-primary-500 py-3.5 text-sm font-black text-white shadow-lg shadow-primary-500/30 hover:bg-primary-400 active:scale-95 transition-all cursor-pointer"
+              >
+                <Plus size={18} /> Add First Exercise
+              </button>
             </div>
-            <div className="flex flex-wrap justify-center gap-1.5">
-              {muscleRecovery
-                .filter((m) => m.readiness === 'ready')
-                .slice(0, 5)
-                .map((m) => (
-                  <button
-                    key={m.muscle}
-                    type="button"
-                    onClick={() => setIsAddExerciseOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-3 py-1 text-xs font-bold text-emerald-400"
-                  >
-                    <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                    {m.muscle} · {m.recoveryPercent}%
-                  </button>
-                ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsAddExerciseOpen(true)}
-              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-primary-500 py-3.5 text-sm font-black text-white shadow-lg shadow-primary-500/30 hover:bg-primary-400 active:scale-95 transition-all cursor-pointer"
-            >
-              <Plus size={18} /> Add First Exercise
-            </button>
-          </div>
+          )
         ) : (
           <>
             <Reorder.Group 
@@ -989,6 +1112,7 @@ export function WorkoutSessionPage() {
                   settings={settings}
                   isDeloadDay={isDeloadDay}
                   muscleReadinessMap={muscleReadinessMap}
+                  livePRMapsByExercise={livePRMapsByExercise}
                   onRemoveExercise={isFreestyle ? handleRemoveExercise : undefined}
                   onDragStart={collapseAll}
                 />
@@ -1069,49 +1193,101 @@ export function WorkoutSessionPage() {
         restTimer={restTimer}
         initialRestTimer={initialRestTimer}
         subtitle={restSubtitle}
+        isPaused={isRestPaused}
+        soundEnabled={Boolean(settings?.soundEnabled ?? true)}
+        onTogglePause={handleToggleRestPause}
+        onToggleSound={handleToggleRestSound}
         onSubtract15={() => {
+          if (isRestPaused) {
+            const nextRem = Math.max(1, (pausedRestRemaining ?? restTimer ?? 15) - 15);
+            setPausedRestRemaining(nextRem);
+            setRestTimer(nextRem);
+            return;
+          }
           if (restEndTime === null) return;
           const nextEnd = Math.max(Date.now() + 1000, restEndTime - 15000);
           const nextRemaining = Math.max(1, Math.ceil((nextEnd - Date.now()) / 1000));
           lastSpokenSecondRef.current = null;
+          lastTickedSecondRef.current = null;
           setRestEndTime(nextEnd);
           setRestTimer(nextRemaining);
         }}
         onAdd15={() => {
+          if (isRestPaused) {
+            const nextRem = (pausedRestRemaining ?? restTimer ?? 0) + 15;
+            setPausedRestRemaining(nextRem);
+            setRestTimer(nextRem);
+            setInitialRestTimer((prev) => (prev || 0) + 15);
+            return;
+          }
           const baseEnd = restEndTime ?? Date.now();
           const nextEnd = baseEnd + 15000;
           const nextRemaining = Math.max(1, Math.ceil((nextEnd - Date.now()) / 1000));
           lastSpokenSecondRef.current = null;
+          lastTickedSecondRef.current = null;
           setRestEndTime(nextEnd);
           setRestTimer(nextRemaining);
           setInitialRestTimer((prev) => (prev || 0) + 15);
         }}
+        onSelectPreset={(seconds) => startRestTimer(seconds, restSubtitle)}
         onSkip={() => {
           lastSpokenSecondRef.current = null;
+          lastTickedSecondRef.current = null;
           setRestEndTime(null);
           setRestTimer(null);
           setInitialRestTimer(null);
+          setIsRestPaused(false);
+          setPausedRestRemaining(null);
         }}
       />
 
       <AnimatePresence>
         {prNotification && (
           <motion.div
-            initial={{ y: -100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -100, opacity: 0 }}
-            className="fixed top-20 left-1/2 z-[70] w-[calc(100%-2rem)] max-w-[428px] -translate-x-1/2 rounded-2xl bg-gradient-to-br from-yellow-500 to-orange-500 p-[2px] shadow-2xl shadow-yellow-500/30"
+            initial={{ y: -90, opacity: 0, scale: 0.96 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: -90, opacity: 0, scale: 0.96 }}
+            transition={{ type: 'spring', damping: 22, stiffness: 320 }}
+            className="fixed top-20 left-1/2 z-[70] w-[calc(100%-2rem)] max-w-[428px] -translate-x-1/2 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 p-[2px] shadow-2xl shadow-amber-500/30"
           >
-            <div className="liquid-glass-strong rounded-[14px] p-4 flex items-center gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-yellow-500/20 text-yellow-500">
-                <Trophy size={24} />
+            <div className="liquid-glass-strong rounded-[14px] p-3.5 flex items-center gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                <Trophy size={22} />
               </div>
-              <div className="flex-1">
-                <p className="text-[10px] font-black uppercase tracking-widest text-yellow-500">New Personal Record!</p>
-                <p className="text-sm font-bold text-content leading-tight mt-0.5">{prNotification.exerciseName}</p>
-                <p className="text-xs font-semibold text-muted mt-1">{prNotification.valueLabel}</p>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400">
+                    New {prNotification.headline}!
+                  </p>
+                  {prNotification.deltaLabel && (
+                    <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 font-mono text-[10px] font-black text-emerald-700 dark:text-emerald-400 tabular-nums">
+                      {prNotification.deltaLabel}
+                    </span>
+                  )}
+                </div>
+                <p className="truncate text-sm font-bold text-content leading-tight mt-0.5">
+                  {prNotification.exerciseName}
+                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  <span className="font-mono text-xs font-extrabold text-amber-700 dark:text-amber-300 tabular-nums">
+                    {prNotification.valueLabel}
+                  </span>
+                  {prNotification.secondaryTags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded border border-amber-500/35 bg-amber-500/15 px-1.5 py-0.2 text-[9px] font-bold text-amber-700 dark:text-amber-300"
+                    >
+                      + {tag}
+                    </span>
+                  ))}
+                </div>
               </div>
-              <button onClick={() => setPrNotification(null)} className="p-2 text-muted hover:text-content transition-colors">
+              <button
+                type="button"
+                aria-label="Dismiss PR notification"
+                onClick={() => setPrNotification(null)}
+                className="p-1.5 text-muted hover:text-content transition-colors cursor-pointer"
+              >
                 <X size={16} />
               </button>
             </div>
@@ -1273,6 +1449,7 @@ export function WorkoutSessionPage() {
         isOpen={isAddExerciseOpen}
         onClose={() => setIsAddExerciseOpen(false)}
         readyMuscles={muscleRecovery}
+        initialFilterMuscle={targetMuscles[0] || ''}
         onAddExercise={handleAddSessionExercise}
       />
       {showOverloadWarning && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4 backdrop-blur-md">

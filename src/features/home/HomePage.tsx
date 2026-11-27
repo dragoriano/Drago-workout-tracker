@@ -365,7 +365,7 @@ export function HomePage() {
             </h3>
             <button
               type="button"
-              onClick={() => navigate('/stats')}
+              onClick={() => navigate('/stats?section=recovery')}
               className="text-xs font-bold text-primary-400 hover:text-primary-300 cursor-pointer"
             >
               Recovery →
@@ -389,7 +389,7 @@ export function HomePage() {
                 <button
                   key={item.muscle}
                   type="button"
-                  onClick={() => navigate('/stats')}
+                  onClick={() => navigate(`/stats?section=recovery&muscle=${encodeURIComponent(item.muscle)}`)}
                   className="liquid-glass liquid-glass-interactive min-w-[92px] shrink-0 rounded-2xl px-3 py-2 text-left cursor-pointer"
                 >
                   <div className="flex items-center gap-1.5">

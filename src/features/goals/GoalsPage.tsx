@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Target, Plus, Trash2, CheckCircle2, Trophy, Calendar, Edit2, RefreshCw, TrendingUp } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { AutocompleteInput } from '../../components/ui/AutocompleteInput';
 import { AppDialog } from '../../components/ui/Dialog';
@@ -9,7 +9,9 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Input';
+import { MilestonesGrid } from '../../components/ui/MilestonesGrid';
 import { Progress } from '../../components/ui/Progress';
+import { Tabs, TabsList, TabsTrigger } from '../../components/ui/Tabs';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { useAppStore } from '../../store/useAppStore';
 import { Goal, GoalDirection, GoalTrackingType } from '../../types';
@@ -19,6 +21,7 @@ import {
   computeGoalProgressPercent,
   isGoalAchieved,
 } from '../../utils/goalsSync';
+import { computeTrainingMilestones } from '../../utils/strengthStandards';
 import { generateId } from '../../utils/uuid';
 
 interface GoalFormData {
@@ -72,18 +75,32 @@ const GOAL_COLORS = [
 
 export function GoalsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const settings = useAppStore(s => s.settings);
   const storeGoals = useAppStore(s => s.goals);
   const sessions = useAppStore(s => s.sessions);
   const measurements = useAppStore(s => s.measurements);
+  const [activeTab, setActiveTab] = useState<'goals' | 'milestones'>(() =>
+    searchParams.get('tab') === 'milestones' ? 'milestones' : 'goals',
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [goalToDelete, setGoalToDelete] = useState<string | null>(null);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'milestones') setActiveTab('milestones');
+    else if (tabParam === 'goals') setActiveTab('goals');
+  }, [searchParams]);
 
   const weightUnit = settings?.weightUnit || 'kg';
   const weightTrend = useMemo(
     () => computeMeasurementTrend(measurements, 'weight'),
     [measurements],
+  );
+  const milestonesSummary = useMemo(
+    () => computeTrainingMilestones(sessions, measurements, weightUnit),
+    [sessions, measurements, weightUnit],
   );
 
   const goals = useMemo(
@@ -272,13 +289,17 @@ export function GoalsPage() {
     <div className="min-h-full bg-transparent">
       <div className="px-4 pt-5 pb-6">
         {/* Header */}
-        <div className="mb-5 flex items-center justify-between gap-3 pt-safe">
+        <div className="mb-4 flex items-center justify-between gap-3 pt-safe">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-400">
-              Milestones
+              {activeTab === 'milestones' ? 'Trophy Case' : 'Targets'}
             </p>
             <h1 className="text-2xl font-extrabold tracking-tight text-content">Goals</h1>
-            <p className="mt-0.5 text-xs font-medium text-muted">{activeGoals.length} active</p>
+            <p className="mt-0.5 text-xs font-medium text-muted">
+              {activeTab === 'milestones'
+                ? `${milestonesSummary.unlockedCount}/${milestonesSummary.totalCount} badges unlocked`
+                : `${activeGoals.length} active`}
+            </p>
           </div>
           <Button onClick={openCreateModal} size="sm">
             <Plus size={16} />
@@ -286,6 +307,31 @@ export function GoalsPage() {
           </Button>
         </div>
 
+        {/* Goals vs Milestones Tab Switcher */}
+        <Tabs
+          value={activeTab}
+          onValueChange={(val) => {
+            const next = val === 'milestones' ? 'milestones' : 'goals';
+            setActiveTab(next);
+            setSearchParams(next === 'milestones' ? { tab: 'milestones' } : {}, { replace: true });
+          }}
+          className="mb-5"
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="goals">My Goals</TabsTrigger>
+            <TabsTrigger value="milestones">
+              Milestones · {milestonesSummary.unlockedCount}/{milestonesSummary.totalCount}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {activeTab === 'milestones' ? (
+          <MilestonesGrid
+            summary={milestonesSummary}
+            hasBodyweight={Boolean(weightTrend.latest)}
+            onLogBodyweight={() => navigate('/stats')}
+          />
+        ) : (
         <div className="space-y-4">
           {weightTrend.latest && (
             <Card
@@ -505,6 +551,7 @@ export function GoalsPage() {
             </>
           )}
         </div>
+        )}
       </div>
 
       {/* Create/Edit Modal */}

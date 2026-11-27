@@ -1,4 +1,5 @@
 import React from 'react';
+import { format } from 'date-fns';
 import {
   AlignLeft,
   ArrowRightLeft,
@@ -8,6 +9,7 @@ import {
   ChevronUp,
   Flame,
   GripVertical,
+  History,
   Link,
   MoreHorizontal,
   Play,
@@ -18,6 +20,7 @@ import {
   Timer,
   Trash2,
   TrendingUp,
+  Trophy,
   Unlink,
   Youtube,
 } from 'lucide-react';
@@ -67,6 +70,12 @@ import {
   stepSetWeight,
 } from '../../../utils/warmupGenerator';
 import { evaluateExerciseCoach } from '../../../utils/workoutCoach';
+import {
+  computeExerciseHistoricalBenchmarks,
+  getRecentExerciseSessions,
+  type LivePRHit,
+} from '../../../utils/liveSessionPR';
+import { playRestFinishChime, triggerHaptic } from '../../../utils/workoutAudio';
 import type { MuscleRecoveryStatus } from '../../../utils/muscleRecovery';
 
 export interface WorkoutBlockData {
@@ -115,24 +124,12 @@ function getQuickAdjustTarget(sets: Set[]): QuickAdjustTarget | null {
   return { set: fallback, label };
 }
 
-function playHoldTargetBeep() {
-  try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    const ctx = new AudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    gain.gain.setValueAtTime(0.4, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.25);
-    osc.onended = () => ctx.close();
-  } catch {
-    // Ignore audio context restriction errors
-  }
+function formatHistoryAge(timestamp: number): string {
+  const diffHours = Math.max(0, (Date.now() - timestamp) / 3_600_000);
+  if (diffHours < 24) return `${Math.max(1, Math.round(diffHours))}h ago`;
+  const days = Math.round(diffHours / 24);
+  if (days < 7) return `${days}d ago`;
+  return `${Math.round(days / 7)}w ago`;
 }
 
 interface ExerciseItemProps {
@@ -160,6 +157,7 @@ interface ExerciseItemProps {
   settings: AppSettings | null;
   isDeloadDay?: boolean;
   muscleReadiness?: MuscleRecoveryStatus | null;
+  livePRSetMap?: Map<string, LivePRHit>;
   onRemoveExercise?: (exId: string) => void;
   dragControls?: ReturnType<typeof useDragControls>;
 }
@@ -187,6 +185,7 @@ export function DraggableExerciseItem({
   settings,
   isDeloadDay,
   muscleReadiness,
+  livePRSetMap,
   onRemoveExercise,
   dragControls,
 }: ExerciseItemProps) {
@@ -211,8 +210,12 @@ export function DraggableExerciseItem({
     Number.isFinite(firstWorkingWeight) &&
     firstWorkingWeight > 0;
   const showPlateAndWarmup = mode === 'weight_reps' || (mode === 'bodyweight_reps' && canGenerateWarmup);
+  const benchmarks = computeExerciseHistoricalBenchmarks(exercise);
+  const recentSessions = getRecentExerciseSessions(exercise, unit, 3);
+  const hasLivePR = Boolean(livePRSetMap && livePRSetMap.size > 0);
 
   const [showRestPresets, setShowRestPresets] = React.useState(false);
+  const [showHistoryPeek, setShowHistoryPeek] = React.useState(false);
   const [isPressing, setIsPressing] = React.useState(false);
   const pressTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -235,12 +238,8 @@ export function DraggableExerciseItem({
         !targetCueFiredRef.current
       ) {
         targetCueFiredRef.current = true;
-        if (settings?.soundEnabled) playHoldTargetBeep();
-        if (settings?.vibrateOnComplete) {
-          try {
-            window.navigator.vibrate([120, 60, 120]);
-          } catch {}
-        }
+        playRestFinishChime(Boolean(settings?.soundEnabled));
+        triggerHaptic('rest_done', Boolean(settings?.vibrateOnComplete));
       }
     }, 200);
     return () => clearInterval(interval);
@@ -414,6 +413,12 @@ export function DraggableExerciseItem({
                     {unit}
                   </span>
                 )}
+                {hasLivePR && (
+                  <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-black text-amber-700 dark:text-amber-400">
+                    <Trophy size={10} />
+                    <span>PR</span>
+                  </span>
+                )}
                 {exercise.history && exercise.history.length > 0 && (
                   <button
                     onClick={(e) => {
@@ -551,12 +556,28 @@ export function DraggableExerciseItem({
               </div>
 
               {lastSession && lastSession.sets.length > 0 && (
-                <div className="mb-4 text-xs">
-                  <div className="flex items-center gap-1 text-muted mb-2">
-                    <RotateCcw size={14} />
-                    <span>Last session:</span>
-                  </div>
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-muted font-medium">
+                <div className="mb-4 rounded-2xl border border-content/10 bg-page/35 p-3 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setShowHistoryPeek((prev) => !prev)}
+                    aria-expanded={showHistoryPeek}
+                    className="flex w-full items-center justify-between gap-2 text-left cursor-pointer"
+                  >
+                    <div className="flex min-w-0 items-center gap-1.5 text-muted">
+                      <RotateCcw size={13} className="shrink-0 text-primary-400" />
+                      <span className="font-bold text-content">Last session</span>
+                      <span className="text-[11px] text-muted">
+                        · {formatHistoryAge(lastSession.date)}
+                      </span>
+                    </div>
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-content/10 bg-surface/80 px-2 py-0.5 text-[10px] font-bold text-primary-400">
+                      <History size={11} />
+                      <span>Peek ({recentSessions.length})</span>
+                      {showHistoryPeek ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                    </span>
+                  </button>
+
+                  <div className="mt-2 flex flex-wrap gap-x-2.5 gap-y-1 text-muted font-medium">
                     {(() => {
                       let lastWorkingOrdinal = 0;
                       return lastSession.sets.map((s, i) => {
@@ -578,6 +599,101 @@ export function DraggableExerciseItem({
                       });
                     })()}
                   </div>
+
+                  <AnimatePresence>
+                    {showHistoryPeek && recentSessions.length > 0 && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-3 space-y-2.5 border-t border-content/10 pt-3">
+                          {benchmarks.hasHistory && (
+                            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/25 bg-amber-500/10 px-2.5 py-1.5 text-[11px]">
+                              <span className="inline-flex items-center gap-1 font-extrabold uppercase tracking-wider text-amber-400">
+                                <Trophy size={11} /> Target to Beat
+                              </span>
+                              <div className="flex flex-wrap items-center gap-2 font-mono font-bold text-content tabular-nums">
+                                {mode === 'timed' ? (
+                                  <span>{formatDurationCompact(benchmarks.bestDuration)}</span>
+                                ) : benchmarks.bestWeight > 0 ? (
+                                  <>
+                                    <span>{benchmarks.bestWeight}{unit}</span>
+                                    {benchmarks.best1RM > 0 && (
+                                      <span className="text-muted">· {benchmarks.best1RM}{unit} e1RM</span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span>{benchmarks.bestReps} reps</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="space-y-2">
+                            {recentSessions.map((sess) => (
+                              <div
+                                key={sess.sessionId + sess.date}
+                                className="rounded-xl border border-content/10 bg-surface/60 p-2.5 space-y-1.5"
+                              >
+                                <div className="flex items-center justify-between gap-2 text-[11px]">
+                                  <span className="font-bold text-content">
+                                    {format(new Date(sess.date), 'MMM d')}
+                                    <span className="ml-1.5 font-medium text-muted">
+                                      ({formatHistoryAge(sess.date)})
+                                    </span>
+                                  </span>
+                                  <div className="flex items-center gap-1.5 font-mono tabular-nums">
+                                    {sess.best1RM !== null && (
+                                      <span className="font-bold text-emerald-400">
+                                        {sess.best1RM}{unit} e1RM
+                                      </span>
+                                    )}
+                                    {sess.totalVolume > 0 && (
+                                      <span className="text-muted">
+                                        {sess.totalVolume.toLocaleString()}{unit}
+                                      </span>
+                                    )}
+                                    {sess.volumeDeltaPct !== null && sess.volumeDeltaPct !== 0 && (
+                                      <span
+                                        className={cn(
+                                          'rounded px-1 py-0.5 text-[9px] font-black',
+                                          sess.volumeDeltaPct > 0
+                                            ? 'bg-emerald-500/15 text-emerald-400'
+                                            : 'bg-amber-500/15 text-amber-400',
+                                        )}
+                                      >
+                                        {sess.volumeDeltaPct > 0 ? '+' : ''}
+                                        {sess.volumeDeltaPct}%
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="flex flex-wrap gap-1">
+                                  {sess.workingSets.map((ws, idx) => {
+                                    const wt = getSetType(ws);
+                                    const prefix = wt === 'drop' ? 'D: ' : wt === 'failure' ? 'F: ' : '';
+                                    const eff = !isWarmupSet(ws) ? formatEffortLabel(ws.rpe, effortScale) : '';
+                                    return (
+                                      <span
+                                        key={ws.id || idx}
+                                        className="rounded-md border border-content/10 bg-page/60 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-content/90 tabular-nums"
+                                      >
+                                        {prefix}{formatSetSummary(ws, mode, unit)}
+                                        {eff ? ` · ${eff}` : ''}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               )}
 
@@ -1014,18 +1130,23 @@ export function DraggableExerciseItem({
                             ? 'F'
                             : String(workingOrdinal);
 
+                    const prHit = livePRSetMap?.get(set.id);
+
                     return (
                       <div
                         key={set.id}
                         className={cn(
-                          'grid grid-cols-[34px_1fr_1fr_52px_34px_26px] items-center gap-1.5 rounded-xl p-1 transition-colors min-w-0 w-full overflow-hidden',
+                          'rounded-xl p-1 transition-colors min-w-0 w-full',
                           set.completed
-                            ? warmup
-                              ? 'bg-sky-900/10'
-                              : 'bg-emerald-900/10'
+                            ? prHit
+                              ? 'bg-amber-500/10 ring-1 ring-amber-500/25'
+                              : warmup
+                                ? 'bg-sky-900/10'
+                                : 'bg-emerald-900/10'
                             : 'bg-transparent',
                         )}
                       >
+                        <div className="grid grid-cols-[34px_1fr_1fr_52px_34px_26px] items-center gap-1.5 min-w-0 w-full">
                         <button
                           type="button"
                           onClick={() => onSetUpdate(exercise.id, set.id, 'setType', getNextSetType(set.setType))}
@@ -1149,6 +1270,19 @@ export function DraggableExerciseItem({
                         >
                           <Trash2 size={15} />
                         </button>
+                        </div>
+                        {prHit && (
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5 px-1">
+                            <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                              <Trophy size={9} />
+                              <span>{prHit.shortTag}</span>
+                            </span>
+                            <span className="font-mono text-[10px] font-bold text-amber-700 dark:text-amber-300 tabular-nums">
+                              {prHit.valueLabel}
+                              {prHit.deltaLabel ? ` (${prHit.deltaLabel})` : ''}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     );
                   });
@@ -1195,6 +1329,7 @@ interface WorkoutBlockProps {
   settings: AppSettings | null;
   isDeloadDay?: boolean;
   muscleReadinessMap?: Record<string, MuscleRecoveryStatus>;
+  livePRMapsByExercise?: Record<string, Map<string, LivePRHit>>;
   onRemoveExercise?: (exId: string) => void;
   onDragStart: () => void;
 }
@@ -1222,6 +1357,7 @@ export function WorkoutBlock({
   settings,
   isDeloadDay,
   muscleReadinessMap,
+  livePRMapsByExercise,
   onRemoveExercise,
   onDragStart,
 }: WorkoutBlockProps) {
@@ -1339,6 +1475,7 @@ export function WorkoutBlock({
             dragControls={controls}
             isDeloadDay={isDeloadDay}
             muscleReadiness={muscleReadinessMap?.[exercise.id] ?? null}
+            livePRSetMap={livePRMapsByExercise?.[exercise.id]}
             onRemoveExercise={onRemoveExercise}
           />
         );

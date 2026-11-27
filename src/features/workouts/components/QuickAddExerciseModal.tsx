@@ -18,6 +18,7 @@ interface QuickAddExerciseModalProps {
   isOpen: boolean;
   onClose: () => void;
   readyMuscles: MuscleRecoveryStatus[];
+  initialFilterMuscle?: string;
   onAddExercise: (
     meta: CatalogExerciseItem,
     setsCount: number,
@@ -30,6 +31,7 @@ export function QuickAddExerciseModal({
   isOpen,
   onClose,
   readyMuscles,
+  initialFilterMuscle = '',
   onAddExercise,
 }: QuickAddExerciseModalProps) {
   const customExercises = useAppStore((s) => s.customExercises);
@@ -46,12 +48,12 @@ export function QuickAddExerciseModal({
     if (isOpen) {
       setQuery('');
       setSelectedMeta(null);
-      setFilterMuscle('');
+      setFilterMuscle(initialFilterMuscle || '');
       setTrackingMode('weight_reps');
       setSetsInput('3');
       setRepsInput('10');
     }
-  }, [isOpen]);
+  }, [isOpen, initialFilterMuscle]);
 
   const sortedMuscles = [...readyMuscles].sort((a, b) => b.recoveryPercent - a.recoveryPercent);
   const trimmedName = query.trim();

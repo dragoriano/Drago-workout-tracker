@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -9,12 +11,22 @@ import { PremiumIcon, FilledIcon } from '../../components/ui/PremiumIcon';
 import { WorkoutHeatmap } from '../../components/ui/WorkoutHeatmap';
 import { MuscleGroupChart, mapToMuscleGroup, getMuscleColor } from '../../components/ui/MuscleGroupChart';
 import { MuscleRecoveryCard } from '../../components/ui/MuscleRecoveryCard';
+import { StrengthStandardsCard } from '../../components/ui/StrengthStandardsCard';
 import { getExerciseMuscleGroups } from '../../data/exercises';
 import { PullToRefresh } from '../../components/ui/PullToRefresh';
 import { useAppStore } from '../../store/useAppStore';
 import { computeEffortSummary, computeStreaks, computeTopEstimated1RMs, flattenPRs } from '../../utils/analytics';
 import { computeMeasurementTrend } from '../../utils/bodyTrends';
-import { computeMuscleRecovery } from '../../utils/muscleRecovery';
+import {
+  computeMuscleRecovery,
+  isTrackedMuscleGroup,
+  type BroadMuscleGroup,
+} from '../../utils/muscleRecovery';
+import {
+  computeStrengthStandards,
+  computeSymmetryBalance,
+  computeTrainingMilestones,
+} from '../../utils/strengthStandards';
 import {
   buildPRTimeline,
   findPreviousComparableSession,
@@ -22,6 +34,7 @@ import {
 } from '../../utils/sessionComparison';
 import { downloadCSV, formatSessionsToCSV } from '../../utils/sessionExport';
 import { isWarmupSet, rpeToRir } from '../../utils/strength';
+import { generateId } from '../../utils/uuid';
 import type { WorkoutSession } from '../../types';
 import { SessionCompareModal } from './SessionCompareModal';
 import { SessionEditorModal } from './SessionEditorModal';
@@ -39,6 +52,15 @@ export function AnalyticsPage() {
   const hydrate = useAppStore((s) => s.hydrate);
   const isHydrated = useAppStore((s) => s.isHydrated);
 
+  // ── Navigation & Deep-Link State ─────────────────────────────────
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sectionParam = searchParams.get('section');
+  const rawMuscleParam = searchParams.get('muscle');
+  const initialRecoveryMuscle: BroadMuscleGroup | null =
+    rawMuscleParam && isTrackedMuscleGroup(rawMuscleParam) ? rawMuscleParam : null;
+  const recoverySectionRef = useRef<HTMLDivElement>(null);
+
   // ── Local UI state ───────────────────────────────────────────────
   const [selectedType, setSelectedType] = useState('weight');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -54,6 +76,16 @@ export function AnalyticsPage() {
   const [editingSession, setEditingSession] = useState<WorkoutSession | null>(null);
 
   useEffect(() => { if (!isHydrated) hydrate(); }, [hydrate, isHydrated]);
+
+  useEffect(() => {
+    if (sectionParam === 'recovery' || initialRecoveryMuscle) {
+      setActiveTab('overview');
+      const timer = window.setTimeout(() => {
+        recoverySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 120);
+      return () => window.clearTimeout(timer);
+    }
+  }, [sectionParam, initialRecoveryMuscle]);
 
   const processVolumeData = () => {
     const last7 = Array.from({ length: 7 }).map((_, i) => {
@@ -85,6 +117,35 @@ export function AnalyticsPage() {
     customExercises,
     resolveFallbackMuscles: getExerciseMuscleGroups,
   });
+
+  const strengthStandards = useMemo(
+    () => computeStrengthStandards(sessions, measurements, unit),
+    [sessions, measurements, unit],
+  );
+  const symmetryBalance = useMemo(
+    () =>
+      computeSymmetryBalance(sessions, {
+        windowDays: 30,
+        customExercises,
+        resolveFallbackMuscles: getExerciseMuscleGroups,
+      }),
+    [sessions, customExercises],
+  );
+  const milestonesSummary = useMemo(
+    () => computeTrainingMilestones(sessions, measurements, unit),
+    [sessions, measurements, unit],
+  );
+
+  const handleQuickSaveBodyweight = async (value: number) => {
+    await useAppStore.getState().saveMeasurement({
+      id: generateId(),
+      date: Date.now(),
+      type: 'weight',
+      value,
+      unit,
+    });
+    toast.success(`Logged bodyweight: ${value} ${unit}`);
+  };
 
   // Compute muscle group volume (last 7 days, working sets only)
   const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -212,6 +273,25 @@ export function AnalyticsPage() {
             </Card>
           </div>
 
+          {/* Muscle Recovery & Body Map (Prominent Flagship Section) */}
+          <div ref={recoverySectionRef} className="scroll-mt-4">
+            <h2 className="text-xl font-bold mb-4 mt-2 flex items-center gap-2">
+              <FilledIcon icon={Activity} size={20} className="text-emerald-400" /> Muscle Recovery &amp; Body Map
+            </h2>
+            <Card className="p-4 mb-8">
+              <MuscleRecoveryCard
+                items={muscleRecovery}
+                sessions={sessions}
+                customExercises={customExercises}
+                unit={unit}
+                initialSelectedMuscle={initialRecoveryMuscle}
+                onStartFreestyle={(muscles) =>
+                  navigate(`/quick-workout?muscles=${encodeURIComponent(muscles.join(','))}`)
+                }
+              />
+            </Card>
+          </div>
+
           {/* Volume chart */}
           <h2 className="mb-3 flex items-center gap-2 text-lg font-bold tracking-tight">
             <FilledIcon icon={Activity} size={18} className="text-primary-400" /> Volume (7 days)
@@ -235,14 +315,6 @@ export function AnalyticsPage() {
                 <Bar dataKey="volume" fill="var(--theme-500)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          </Card>
-
-          {/* Muscle Recovery & Weekly Sets */}
-          <h2 className="text-xl font-bold mb-4 mt-8 flex items-center gap-2">
-            <FilledIcon icon={Activity} size={20} className="text-emerald-400" /> Muscle Recovery &amp; Weekly Sets
-          </h2>
-          <Card className="p-4 mb-8">
-            <MuscleRecoveryCard items={muscleRecovery} />
           </Card>
 
           {/* Muscle Group Volume */}
@@ -401,6 +473,17 @@ export function AnalyticsPage() {
               </>
             )}
           </Card>
+
+          {/* Strength Standards & 30-Day Training Balance */}
+          <StrengthStandardsCard
+            standards={strengthStandards}
+            symmetry={symmetryBalance}
+            unit={unit}
+            milestonesUnlocked={milestonesSummary.unlockedCount}
+            milestonesTotal={milestonesSummary.totalCount}
+            onLogBodyweight={handleQuickSaveBodyweight}
+            onViewMilestones={() => navigate('/goals?tab=milestones')}
+          />
 
           {/* Strength Benchmarks (Est. 1RM) */}
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
